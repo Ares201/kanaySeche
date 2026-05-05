@@ -1,0 +1,28 @@
+{
+  "apis": {
+    "envases": {
+      "collection": "envases",
+      "model": "envase",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    },
+    "residuos": {
+      "collection": "residuos",
+      "model": "residuo",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    }
+  }
+}
