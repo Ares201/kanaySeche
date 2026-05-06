@@ -1,13 +1,8 @@
 <template>
   <div class="app-shell">
     <header class="toolbar">
-      <button
-        class="menu-button"
-        type="button"
-        aria-label="Abrir menu de navegacion"
-        :aria-expanded="isOpen ? 'true' : 'false'"
-        @click="toggleMenu"
-      >
+      <button class="menu-button" type="button" aria-label="Abrir menu de navegacion"
+        :aria-expanded="isOpen ? 'true' : 'false'" @click="toggleMenu">
         <span />
         <span />
         <span />
@@ -15,7 +10,7 @@
 
       <NuxtLink style="text-decoration: none;" to="/" @click.native="closeMenu">
         <div class="brand">
-          Kanay Seche
+          Kanay - Gestion Documentaria
         </div>
       </NuxtLink>
     </header>
@@ -43,6 +38,20 @@
           <NuxtLink class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">
             Residuos
           </NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">
+            Clientes
+          </NuxtLink>
+        </div>
+
+        <button class="module-button module-button--spaced" type="button" @click="toggleDocumentos">
+          <span>Documentos</span>
+          <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
+        </button>
+
+        <div v-show="documentosOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
+            Cartas
+          </NuxtLink>
         </div>
       </nav>
     </aside>
@@ -52,21 +61,25 @@
 <script>
 export default {
   name: 'Toolbar',
-  data () {
+  data() {
     return {
       isOpen: false,
-      configuracionOpen: true
+      configuracionOpen: true,
+      documentosOpen: true
     }
   },
   methods: {
-    toggleMenu () {
+    toggleMenu() {
       this.isOpen = !this.isOpen
     },
-    closeMenu () {
+    closeMenu() {
       this.isOpen = false
     },
-    toggleConfiguracion () {
+    toggleConfiguracion() {
       this.configuracionOpen = !this.configuracionOpen
+    },
+    toggleDocumentos() {
+      this.documentosOpen = !this.documentosOpen
     }
   }
 }
@@ -93,6 +106,10 @@ export default {
   justify-content: center;
   border: 0;
   cursor: pointer;
+}
+
+.module-button--spaced {
+  margin-top: 10px;
 }
 
 .menu-button {

@@ -23,6 +23,30 @@
         "update": "update",
         "delete": "remove"
       }
+    },
+    "clientes": {
+      "collection": "clientes",
+      "model": "cliente",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    },
+    "cartas": {
+      "collection": "cartas",
+      "model": "carta",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
     }
   }
 }

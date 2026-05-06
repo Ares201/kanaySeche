@@ -12,6 +12,7 @@
     "@nuxtjs/vuetify": "^1.12.3",
     "core-js": "^3.25.3",
     "firebase": "^8.10.1",
+    "html2pdf.js": "^0.10.1",
     "nuxt": "^2.15.8",
     "vue": "^2.7.10",
     "vue-server-renderer": "^2.7.10",
