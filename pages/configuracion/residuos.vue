@@ -17,10 +17,40 @@
           <span>{{ filteredResiduos.length }} registros</span>
         </div>
 
-        <label class="search-field">
-          <span>Buscar por nombre</span>
-          <input v-model.trim="search" type="search" placeholder="Ej. Residuo organico">
-        </label>
+        <div class="table-actions">
+          <v-menu offset-y>
+            <template #activator="{ on, attrs }">
+              <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
+                <v-icon left>
+                  mdi-microsoft-excel
+                </v-icon>
+                Excel
+              </v-btn>
+            </template>
+
+            <v-list dense>
+              <v-list-item @click="exportResiduos">
+                <v-list-item-title>Exportar</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="openImportResiduos">
+                <v-list-item-title>Importar</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <input
+            ref="residuosExcelInput"
+            class="excel-input"
+            type="file"
+            accept=".xlsx"
+            @change="importResiduos"
+          >
+
+          <label class="search-field">
+            <span>Buscar por nombre</span>
+            <input v-model.trim="search" type="search" placeholder="Ej. Residuo organico">
+          </label>
+        </div>
       </div>
 
       <div class="table-wrapper">
@@ -161,6 +191,19 @@ import {
   normalizeResiduo,
   toResiduoPayload
 } from '~/models/residuo'
+import {
+  exportRowsToExcel,
+  parseActiveValue,
+  readRowsFromExcelFile
+} from '~/utils/exportExcel'
+
+const RESIDUO_EXCEL_COLUMNS = [
+  'Codigo',
+  'Nombre',
+  'Descripcion',
+  'Estado',
+  'Fecha creacion'
+]
 
 export default {
   name: 'ResiduosPage',
@@ -285,6 +328,59 @@ export default {
       }
     },
 
+    async exportResiduos() {
+      await exportRowsToExcel({
+        filename: 'residuos',
+        sheetName: 'Residuos',
+        rows: this.filteredResiduos,
+        columns: [
+          { label: 'Codigo', value: residuo => residuo.codigo },
+          { label: 'Nombre', value: residuo => residuo.nombre },
+          { label: 'Descripcion', value: residuo => residuo.descripcion },
+          { label: 'Estado', value: residuo => residuo.estado ? 'Activo' : 'Inactivo' },
+          { label: 'Fecha creacion', value: residuo => this.formatDate(residuo.fechaCreacion) }
+        ]
+      })
+    },
+    openImportResiduos() {
+      this.$refs.residuosExcelInput.click()
+    },
+    async importResiduos(event) {
+      const file = event.target.files[0]
+      event.target.value = ''
+      if (!file) return
+
+      try {
+        const result = await readRowsFromExcelFile(file, RESIDUO_EXCEL_COLUMNS)
+
+        if (!result.matched) {
+          alert('Este Excel no coincidio con las columnas esperadas.')
+          return
+        }
+
+        if (result.rows.length === 0) {
+          alert('El Excel no tiene filas para importar.')
+          return
+        }
+
+        for (const row of result.rows) {
+          const residuo = await this.$firebaseApi.create('residuos', {
+            codigo: row.Codigo,
+            nombre: row.Nombre,
+            descripcion: row.Descripcion,
+            estado: parseActiveValue(row.Estado)
+          })
+          this.residuos.unshift(normalizeResiduo(residuo))
+        }
+
+        alert(`Se agregaron ${result.rows.length} filas.`)
+      } catch (error) {
+        alert('No se pudo importar el Excel')
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
+    },
+
     async deleteResiduo(id) {
       try {
         await this.$firebaseApi.remove('residuos', id)
@@ -380,6 +476,12 @@ h2 {
   gap: 4px;
 }
 
+.table-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .table-header span {
   color: #64748b;
   font-size: 14px;
@@ -393,6 +495,16 @@ h2 {
   color: #475569;
   font-size: 13px;
   font-weight: 700;
+}
+
+.excel-button {
+  margin-bottom: 1px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.excel-input {
+  display: none;
 }
 
 .search-field input,
@@ -616,12 +728,14 @@ td {
 @media (max-width: 640px) {
 
   .page-header,
-  .table-header {
+  .table-header,
+  .table-actions {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .primary-button {
+  .primary-button,
+  .excel-button {
     width: 100%;
   }
 

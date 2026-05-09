@@ -10,16 +10,26 @@
 
       <NuxtLink style="text-decoration: none;" to="/" @click.native="closeMenu">
         <div class="brand">
-          Kanay - Gestion Documentaria
+          Gestion Documentaria
         </div>
       </NuxtLink>
+
+      <v-btn
+        icon
+        class="theme-button"
+        :aria-label="isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro'"
+        :title="isDarkMode ? 'Modo claro' : 'Modo oscuro'"
+        @click="toggleDarkMode"
+      >
+        <v-icon>{{ isDarkMode ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
     </header>
 
     <div v-if="isOpen" class="backdrop" @click="closeMenu" />
 
     <aside class="sidebar" :class="{ 'sidebar--open': isOpen }" aria-label="Menu principal">
       <div class="sidebar-header">
-        <strong>Modulos</strong>
+        <strong>Kanay - Seche</strong>
         <button type="button" class="close-button" aria-label="Cerrar menu" @click="closeMenu">
           x
         </button>
@@ -68,6 +78,11 @@ export default {
       documentosOpen: true
     }
   },
+  computed: {
+    isDarkMode() {
+      return this.$vuetify.theme.dark
+    }
+  },
   methods: {
     toggleMenu() {
       this.isOpen = !this.isOpen
@@ -80,6 +95,9 @@ export default {
     },
     toggleDocumentos() {
       this.documentosOpen = !this.documentosOpen
+    },
+    toggleDarkMode() {
+      this.$vuetify.theme.dark = !this.$vuetify.theme.dark
     }
   }
 }
@@ -132,6 +150,11 @@ export default {
   color: #ffffff;
   font-size: 24px;
   text-decoration: none;
+}
+
+.theme-button {
+  margin-left: auto;
+  color: #ffffff !important;
 }
 
 .backdrop {

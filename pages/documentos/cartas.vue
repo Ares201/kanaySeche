@@ -17,10 +17,40 @@
           <span>{{ filteredCartas.length }} registros</span>
         </div>
 
-        <label class="search-field">
-          <span>Buscar por cliente o correlativo</span>
-          <input v-model.trim="search" type="search" placeholder="Ej. CARTA-001">
-        </label>
+        <div class="table-actions">
+          <v-menu offset-y>
+            <template #activator="{ on, attrs }">
+              <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
+                <v-icon left>
+                  mdi-microsoft-excel
+                </v-icon>
+                Excel
+              </v-btn>
+            </template>
+
+            <v-list dense>
+              <v-list-item @click="exportCartas">
+                <v-list-item-title>Exportar</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="openImportCartas">
+                <v-list-item-title>Importar</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <input
+            ref="cartasExcelInput"
+            class="excel-input"
+            type="file"
+            accept=".xlsx"
+            @change="importCartas"
+          >
+
+          <label class="search-field">
+            <span>Buscar por cliente o correlativo</span>
+            <input v-model.trim="search" type="search" placeholder="Ej. CARTA-001">
+          </label>
+        </div>
       </div>
 
       <div class="table-wrapper">
@@ -42,6 +72,20 @@
               <td>{{ formatShortDate(carta.fecha) }}</td>
               <td>
                 <div class="actions">
+                  <v-btn
+                    icon
+                    small
+                    class="status-icon-button"
+                    :class="`status-icon-button--${getEstadoClass(carta.estadoProceso)}`"
+                    :title="getEstadoTitle(carta)"
+                    :aria-label="getEstadoTitle(carta)"
+                    :disabled="carta.estadoProceso === 'Entregado'"
+                    @click="advanceCartaEstado(carta)"
+                  >
+                    <v-icon small>
+                      {{ getEstadoIcon(carta.estadoProceso) }}
+                    </v-icon>
+                  </v-btn>
                   <button class="icon-button" type="button" title="Ver" aria-label="Ver carta" @click="openPreviewModal(carta)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
@@ -269,7 +313,9 @@
         </div>
 
         <div ref="previewContent" class="preview-content">
-          <CartaPreview :carta="selectedCarta" />
+          <div class="preview-sheet">
+            <CartaPreview :carta="selectedCarta" />
+          </div>
         </div>
       </div>
     </div>
@@ -279,11 +325,24 @@
 <script>
 import CartaPreview from '~/components/CartaPreview.vue'
 import { normalizeCliente } from '~/models/cliente'
+import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
 
 const DEFAULT_ASUNTO = 'Presentación de Documentos del Servicio Ambiental del /.'
 const DEFAULT_CONTEXTO = `De nuestra consideración:
 La presente tiene por finalidad saludarlo cordialmente en nombre de la Empresa KANAY S.A.C. – Séché Group Perú y a su vez hacerles llegar la documentación del Servicio de Disposición Final, según detalle:`
 const DEFAULT_DESPEDIDA = 'Sin otro particular me despido y le reiteramos nuestro atento saludo.'
+const CARTA_ESTADOS = ['Emitido', 'Enviado', 'Entregado']
+const CARTA_EXCEL_COLUMNS = [
+  'Correlativo',
+  'Cliente',
+  'RUC',
+  'Direccion',
+  'Contacto',
+  'Telefono',
+  'Asunto',
+  'Fecha',
+  'Estado proceso'
+]
 
 export default {
   name: 'CartasPage',
@@ -362,6 +421,7 @@ export default {
           { descripcion: '' }
         ],
         despedida: DEFAULT_DESPEDIDA,
+        estadoProceso: 'Emitido',
         fechaCreacion: new Date()
       }
     },
@@ -408,6 +468,52 @@ export default {
     async delete(id) {
       await this.$firebaseApi.remove('cartas', id)
       this.cartas = this.cartas.filter(carta => carta.id !== id)
+    },
+    getNextEstadoProceso(estado) {
+      const index = CARTA_ESTADOS.indexOf(estado)
+
+      return CARTA_ESTADOS[index + 1] || estado
+    },
+    getEstadoClass(estado) {
+      return String(estado || 'Emitido').toLowerCase()
+    },
+    getEstadoIcon(estado) {
+      const icons = {
+        Emitido: 'mdi-file-document-check-outline',
+        Enviado: 'mdi-send',
+        Entregado: 'mdi-check-circle-outline'
+      }
+
+      return icons[estado] || icons.Emitido
+    },
+    getEstadoTitle(carta) {
+      const nextEstado = this.getNextEstadoProceso(carta.estadoProceso)
+
+      return carta.estadoProceso === nextEstado
+        ? 'Carta entregada'
+        : `Cambiar a ${nextEstado}`
+    },
+    async advanceCartaEstado(carta) {
+      const nextEstado = this.getNextEstadoProceso(carta.estadoProceso)
+
+      if (nextEstado === carta.estadoProceso) return
+      if (!window.confirm(`Deseas cambiar el estado de la carta a ${nextEstado}?`)) return
+
+      try {
+        const updatedCarta = await this.$firebaseApi.update('cartas', carta.id, {
+          estadoProceso: nextEstado
+        })
+
+        this.cartas = this.cartas.map(currentCarta => {
+          return currentCarta.id === carta.id
+            ? this.normalizeCarta({ ...carta, ...updatedCarta, estadoProceso: nextEstado })
+            : currentCarta
+        })
+      } catch (error) {
+        alert('No se pudo actualizar el estado de la carta')
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
     },
     openCreateModal() {
       this.editingId = null
@@ -474,14 +580,234 @@ export default {
     closePreviewModal() {
       this.isPreviewOpen = false
     },
+    printCarta(carta = this.selectedCarta) {
+      const escapeHtml = value => String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+      const textToHtml = value => escapeHtml(value).replace(/\r?\n/g, '<br>')
+      const formatPeruDate = date => {
+        if (!date) return ''
+
+        const parsedDate = new Date(date)
+        if (Number.isNaN(parsedDate.getTime())) return ''
+
+        const formatted = new Intl.DateTimeFormat('es-PE', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        }).format(parsedDate)
+
+        return formatted.replace(/ de (\d{4})$/, ' del $1')
+      }
+
+      const cliente = carta.cliente || {}
+      const detalles = Array.isArray(carta.detalles)
+        ? carta.detalles.filter(detalle => detalle && detalle.descripcion)
+        : []
+      const detallesHtml = detalles.length
+        ? `
+          <ul class="detalles">
+            ${detalles.map(detalle => `<li>${textToHtml(detalle.descripcion)}</li>`).join('')}
+          </ul>
+        `
+        : ''
+
+      const imprimir = `
+        <!doctype html>
+        <html lang="es">
+          <head>
+            <meta charset="utf-8" />
+            <title>Carta</title>
+            <style>
+              @page {
+                size: A4;
+                margin: 0;
+              }
+
+              * {
+                box-sizing: border-box;
+              }
+
+              html,
+              body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+                background: #fff;
+                font-family: Arial, Helvetica, sans-serif;
+                color: #000;
+              }
+
+              body {
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+              }
+
+              .page {
+                width: 210mm;
+                height: 297mm;
+                padding:
+                  42mm
+                  24mm
+                  25mm
+                  30mm;
+                position: relative;
+              }
+
+              .fecha {
+                text-align: right;
+                font-size: 13px;
+                font-style: italic;
+                font-weight: 600;
+                margin-bottom: 38px;
+              }
+
+              .correlativo {
+                font-size: 13px;
+                font-weight: 700;
+                text-decoration: underline;
+                margin-bottom: 24px;
+              }
+
+              .bloque {
+                margin-bottom: 18px;
+                font-size: 13px;
+                line-height: 1.6;
+              }
+
+              .bloque strong {
+                font-weight: 700;
+              }
+
+              .asunto {
+                margin-top: 10px;
+                margin-bottom: 22px;
+                padding-bottom: 5px;
+                border-bottom: 1px solid #000;
+                font-size: 13px;
+                line-height: 1.5;
+              }
+
+              .contenido {
+                font-size: 13px;
+                line-height: 1.8;
+                text-align: justify;
+              }
+
+              .contenido p {
+                margin: 0 0 14px;
+              }
+
+              .detalles {
+                margin: 18px 0 26px 0;
+                padding-left: 22px;
+                list-style: none;
+              }
+
+              .detalles li {
+                margin-bottom: 7px;
+                position: relative;
+              }
+
+              .detalles li::before {
+                content: "\\2192";
+                position: absolute;
+                left: -20px;
+              }
+
+              .firma {
+                margin-top: 50px;
+                font-size: 13px;
+              }
+
+              .firma p {
+                margin: 0;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="page">
+              <div class="fecha">
+                ${escapeHtml(carta.lugar)}, ${escapeHtml(formatPeruDate(carta.fecha))}
+              </div>
+
+              <div class="correlativo">
+                ${escapeHtml(carta.correlativo)}
+              </div>
+
+              <div class="bloque">
+                <strong>Señores:</strong><br>
+                <strong>${escapeHtml(cliente.nombre)}</strong><br>
+                ${escapeHtml(cliente.direccion)}
+              </div>
+
+              <div class="bloque">
+                <strong>Atención:</strong><br>
+                <strong>${escapeHtml(cliente.contactoNombre)}</strong><br>
+                Contacto: ${escapeHtml(cliente.contactoTelefono)}
+              </div>
+
+              <div class="asunto">
+                <strong>ASUNTO:</strong>
+                ${escapeHtml(carta.asunto)}
+              </div>
+
+              <div class="contenido">
+                <p>
+                  ${textToHtml(carta.contexto)}
+                </p>
+
+                ${detallesHtml}
+
+                <p>
+                  ${textToHtml(carta.despedida)}
+                </p>
+              </div>
+
+              <div class="firma">
+                <p>Atentamente,</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+
+      return imprimir
+    },
     printPreview() {
-      window.print()
+      if (!process.client) return
+
+      const printFrame = document.createElement('iframe')
+      printFrame.setAttribute('title', 'Imprimir carta')
+      printFrame.style.position = 'fixed'
+      printFrame.style.right = '0'
+      printFrame.style.bottom = '0'
+      printFrame.style.width = '0'
+      printFrame.style.height = '0'
+      printFrame.style.border = '0'
+
+      document.body.appendChild(printFrame)
+
+      const printWindow = printFrame.contentWindow
+      const printDocument = printWindow.document
+      printDocument.open()
+      printDocument.write(this.printCarta())
+      printDocument.close()
+
+      window.setTimeout(() => {
+        printWindow.focus()
+        printWindow.print()
+
+        document.body.removeChild(printFrame)
+      }, 250)
     },
     async downloadPdf() {
       if (!process.client) return
-
-      const element = this.$refs.previewContent
-      if (!element) return
 
       const fileName = `${this.selectedCarta.correlativo || 'carta'}.pdf`
       const options = {
@@ -495,7 +821,18 @@ export default {
       const html2pdfModule = await import('html2pdf.js')
       const html2pdf = html2pdfModule.default || html2pdfModule
 
-      html2pdf().set(options).from(element).save()
+      const pdfContainer = document.createElement('div')
+      pdfContainer.style.position = 'fixed'
+      pdfContainer.style.left = '-9999px'
+      pdfContainer.style.top = '0'
+      pdfContainer.innerHTML = this.printCarta()
+      document.body.appendChild(pdfContainer)
+
+      try {
+        await html2pdf().set(options).from(pdfContainer.querySelector('.page')).save()
+      } finally {
+        document.body.removeChild(pdfContainer)
+      }
     },
     addDetalle() {
       this.form.detalles.push({ descripcion: '' })
@@ -582,6 +919,7 @@ export default {
           descripcion: detalle && detalle.descripcion ? detalle.descripcion : ''
         })),
         despedida: source.despedida || DEFAULT_DESPEDIDA,
+        estadoProceso: CARTA_ESTADOS.includes(source.estadoProceso) ? source.estadoProceso : 'Emitido',
         fechaCreacion: this.normalizeDate(source.fechaCreacion)
       }
     },
@@ -611,6 +949,82 @@ export default {
       const month = String(today.getMonth() + 1).padStart(2, '0')
       const day = String(today.getDate()).padStart(2, '0')
       return `${year}-${month}-${day}`
+    },
+    async exportCartas() {
+      await exportRowsToExcel({
+        filename: 'cartas',
+        sheetName: 'Cartas',
+        rows: this.filteredCartas,
+        columns: [
+          { label: 'Correlativo', value: carta => carta.correlativo },
+          { label: 'Cliente', value: carta => (carta.cliente || {}).nombre },
+          { label: 'RUC', value: carta => (carta.cliente || {}).ruc },
+          { label: 'Direccion', value: carta => (carta.cliente || {}).direccion },
+          { label: 'Contacto', value: carta => (carta.cliente || {}).contactoNombre },
+          { label: 'Telefono', value: carta => (carta.cliente || {}).contactoTelefono },
+          { label: 'Asunto', value: carta => carta.asunto },
+          { label: 'Fecha', value: carta => this.formatShortDate(carta.fecha) },
+          { label: 'Estado proceso', value: carta => carta.estadoProceso }
+        ]
+      })
+    },
+    openImportCartas() {
+      this.$refs.cartasExcelInput.click()
+    },
+    async importCartas(event) {
+      const file = event.target.files[0]
+      event.target.value = ''
+      if (!file) return
+
+      try {
+        const result = await readRowsFromExcelFile(file, CARTA_EXCEL_COLUMNS)
+
+        if (!result.matched) {
+          alert('Este Excel no coincidio con las columnas esperadas.')
+          return
+        }
+
+        if (result.rows.length === 0) {
+          alert('El Excel no tiene filas para importar.')
+          return
+        }
+
+        for (const row of result.rows) {
+          const carta = await this.$firebaseApi.create('cartas', this.toCartaPayload({
+            ...this.getEmptyForm(),
+            correlativo: row.Correlativo,
+            fecha: this.parseImportedDate(row.Fecha),
+            asunto: row.Asunto,
+            estadoProceso: CARTA_ESTADOS.includes(row['Estado proceso']) ? row['Estado proceso'] : 'Emitido',
+            cliente: {
+              nombre: row.Cliente,
+              ruc: row.RUC,
+              direccion: row.Direccion,
+              contactoNombre: row.Contacto,
+              contactoNumero: '',
+              contactoTelefono: row.Telefono
+            }
+          }))
+          this.cartas.unshift(this.normalizeCarta(carta))
+        }
+
+        alert(`Se agregaron ${result.rows.length} filas.`)
+      } catch (error) {
+        alert('No se pudo importar el Excel')
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
+    },
+    parseImportedDate(value) {
+      if (!value) return this.getTodayInputDate()
+
+      const parts = String(value).split('/')
+      if (parts.length === 3) {
+        const [day, month, year] = parts
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+      }
+
+      return value
     },
     formatShortDate(date) {
       if (!date) return ''
@@ -707,6 +1121,12 @@ h3 {
   gap: 4px;
 }
 
+.table-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .table-header span {
   color: #64748b;
   font-size: 14px;
@@ -720,6 +1140,16 @@ h3 {
   color: #475569;
   font-size: 13px;
   font-weight: 700;
+}
+
+.excel-button {
+  margin-bottom: 1px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.excel-input {
+  display: none;
 }
 
 .search-field input,
@@ -771,7 +1201,32 @@ td {
 
 .actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.status-icon-button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.status-icon-button--emitido {
+  color: #075985 !important;
+  border-color: #bae6fd;
+  background: #e0f2fe;
+}
+
+.status-icon-button--enviado {
+  color: #854d0e !important;
+  border-color: #fde68a;
+  background: #fef3c7;
+}
+
+.status-icon-button--entregado {
+  color: #166534 !important;
+  border-color: #bbf7d0;
+  background: #dcfce7;
+  cursor: not-allowed;
 }
 
 .icon-button {
@@ -824,8 +1279,8 @@ td {
 }
 
 .modal-backdrop--preview {
-  align-items: flex-start;
-  overflow-y: auto;
+  align-items: center;
+  overflow: hidden;
 }
 
 .modal {
@@ -841,8 +1296,8 @@ td {
 }
 
 .modal--preview {
-  width: min(960px, 100%);
-  margin: 24px 0;
+  width: min(760px, 100%);
+  max-height: calc(100vh - 32px);
   overflow: hidden;
 }
 
@@ -1009,19 +1464,37 @@ td {
 }
 
 .preview-content {
-  padding: 24px;
-  background: #ffffff;
+  --preview-scale: 0.62;
+  display: flex;
+  justify-content: center;
+  max-height: calc(100vh - 174px);
+  overflow: auto;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.preview-sheet {
+  width: calc(210mm * var(--preview-scale));
+  height: calc(297mm * var(--preview-scale));
+  flex: 0 0 auto;
+}
+
+.preview-sheet .carta-preview {
+  transform: scale(var(--preview-scale));
+  transform-origin: top left;
 }
 
 @media (max-width: 640px) {
   .page-header,
   .table-header,
+  .table-actions,
   .details-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .primary-button,
+  .excel-button,
   .details-header .secondary-button {
     width: 100%;
   }
@@ -1035,6 +1508,11 @@ td {
   .modal-actions .primary-button,
   .preview-toolbar .primary-button {
     width: 100%;
+  }
+
+  .preview-content {
+    --preview-scale: 0.42;
+    max-height: calc(100vh - 228px);
   }
 }
 
@@ -1064,6 +1542,7 @@ td {
 
   .modal-backdrop,
   .modal,
+  .preview-sheet,
   .preview-content {
     position: static;
     display: block;
@@ -1074,6 +1553,10 @@ td {
     overflow: hidden;
     background: #ffffff;
     box-shadow: none;
+  }
+
+  .preview-sheet .carta-preview {
+    transform: none;
   }
 
   .modal-backdrop {

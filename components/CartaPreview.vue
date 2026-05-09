@@ -115,7 +115,7 @@ export default {
   padding: 86px 68px 20px;
   color: #111827;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.35;
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
 }

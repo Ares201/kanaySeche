@@ -17,10 +17,40 @@
           <span>{{ filteredClientes.length }} registros</span>
         </div>
 
-        <label class="search-field">
-          <span>Buscar por cliente o RUC</span>
-          <input v-model.trim="search" type="search" placeholder="Ej. 20600000000">
-        </label>
+        <div class="table-actions">
+          <v-menu offset-y>
+            <template #activator="{ on, attrs }">
+              <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
+                <v-icon left>
+                  mdi-microsoft-excel
+                </v-icon>
+                Excel
+              </v-btn>
+            </template>
+
+            <v-list dense>
+              <v-list-item @click="exportClientes">
+                <v-list-item-title>Exportar</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="openImportClientes">
+                <v-list-item-title>Importar</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <input
+            ref="clientesExcelInput"
+            class="excel-input"
+            type="file"
+            accept=".xlsx"
+            @change="importClientes"
+          >
+
+          <label class="search-field">
+            <span>Buscar por cliente o RUC</span>
+            <input v-model.trim="search" type="search" placeholder="Ej. 20600000000">
+          </label>
+        </div>
       </div>
 
       <div class="table-wrapper">
@@ -100,35 +130,35 @@
             <v-col cols="12" md="4">
               <label>
                 RUC
-                <input v-model.trim="form.ruc" type="text" required inputmode="numeric" placeholder="20600000000">
+                <input v-model.trim="form.ruc" type="text" inputmode="numeric" placeholder="20600000000">
               </label>
             </v-col>
 
             <v-col cols="12">
               <label>
                 Direccion
-                <input v-model.trim="form.direccion" type="text" required placeholder="Av. Principal 123">
+                <input v-model.trim="form.direccion" type="text" placeholder="Av. Principal 123">
               </label>
             </v-col>
 
             <v-col cols="12" md="4">
               <label>
                 Contacto
-                <input v-model.trim="form.contacto" type="text" required placeholder="Nombre del contacto">
+                <input v-model.trim="form.contacto" type="text" placeholder="Nombre del contacto">
               </label>
             </v-col>
 
             <v-col cols="12" md="4">
               <label>
                 Numero de contacto
-                <input v-model.trim="form.numeroContacto" type="text" required placeholder="Anexo, DNI o codigo">
+                <input v-model.trim="form.numeroContacto" type="text" placeholder="Anexo, DNI o codigo">
               </label>
             </v-col>
 
             <v-col cols="12" md="4">
               <label>
                 Telefono de contacto
-                <input v-model.trim="form.telefonoContacto" type="text" required placeholder="999 999 999">
+                <input v-model.trim="form.telefonoContacto" type="text" placeholder="999 999 999">
               </label>
             </v-col>
 
@@ -160,6 +190,21 @@ import {
   normalizeCliente,
   toClientePayload
 } from '~/models/cliente'
+import {
+  exportRowsToExcel,
+  parseActiveValue,
+  readRowsFromExcelFile
+} from '~/utils/exportExcel'
+
+const CLIENTE_EXCEL_COLUMNS = [
+  'Cliente',
+  'RUC',
+  'Direccion',
+  'Contacto',
+  'Numero contacto',
+  'Telefono contacto',
+  'Estado'
+]
 
 export default {
   name: 'ClientesPage',
@@ -276,6 +321,63 @@ export default {
         // eslint-disable-next-line no-console
         console.error(error)
       }
+    },
+    async exportClientes() {
+      await exportRowsToExcel({
+        filename: 'clientes',
+        sheetName: 'Clientes',
+        rows: this.filteredClientes,
+        columns: [
+          { label: 'Cliente', value: cliente => cliente.nombre },
+          { label: 'RUC', value: cliente => cliente.ruc },
+          { label: 'Direccion', value: cliente => cliente.direccion },
+          { label: 'Contacto', value: cliente => cliente.contacto },
+          { label: 'Numero contacto', value: cliente => cliente.numeroContacto },
+          { label: 'Telefono contacto', value: cliente => cliente.telefonoContacto },
+          { label: 'Estado', value: cliente => cliente.estado ? 'Activo' : 'Inactivo' }
+        ]
+      })
+    },
+    openImportClientes() {
+      this.$refs.clientesExcelInput.click()
+    },
+    async importClientes(event) {
+      const file = event.target.files[0]
+      event.target.value = ''
+      if (!file) return
+
+      try {
+        const result = await readRowsFromExcelFile(file, CLIENTE_EXCEL_COLUMNS)
+
+        if (!result.matched) {
+          alert('Este Excel no coincidio con las columnas esperadas.')
+          return
+        }
+
+        if (result.rows.length === 0) {
+          alert('El Excel no tiene filas para importar.')
+          return
+        }
+
+        for (const row of result.rows) {
+          const cliente = await this.$firebaseApi.create('clientes', {
+            nombre: row.Cliente,
+            ruc: row.RUC,
+            direccion: row.Direccion,
+            contacto: row.Contacto,
+            numeroContacto: row['Numero contacto'],
+            telefonoContacto: row['Telefono contacto'],
+            estado: parseActiveValue(row.Estado)
+          })
+          this.clientes.unshift(normalizeCliente(cliente))
+        }
+
+        alert(`Se agregaron ${result.rows.length} filas.`)
+      } catch (error) {
+        alert('No se pudo importar el Excel')
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
     }
   }
 }
@@ -354,6 +456,12 @@ h2 {
   gap: 4px;
 }
 
+.table-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .table-header span {
   color: #64748b;
   font-size: 14px;
@@ -367,6 +475,16 @@ h2 {
   color: #475569;
   font-size: 13px;
   font-weight: 700;
+}
+
+.excel-button {
+  margin-bottom: 1px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.excel-input {
+  display: none;
 }
 
 .search-field input,
@@ -537,12 +655,14 @@ td {
 
 @media (max-width: 640px) {
   .page-header,
-  .table-header {
+  .table-header,
+  .table-actions {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .primary-button {
+  .primary-button,
+  .excel-button {
     width: 100%;
   }
 
