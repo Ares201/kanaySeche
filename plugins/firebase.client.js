@@ -1,5 +1,6 @@
 import firebase from 'firebase/app'
 import 'firebase/firestore'
+import 'firebase/storage'
 import crudConfig from '~/api/firebase-crud.json'
 // import 'firebase/auth' (si luego usas login)
 
@@ -20,6 +21,7 @@ if (!firebase.apps.length) {
 
 // Firestore
 const db = firebase.firestore()
+const storage = firebase.storage()
 
 function getApiConfig(apiName) {
   const apiConfig = crudConfig.apis[apiName]
@@ -97,9 +99,10 @@ function createFirebaseApi(db) {
 
 const firebaseApi = createFirebaseApi(db)
 
-export { db, firebaseApi }
+export { db, storage, firebaseApi }
 
 export default (_context, inject) => {
   inject('db', db)
+  inject('storage', storage)
   inject('firebaseApi', firebaseApi)
 }

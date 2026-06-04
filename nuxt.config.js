@@ -41,6 +41,10 @@ export default {
   modules: [
   ],
 
+  serverMiddleware: [
+    { path: '/api/pdf/sign', handler: '~/server/api/pdf/sign.js' }
+  ],
+
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
   }

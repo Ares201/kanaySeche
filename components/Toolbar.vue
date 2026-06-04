@@ -36,6 +36,17 @@
       </div>
 
       <nav class="nav">
+        <button class="module-button" type="button" @click="toggleOperaciones">
+          <span>Operaciones</span>
+          <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
+        </button>
+
+        <div v-show="operacionesOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">
+            Pedido de venta
+          </NuxtLink>
+        </div>
+
         <button class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>
@@ -48,8 +59,14 @@
           <NuxtLink class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">
             Residuos
           </NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/productos" @click.native="closeMenu">
+            Productos
+          </NuxtLink>
           <NuxtLink class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">
             Clientes
+          </NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">
+            Vehiculos
           </NuxtLink>
         </div>
 
@@ -61,6 +78,9 @@
         <div v-show="documentosOpen" class="submenu">
           <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
             Cartas
+          </NuxtLink>
+          <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
+            Firmar PDF
           </NuxtLink>
         </div>
       </nav>
@@ -74,6 +94,7 @@ export default {
   data() {
     return {
       isOpen: false,
+      operacionesOpen: true,
       configuracionOpen: true,
       documentosOpen: true
     }
@@ -89,6 +110,9 @@ export default {
     },
     closeMenu() {
       this.isOpen = false
+    },
+    toggleOperaciones() {
+      this.operacionesOpen = !this.operacionesOpen
     },
     toggleConfiguracion() {
       this.configuracionOpen = !this.configuracionOpen

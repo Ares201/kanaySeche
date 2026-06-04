@@ -1,31 +1,53 @@
 <template>
-  <section class="residuos-page">
+  <section class="productos-page">
     <div class="page-header">
       <div>
         <p class="eyebrow">Configuracion</p>
-        <h1>Residuos</h1>
+        <h1>Productos</h1>
       </div>
       <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo residuo
+        Nuevo producto
       </button>
     </div>
 
     <div class="content">
       <div class="table-header">
         <div>
-          <h2>Listado de residuos</h2>
-          <span>{{ filteredResiduos.length }} registros</span>
+          <h2>Listado de productos</h2>
+          <span>{{ filteredProductos.length }} registros</span>
         </div>
         <div class="table-actions">
-          <v-btn class="excel-button" color="#107c41" dark type="button" @click="exportResiduos">
-            <v-icon left>
-              mdi-microsoft-excel
-            </v-icon>
-            Excel
-          </v-btn>
+          <v-menu offset-y>
+            <template #activator="{ on, attrs }">
+              <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
+                <v-icon left>
+                  mdi-microsoft-excel
+                </v-icon>
+                Excel
+              </v-btn>
+            </template>
+
+            <v-list dense>
+              <v-list-item @click="exportProductos">
+                <v-list-item-title>Exportar</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="openImportProductos">
+                <v-list-item-title>Importar</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <input
+            ref="productosExcelInput"
+            class="excel-input"
+            type="file"
+            accept=".xlsx"
+            @change="importProductos"
+          >
+
           <label class="search-field">
-            <span>Buscar por nombre</span>
-            <input v-model.trim="search" type="search" placeholder="Ej. Residuo organico">
+            <span>Buscar por codigo, nombre o zona</span>
+            <input v-model.trim="search" type="search" placeholder="Ej. Zona A">
           </label>
         </div>
       </div>
@@ -35,34 +57,34 @@
             <tr>
               <th>Codigo</th>
               <th>Nombre</th>
-              <th>Descripcion</th>
+              <th>Zona de recepcion</th>
               <th>Estado</th>
               <th>Fecha creacion</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="residuo in filteredResiduos" :key="residuo.id">
-              <td>{{ residuo.codigo }}</td>
-              <td>{{ residuo.nombre }}</td>
-              <td>{{ residuo.descripcion }}</td>
+            <tr v-for="producto in filteredProductos" :key="producto.id">
+              <td>{{ producto.codigo }}</td>
+              <td>{{ producto.nombre }}</td>
+              <td>{{ producto.zonaRecepcion }}</td>
               <td>
-                <span class="status" :class="{ 'status--inactive': !residuo.estado }">
-                  {{ residuo.estado ? 'Activo' : 'Inactivo' }}
+                <span class="status" :class="{ 'status--inactive': !producto.estado }">
+                  {{ producto.estado ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
-              <td>{{ formatDate(residuo.fechaCreacion) }}</td>
+              <td>{{ formatDate(producto.fechaCreacion) }}</td>
               <td>
                 <div class="actions">
-                  <button class="icon-button" type="button" title="Editar" aria-label="Editar residuo"
-                    @click="openEditModal(residuo)">
+                  <button class="icon-button" type="button" title="Editar" aria-label="Editar producto"
+                    @click="openEditModal(producto)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
                       <path d="M13.5 6.5l4 4" />
                     </svg>
                   </button>
                   <button class="icon-button icon-button--danger" type="button" title="Eliminar"
-                    aria-label="Eliminar residuo" @click="deleteResiduo(residuo.id)">
+                    aria-label="Eliminar producto" @click="deleteProducto(producto.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 7h14" />
                       <path d="M10 11v6" />
@@ -76,70 +98,69 @@
             </tr>
             <tr v-if="loading">
               <td class="empty-state" colspan="6">
-                Cargando residuos...
+                Cargando productos...
               </td>
             </tr>
-            <tr v-else-if="filteredResiduos.length === 0">
+            <tr v-else-if="filteredProductos.length === 0">
               <td class="empty-state" colspan="6">
-                No se encontraron residuos.
+                No se encontraron productos.
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
+
     <div v-if="isModalOpen" class="modal-backdrop">
-      <form class="modal" @submit.prevent="saveResiduo">
+      <form class="modal" @submit.prevent="saveProducto">
         <div class="modal-header">
-          <h2>{{ editingId ? 'Editar residuo' : 'Nuevo residuo' }}</h2>
+          <h2>{{ editingId ? 'Editar producto' : 'Nuevo producto' }}</h2>
           <button type="button" class="modal-close" aria-label="Cerrar modal" @click="closeModal">
             x
           </button>
         </div>
+
         <div class="form-grid">
           <v-row dense>
             <v-col cols="12" md="4">
-          <label>
-            Código
-            <div class="code-field">
-              <input
-                v-model.trim="form.codigo"
-                type="text"
-                inputmode="numeric"
-                pattern="[0-9]+"
-                required
-                placeholder="7000001"
-                :disabled="form.autogenerar"
-              >
-            </div>
-          </label>
+              <label>
+                Codigo
+                <input
+                  v-model.trim="form.codigo"
+                  type="text"
+                  required
+                  placeholder="PROD-001"
+                  :disabled="form.autogenerar"
+                >
+              </label>
             </v-col>
             <v-col cols="12" md="3" class="checkbox-col">
-          <label class="checkbox-field">
-            <input v-model="form.autogenerar" type="checkbox" @change="handleAutogenerarChange">
-            Autogenerar
-          </label>
+              <label class="checkbox-field">
+                <input v-model="form.autogenerar" type="checkbox" @change="handleAutogenerarChange">
+                Autogenerar
+              </label>
             </v-col>
             <v-col cols="12" md="5">
-          <label>
-            Nombre
-            <input v-model.trim="form.nombre" type="text" required placeholder="Bolsas">
-          </label>
+              <label>
+                Nombre
+                <input v-model.trim="form.nombre" type="text" required placeholder="Nombre del producto">
+              </label>
             </v-col>
             <v-col cols="12">
-          <label class="field-full">
-            Descripcion
-            <textarea v-model.trim="form.descripcion" rows="3" placeholder="Descripcion del residuo" />
-          </label>
+              <label>
+                Zona de recepcion
+                <input v-model.trim="form.zonaRecepcion" type="text" placeholder="Zona A">
+              </label>
             </v-col>
             <v-col cols="12">
-          <label class="checkbox-field">
-            <input v-model="form.estado" type="checkbox">
-            Residuo activo
-          </label>
+              <label class="checkbox-field">
+                <input v-model="form.estado" type="checkbox">
+                Producto activo
+              </label>
             </v-col>
           </v-row>
         </div>
+
         <div class="modal-actions">
           <button class="secondary-button" type="button" @click="closeModal">
             Cancelar
@@ -155,15 +176,27 @@
 
 <script>
 import {
-  createEmptyResiduoForm,
-  getNextResiduoCodigo,
-  normalizeResiduo,
-  toResiduoPayload
-} from '~/models/residuo'
-import { exportRowsToExcel } from '~/utils/exportExcel'
+  createEmptyProductoForm,
+  getNextProductoCodigo,
+  normalizeProducto,
+  toProductoPayload
+} from '~/models/producto'
+import {
+  exportRowsToExcel,
+  parseActiveValue,
+  readRowsFromExcelFile
+} from '~/utils/exportExcel'
+
+const PRODUCTO_EXCEL_COLUMNS = [
+  'Codigo',
+  'Nombre',
+  'Zona de recepcion',
+  'Estado',
+  'Fecha creacion'
+]
 
 export default {
-  name: 'ResiduosPage',
+  name: 'ProductosPage',
   data() {
     return {
       search: '',
@@ -171,75 +204,70 @@ export default {
       isModalOpen: false,
       editingId: null,
       form: this.getEmptyForm(),
-      residuos: []
+      productos: []
     }
   },
   computed: {
-    filteredResiduos() {
+    filteredProductos() {
       const term = this.search.toLowerCase()
 
-      if (!term) return this.residuos
+      if (!term) return this.productos
 
-      return this.residuos.filter(r =>
-        r.nombre.toLowerCase().includes(term) ||
-        r.descripcion.toLowerCase().includes(term) ||
-        r.codigo.includes(term)
+      return this.productos.filter(producto =>
+        producto.codigo.toLowerCase().includes(term) ||
+        producto.nombre.toLowerCase().includes(term) ||
+        producto.zonaRecepcion.toLowerCase().includes(term)
       )
     }
   },
   mounted() {
-    this.loadResiduos()
+    this.loadProductos()
   },
   methods: {
     getEmptyForm() {
-      return createEmptyResiduoForm()
+      return createEmptyProductoForm()
     },
-
-    async loadResiduos() {
+    async loadProductos() {
       this.loading = true
 
       try {
-        const residuos = await this.$firebaseApi.list('residuos')
-        this.residuos = residuos.map(normalizeResiduo)
+        const productos = await this.$firebaseApi.list('productos')
+        this.productos = productos.map(normalizeProducto)
       } catch (error) {
-        alert('No se pudieron listar los residuos')
+        alert('No se pudieron listar los productos')
         // eslint-disable-next-line no-console
         console.error(error)
       } finally {
         this.loading = false
       }
     },
-
     openCreateModal() {
       this.editingId = null
       this.form = this.getEmptyForm()
       this.setAutogeneratedCodigo()
       this.isModalOpen = true
     },
-
-    openEditModal(residuo) {
-      this.editingId = residuo.id
+    openEditModal(producto) {
+      this.editingId = producto.id
       this.form = {
-        codigo: residuo.codigo,
+        codigo: producto.codigo,
         autogenerar: false,
-        nombre: residuo.nombre,
-        descripcion: residuo.descripcion,
-        estado: residuo.estado
+        nombre: producto.nombre,
+        zonaRecepcion: producto.zonaRecepcion,
+        estado: producto.estado
       }
       this.isModalOpen = true
     },
-
     closeModal() {
       this.isModalOpen = false
     },
-
-    async saveResiduo() {
+    async saveProducto() {
       if (this.form.autogenerar) {
         this.setAutogeneratedCodigo()
       }
 
-      const existe = this.residuos.some(
-        r => r.codigo === this.form.codigo && r.id !== this.editingId
+      const existe = this.productos.some(
+        producto => producto.codigo === this.form.codigo && producto.id !== this.editingId
       )
 
       if (existe) {
@@ -249,68 +277,119 @@ export default {
 
       try {
         if (this.editingId) {
-          const residuo = await this.$firebaseApi.update(
-            'residuos',
+          const producto = await this.$firebaseApi.update(
+            'productos',
             this.editingId,
-            toResiduoPayload(this.form)
+            toProductoPayload(this.form)
           )
-          this.residuos = this.residuos.map(currentResiduo => {
-            return currentResiduo.id === this.editingId
-              ? normalizeResiduo(residuo)
-              : currentResiduo
+          this.productos = this.productos.map(currentProducto => {
+            return currentProducto.id === this.editingId
+              ? normalizeProducto(producto)
+              : currentProducto
           })
         } else {
-          const residuo = await this.$firebaseApi.create(
-            'residuos',
-            toResiduoPayload(this.form)
+          const producto = await this.$firebaseApi.create(
+            'productos',
+            toProductoPayload(this.form)
           )
-          this.residuos.unshift(normalizeResiduo(residuo))
+          this.productos.unshift(normalizeProducto(producto))
         }
 
         this.closeModal()
       } catch (error) {
-        alert('No se pudo guardar el residuo')
+        alert('No se pudo guardar el producto')
         // eslint-disable-next-line no-console
         console.error(error)
       }
     },
-
     setAutogeneratedCodigo() {
-      this.form.codigo = getNextResiduoCodigo(this.residuos)
+      this.form.codigo = getNextProductoCodigo(this.productos)
     },
-
     handleAutogenerarChange() {
       if (this.form.autogenerar) {
         this.setAutogeneratedCodigo()
       }
     },
-
-    exportResiduos() {
+    exportProductos() {
       exportRowsToExcel({
-        filename: 'residuos',
-        sheetName: 'Residuos',
-        rows: this.filteredResiduos,
+        filename: 'productos',
+        sheetName: 'Productos',
+        rows: this.filteredProductos,
         columns: [
-          { label: 'Codigo', value: residuo => residuo.codigo },
-          { label: 'Nombre', value: residuo => residuo.nombre },
-          { label: 'Descripcion', value: residuo => residuo.descripcion },
-          { label: 'Estado', value: residuo => residuo.estado ? 'Activo' : 'Inactivo' },
-          { label: 'Fecha creacion', value: residuo => this.formatDate(residuo.fechaCreacion) }
+          { label: 'Codigo', value: producto => producto.codigo },
+          { label: 'Nombre', value: producto => producto.nombre },
+          { label: 'Zona de recepcion', value: producto => producto.zonaRecepcion },
+          { label: 'Estado', value: producto => producto.estado ? 'Activo' : 'Inactivo' },
+          { label: 'Fecha creacion', value: producto => this.formatDate(producto.fechaCreacion) }
         ]
       })
     },
+    openImportProductos() {
+      this.$refs.productosExcelInput.click()
+    },
+    async importProductos(event) {
+      const file = event.target.files[0]
+      event.target.value = ''
+      if (!file) return
 
-    async deleteResiduo(id) {
       try {
-        await this.$firebaseApi.remove('residuos', id)
-        this.residuos = this.residuos.filter(r => r.id !== id)
+        const result = await readRowsFromExcelFile(file, PRODUCTO_EXCEL_COLUMNS)
+
+        if (!result.matched) {
+          alert('Este Excel no coincidio con las columnas esperadas.')
+          return
+        }
+
+        if (result.rows.length === 0) {
+          alert('El Excel no tiene filas para importar.')
+          return
+        }
+
+        let created = 0
+        let skipped = 0
+
+        for (const row of result.rows) {
+          const codigo = String(row.Codigo || '').trim()
+          const nombre = String(row.Nombre || '').trim()
+
+          if (!codigo || !nombre) {
+            skipped += 1
+            continue
+          }
+
+          const exists = this.productos.some(producto => producto.codigo === codigo)
+          if (exists) {
+            skipped += 1
+            continue
+          }
+
+          const producto = await this.$firebaseApi.create('productos', {
+            codigo,
+            nombre,
+            zonaRecepcion: row['Zona de recepcion'],
+            estado: parseActiveValue(row.Estado)
+          })
+          this.productos.unshift(normalizeProducto(producto))
+          created += 1
+        }
+
+        alert(`Se agregaron ${created} productos. Filas omitidas: ${skipped}.`)
       } catch (error) {
-        alert('No se pudo eliminar el residuo')
+        alert('No se pudo importar el Excel')
         // eslint-disable-next-line no-console
         console.error(error)
       }
     },
-
+    async deleteProducto(id) {
+      try {
+        await this.$firebaseApi.remove('productos', id)
+        this.productos = this.productos.filter(producto => producto.id !== id)
+      } catch (error) {
+        alert('No se pudo eliminar el producto')
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
+    },
     formatDate(date) {
       return new Intl.DateTimeFormat('es-PE', {
         year: 'numeric',
@@ -323,7 +402,7 @@ export default {
 </script>
 
 <style scoped>
-.residuos-page {
+.productos-page {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: 32px 0;
@@ -422,9 +501,12 @@ h2 {
   text-transform: none;
 }
 
+.excel-input {
+  display: none;
+}
+
 .search-field input,
-.form-grid input,
-.form-grid textarea {
+.form-grid input {
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -434,34 +516,14 @@ h2 {
   outline: none;
 }
 
-.code-field {
-  display: flex;
-}
-
-.code-field span {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid #cbd5e1;
-  border-right: 0;
-  border-radius: 8px 0 0 8px;
-  padding: 0 12px;
-  color: #334155;
-  background: #f8fafc;
-}
-
-.code-field input {
-  border-radius: 0 8px 8px 0;
-}
-
-.code-field input:disabled {
+.form-grid input:disabled {
   color: #475569;
   background: #f1f5f9;
   cursor: not-allowed;
 }
 
 .search-field input:focus,
-.form-grid input:focus,
-.form-grid textarea:focus {
+.form-grid input:focus {
   border-color: #0f766e;
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
 }
@@ -603,11 +665,6 @@ td {
   font-weight: 700;
 }
 
-.field-full,
-.checkbox-field {
-  grid-column: 1 / -1;
-}
-
 .checkbox-col {
   display: flex;
   align-items: end;
@@ -641,7 +698,6 @@ td {
 }
 
 @media (max-width: 640px) {
-
   .page-header,
   .table-header,
   .table-actions {

@@ -24,9 +24,45 @@
         "delete": "remove"
       }
     },
+    "productos": {
+      "collection": "productos",
+      "model": "producto",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    },
     "clientes": {
       "collection": "clientes",
       "model": "cliente",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    },
+    "vehiculos": {
+      "collection": "vehiculos",
+      "model": "vehiculo",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    },
+    "pedidosVenta": {
+      "collection": "pedidosVenta",
+      "model": "pedidoVenta",
       "orderBy": "fechaCreacion",
       "orderDirection": "desc",
       "crud": {
