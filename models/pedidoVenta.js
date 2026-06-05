@@ -21,8 +21,12 @@ export function createEmptyPedidoVentaForm() {
 export function createEmptyDetalleItem(item = 1) {
   return {
     item,
+    tipo: 'Producto',
+    codigoResiduo: '',
+    nombreResiduo: '',
+    codigoGenerador: '',
+    nombreGenerador: '',
     producto: '',
-    generador: '',
     eje: '',
     pesoDeclaradoCliente: '',
     zonaRecepcion: ''
@@ -49,8 +53,12 @@ export function normalizePedidoVenta(data) {
     pesoNeto: normalizeNumber(data.pesoNeto),
     detalle: detalle.map((row, index) => ({
       item: row.item || index + 1,
-      producto: row.producto || row.residuo || '',
-      generador: row.generador || '',
+      tipo: row.tipo || 'Producto',
+      codigoResiduo: row.codigoResiduo || row.residuoCodigo || '',
+      nombreResiduo: row.nombreResiduo || row.residuoNombre || row.residuo || '',
+      codigoGenerador: row.codigoGenerador || row.generadorCodigo || '',
+      nombreGenerador: row.nombreGenerador || row.generadorNombre || row.generador || '',
+      producto: row.producto || '',
       eje: row.eje || row.ejeNorte || '',
       pesoDeclaradoCliente: normalizeNumber(row.pesoDeclaradoCliente),
       zonaRecepcion: row.zonaRecepcion || ''
@@ -79,8 +87,12 @@ export function toPedidoVentaPayload(form) {
     pesoNeto: calculatePesoNeto(pesoIngreso, pesoSalida),
     detalle: form.detalle.map((row, index) => ({
       item: index + 1,
+      tipo: 'Producto',
+      codigoResiduo: row.codigoResiduo,
+      nombreResiduo: row.nombreResiduo,
+      codigoGenerador: row.codigoGenerador,
+      nombreGenerador: row.nombreGenerador,
       producto: row.producto,
-      generador: row.generador,
       eje: row.eje,
       pesoDeclaradoCliente: normalizeNumber(row.pesoDeclaradoCliente),
       zonaRecepcion: row.zonaRecepcion

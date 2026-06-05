@@ -36,6 +36,18 @@
         "delete": "remove"
       }
     },
+    "generadores": {
+      "collection": "generadores",
+      "model": "generador",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    },
     "clientes": {
       "collection": "clientes",
       "model": "cliente",

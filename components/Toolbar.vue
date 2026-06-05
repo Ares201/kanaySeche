@@ -62,6 +62,9 @@
           <NuxtLink class="nav-link" to="/configuracion/productos" @click.native="closeMenu">
             Productos
           </NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/generador" @click.native="closeMenu">
+            Generador
+          </NuxtLink>
           <NuxtLink class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">
             Clientes
           </NuxtLink>

@@ -3,6 +3,8 @@ export function createEmptyProductoForm() {
     codigo: '',
     autogenerar: true,
     nombre: '',
+    codigoResiduo: '',
+    nombreResiduo: '',
     zonaRecepcion: '',
     estado: true
   }
@@ -13,6 +15,8 @@ export function normalizeProducto(data) {
     id: data.id,
     codigo: data.codigo || '',
     nombre: data.nombre || '',
+    codigoResiduo: data.codigoResiduo || '',
+    nombreResiduo: data.nombreResiduo || '',
     zonaRecepcion: data.zonaRecepcion || '',
     estado: data.estado !== false,
     fechaCreacion: normalizeDate(data.fechaCreacion)
@@ -23,6 +27,8 @@ export function toProductoPayload(form) {
   return {
     codigo: form.codigo,
     nombre: form.nombre,
+    codigoResiduo: form.codigoResiduo,
+    nombreResiduo: form.nombreResiduo,
     zonaRecepcion: form.zonaRecepcion,
     estado: Boolean(form.estado)
   }

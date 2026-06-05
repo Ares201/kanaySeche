@@ -262,6 +262,9 @@
                 </template>
 
                 <v-list dense>
+                  <v-list-item @click="exportCurrentDetalle">
+                    <v-list-item-title>Exportar detalle</v-list-item-title>
+                  </v-list-item>
                   <v-list-item @click="downloadDetalleTemplate">
                     <v-list-item-title>Descargar plantilla detalle</v-list-item-title>
                   </v-list-item>
@@ -282,13 +285,26 @@
           </div>
 
           <div class="detail-wrapper">
-            <table>
+            <table class="detail-edit-table">
+              <colgroup>
+                <col class="detail-col-item">
+                <col class="detail-col-code">
+                <col class="detail-col-name">
+                <col class="detail-col-code">
+                <col class="detail-col-name">
+                <col class="detail-col-product">
+                <col class="detail-col-weight">
+                <col class="detail-col-zone">
+                <col class="detail-col-action">
+              </colgroup>
               <thead>
                 <tr>
                   <th>Item</th>
-                  <th>Producto</th>
+                  <th>Codigo residuo</th>
+                  <th>Nombre residuo</th>
                   <th>Generador</th>
-                  <th>Eje Norte/Eje</th>
+                  <th>Nombre generador</th>
+                  <th>Producto</th>
                   <th>Peso declarado por cliente</th>
                   <th>Zona de recepcion</th>
                   <th></th>
@@ -299,19 +315,53 @@
                   <td>{{ index + 1 }}</td>
                   <td>
                     <input
+                      v-model.trim="row.codigoResiduo"
+                      type="text"
+                      list="residuos-codigo-list"
+                      placeholder="Codigo"
+                      @input="syncResiduoByCodigo(row)"
+                      @change="syncResiduoByCodigo(row)"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      v-model.trim="row.nombreResiduo"
+                      type="text"
+                      list="residuos-nombre-list"
+                      placeholder="Residuo"
+                      @input="syncResiduoByNombre(row)"
+                      @change="syncResiduoByNombre(row)"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      v-model.trim="row.codigoGenerador"
+                      type="text"
+                      list="generadores-codigo-list"
+                      placeholder="Codigo"
+                      @input="syncGeneradorByCodigo(row)"
+                      @change="syncGeneradorByCodigo(row)"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      v-model.trim="row.nombreGenerador"
+                      type="text"
+                      list="generadores-nombre-list"
+                      placeholder="Generador"
+                      @input="syncGeneradorByNombre(row)"
+                      @change="syncGeneradorByNombre(row)"
+                    >
+                  </td>
+                  <td>
+                    <input
                       v-model.trim="row.producto"
                       type="text"
                       list="productos-list"
                       placeholder="Producto"
-                      @input="syncProductoZona(row)"
-                      @change="syncProductoZona(row)"
+                      @input="syncProductoData(row)"
+                      @change="syncProductoData(row)"
                     >
-                  </td>
-                  <td>
-                    <input v-model.trim="row.generador" type="text" placeholder="Generador">
-                  </td>
-                  <td>
-                    <input v-model.trim="row.eje" type="text" placeholder="Eje">
                   </td>
                   <td>
                     <input v-model.number="row.pesoDeclaradoCliente" type="number" min="0" step="0.01">
@@ -331,7 +381,27 @@
             </table>
             <datalist id="productos-list">
               <option v-for="producto in productos" :key="producto.id" :value="producto.nombre">
-                {{ producto.zonaRecepcion }}
+                {{ producto.codigo }}
+              </option>
+            </datalist>
+            <datalist id="residuos-codigo-list">
+              <option v-for="residuo in residuos" :key="residuo.id" :value="residuo.codigo">
+                {{ residuo.nombre }}
+              </option>
+            </datalist>
+            <datalist id="residuos-nombre-list">
+              <option v-for="residuo in residuos" :key="residuo.id" :value="residuo.nombre">
+                {{ residuo.codigo }}
+              </option>
+            </datalist>
+            <datalist id="generadores-codigo-list">
+              <option v-for="generador in generadores" :key="generador.id" :value="generador.codigo">
+                {{ generador.nombre }}
+              </option>
+            </datalist>
+            <datalist id="generadores-nombre-list">
+              <option v-for="generador in generadores" :key="generador.id" :value="generador.nombre">
+                {{ generador.codigo }}
               </option>
             </datalist>
           </div>
@@ -373,7 +443,9 @@
 
 <script>
 import { normalizeCliente } from '~/models/cliente'
+import { normalizeGenerador } from '~/models/generador'
 import { normalizeProducto } from '~/models/producto'
+import { normalizeResiduo } from '~/models/residuo'
 import { normalizeVehiculo } from '~/models/vehiculo'
 import {
   calculatePesoNeto,
@@ -398,16 +470,24 @@ const PEDIDO_VENTA_EXCEL_COLUMNS = [
   'Hora ingreso',
   'Peso ingreso',
   'Peso salida',
-  'Producto',
+  'Tipo',
+  'Codigo residuo',
+  'Nombre residuo',
   'Generador',
+  'Nombre generador',
+  'Producto',
   'Eje Norte/Eje',
   'Peso declarado por cliente',
   'Zona de recepcion'
 ]
 
 const PEDIDO_VENTA_DETALLE_EXCEL_COLUMNS = [
-  'Producto',
+  'Tipo',
+  'Codigo residuo',
+  'Nombre residuo',
   'Generador',
+  'Nombre generador',
+  'Producto',
   'Eje Norte/Eje',
   'Peso declarado por cliente',
   'Zona de recepcion'
@@ -431,7 +511,9 @@ export default {
       pedidos: [],
       clientes: [],
       vehiculos: [],
-      productos: []
+      productos: [],
+      residuos: [],
+      generadores: []
     }
   },
   computed: {
@@ -507,17 +589,21 @@ export default {
       this.clientesLoading = true
 
       try {
-        const [pedidos, clientes, vehiculos, productos] = await Promise.all([
+        const [pedidos, clientes, vehiculos, productos, residuos, generadores] = await Promise.all([
           this.$firebaseApi.list('pedidosVenta'),
           this.$firebaseApi.list('clientes'),
           this.$firebaseApi.list('vehiculos'),
-          this.$firebaseApi.list('productos')
+          this.$firebaseApi.list('productos'),
+          this.$firebaseApi.list('residuos'),
+          this.$firebaseApi.list('generadores')
         ])
 
         this.pedidos = pedidos.map(normalizePedidoVenta)
         this.clientes = clientes.map(normalizeCliente)
         this.vehiculos = vehiculos.map(normalizeVehiculo)
         this.productos = productos.map(normalizeProducto).filter(producto => producto.estado)
+        this.residuos = residuos.map(normalizeResiduo).filter(residuo => residuo.estado)
+        this.generadores = generadores.map(normalizeGenerador).filter(generador => generador.estado)
       } catch (error) {
         alert('No se pudieron listar los datos del PV')
         // eslint-disable-next-line no-console
@@ -595,19 +681,91 @@ export default {
       this.form.placa = vehiculo.placa
       this.placaOptionsOpen = false
     },
-    syncProductoZona(row) {
-      const zonaRecepcion = this.getProductoZonaRecepcion(row.producto)
+    syncResiduoByCodigo(row) {
+      const residuo = this.findResiduoByCodigo(row.codigoResiduo)
 
-      if (zonaRecepcion) {
-        row.zonaRecepcion = zonaRecepcion
+      if (residuo) {
+        row.codigoResiduo = residuo.codigo
+        row.nombreResiduo = residuo.nombre
+      }
+    },
+    syncResiduoByNombre(row) {
+      const residuo = this.findResiduoByNombre(row.nombreResiduo)
+
+      if (residuo) {
+        row.codigoResiduo = residuo.codigo
+        row.nombreResiduo = residuo.nombre
+      }
+    },
+    syncGeneradorByCodigo(row) {
+      const generador = this.findGeneradorByCodigo(row.codigoGenerador)
+
+      if (generador) {
+        row.codigoGenerador = generador.codigo
+        row.nombreGenerador = generador.nombre
+      }
+    },
+    syncGeneradorByNombre(row) {
+      const generador = this.findGeneradorByNombre(row.nombreGenerador)
+
+      if (generador) {
+        row.codigoGenerador = generador.codigo
+        row.nombreGenerador = generador.nombre
+      }
+    },
+    syncProductoData(row) {
+      const producto = this.findProducto(row.producto)
+
+      if (!producto) {
+        return
+      }
+
+      row.producto = producto.nombre
+
+      if (producto.zonaRecepcion) {
+        row.zonaRecepcion = producto.zonaRecepcion
+      }
+
+      if (producto.codigoResiduo) {
+        row.codigoResiduo = producto.codigoResiduo
+      }
+
+      if (producto.nombreResiduo) {
+        row.nombreResiduo = producto.nombreResiduo
       }
     },
     getProductoZonaRecepcion(nombreProducto) {
-      const producto = this.productos.find(currentProducto => {
-        return currentProducto.nombre.toLowerCase() === String(nombreProducto || '').toLowerCase()
-      })
+      const producto = this.findProducto(nombreProducto)
 
       return producto ? producto.zonaRecepcion : ''
+    },
+    findProducto(value) {
+      const cleanValue = String(value || '').trim().toLowerCase()
+
+      return this.productos.find(producto => {
+        return producto.nombre.toLowerCase() === cleanValue ||
+          producto.codigo.toLowerCase() === cleanValue
+      })
+    },
+    findResiduoByCodigo(codigo) {
+      const cleanCodigo = String(codigo || '').trim().toLowerCase()
+
+      return this.residuos.find(residuo => residuo.codigo.toLowerCase() === cleanCodigo)
+    },
+    findResiduoByNombre(nombre) {
+      const cleanNombre = String(nombre || '').trim().toLowerCase()
+
+      return this.residuos.find(residuo => residuo.nombre.toLowerCase() === cleanNombre)
+    },
+    findGeneradorByCodigo(codigo) {
+      const cleanCodigo = String(codigo || '').trim().toLowerCase()
+
+      return this.generadores.find(generador => generador.codigo.toLowerCase() === cleanCodigo)
+    },
+    findGeneradorByNombre(nombre) {
+      const cleanNombre = String(nombre || '').trim().toLowerCase()
+
+      return this.generadores.find(generador => generador.nombre.toLowerCase() === cleanNombre)
     },
     addDetalleRow() {
       this.form.detalle.push(createEmptyDetalleItem(this.form.detalle.length + 1))
@@ -746,7 +904,7 @@ export default {
         <main class="pv-print-page">
           <header class="pv-print-header">
             <div class="brand-block">
-              <div class="brand-mark">SÃ©chÃ© Group PerÃº</div>
+              <div class="brand-mark">Seche Group Peru</div>
               <div class="brand-subtitle">A world of solutions</div>
             </div>
             <div class="page-number">Page 1 of 1</div>
@@ -824,7 +982,7 @@ export default {
           <td>${index + 1}</td>
           <td></td>
           <td>${this.escapeHtml(row.producto)}</td>
-          <td>${this.escapeHtml(row.generador)}</td>
+          <td>${this.escapeHtml(row.nombreGenerador || row.generador)}</td>
           <td>${this.escapeHtml(row.eje)}</td>
           <td>${this.escapeHtml(row.envase)}</td>
           <td>${this.escapeHtml(this.formatWeight(row.pesoDeclaradoCliente))}</td>
@@ -886,7 +1044,7 @@ export default {
         .summary-grid {
           display: grid;
           grid-template-columns: 1fr 0.9fr;
-          gap: 9mm;
+          gap: 6mm;
           margin-bottom: 3mm;
           font-size: 9px;
         }
@@ -898,7 +1056,19 @@ export default {
           align-items: center;
         }
         .summary-right div {
-          grid-template-columns: 33mm 1fr;
+          justify-content: end;
+          grid-template-columns: max-content 20mm;
+          column-gap: 1.5mm;
+        }
+        .summary-right {
+          justify-self: end;
+          width: 72mm;
+        }
+        .summary-right strong {
+          text-align: right;
+        }
+        .summary-right span {
+          text-align: right;
         }
         .summary-grid strong {
           font-weight: 700;
@@ -1001,6 +1171,17 @@ export default {
         }))
       })
     },
+    async exportCurrentDetalle() {
+      await exportRowsToExcel({
+        filename: this.form.codigo ? `detalle-${this.form.codigo}` : 'detalle-pv',
+        sheetName: 'DetallePV',
+        rows: this.buildFormDetalleExcelRows(),
+        columns: PEDIDO_VENTA_DETALLE_EXCEL_COLUMNS.map(header => ({
+          label: header,
+          value: row => row[header]
+        }))
+      })
+    },
     async downloadTemplate() {
       await exportRowsToExcel({
         filename: 'plantilla-pedidos-venta',
@@ -1014,8 +1195,12 @@ export default {
             'Hora ingreso': getNowTimeInput(),
             'Peso ingreso': '1000',
             'Peso salida': '250',
+            Tipo: 'Producto',
+            'Codigo residuo': '7000000',
+            'Nombre residuo': 'Residuo ejemplo',
+            Generador: 'GEN-001',
+            'Nombre generador': 'Generador ejemplo',
             Producto: 'Producto ejemplo',
-            Generador: 'Generador ejemplo',
             'Eje Norte/Eje': 'Eje 1',
             'Peso declarado por cliente': '750',
             'Zona de recepcion': 'Zona A'
@@ -1120,14 +1305,7 @@ export default {
         pesoIngreso,
         pesoSalida,
         pesoNeto: calculatePesoNeto(pesoIngreso, pesoSalida),
-        detalle: group.rows.map((row, index) => ({
-          item: index + 1,
-          producto: row.Producto,
-          generador: row.Generador,
-          eje: row['Eje Norte/Eje'],
-          pesoDeclaradoCliente: Number(row['Peso declarado por cliente']) || 0,
-          zonaRecepcion: row['Zona de recepcion'] || this.getProductoZonaRecepcion(row.Producto)
-        }))
+        detalle: group.rows.map((row, index) => this.buildDetalleRowFromExcel(row, index))
       }
     },
     async downloadDetalleTemplate() {
@@ -1136,8 +1314,12 @@ export default {
         sheetName: 'DetallePV',
         rows: [
           {
+            Tipo: 'Producto',
+            'Codigo residuo': '7000000',
+            'Nombre residuo': 'Residuo ejemplo',
+            Generador: 'GEN-001',
+            'Nombre generador': 'Generador ejemplo',
             Producto: 'Producto ejemplo',
-            Generador: 'Generador ejemplo',
             'Eje Norte/Eje': 'Eje 1',
             'Peso declarado por cliente': '750',
             'Zona de recepcion': 'Zona A'
@@ -1170,14 +1352,7 @@ export default {
           return
         }
 
-        this.form.detalle = result.rows.map((row, index) => ({
-          item: index + 1,
-          producto: row.Producto,
-          generador: row.Generador,
-          eje: row['Eje Norte/Eje'],
-          pesoDeclaradoCliente: Number(row['Peso declarado por cliente']) || 0,
-          zonaRecepcion: row['Zona de recepcion'] || this.getProductoZonaRecepcion(row.Producto)
-        }))
+        this.form.detalle = result.rows.map((row, index) => this.buildDetalleRowFromExcel(row, index))
 
         alert(`Se cargaron ${this.form.detalle.length} items en el detalle.`)
       } catch (error) {
@@ -1196,13 +1371,58 @@ export default {
           'Hora ingreso': pedido.horaIngreso,
           'Peso ingreso': pedido.pesoIngreso,
           'Peso salida': pedido.pesoSalida,
+          Tipo: 'Producto',
+          'Codigo residuo': row.codigoResiduo,
+          'Nombre residuo': row.nombreResiduo,
+          Generador: row.codigoGenerador,
+          'Nombre generador': row.nombreGenerador || row.generador,
           Producto: row.producto,
-          Generador: row.generador,
           'Eje Norte/Eje': row.eje,
           'Peso declarado por cliente': row.pesoDeclaradoCliente,
           'Zona de recepcion': row.zonaRecepcion
         }))
       })
+    },
+    buildFormDetalleExcelRows() {
+      return this.form.detalle.map(row => ({
+        Tipo: 'Producto',
+        'Codigo residuo': row.codigoResiduo,
+        'Nombre residuo': row.nombreResiduo,
+        Generador: row.codigoGenerador,
+        'Nombre generador': row.nombreGenerador || row.generador,
+        Producto: row.producto,
+        'Eje Norte/Eje': row.eje,
+        'Peso declarado por cliente': row.pesoDeclaradoCliente,
+        'Zona de recepcion': row.zonaRecepcion
+      }))
+    },
+    buildDetalleRowFromExcel(row, index) {
+      const generadorValue = String(row.Generador || '').trim()
+      const detalle = {
+        item: index + 1,
+        tipo: 'Producto',
+        codigoResiduo: String(row['Codigo residuo'] || '').trim(),
+        nombreResiduo: String(row['Nombre residuo'] || '').trim(),
+        codigoGenerador: generadorValue,
+        nombreGenerador: String(row['Nombre generador'] || '').trim(),
+        producto: String(row.Producto || '').trim(),
+        eje: row['Eje Norte/Eje'],
+        pesoDeclaradoCliente: Number(row['Peso declarado por cliente']) || 0,
+        zonaRecepcion: row['Zona de recepcion'] || this.getProductoZonaRecepcion(row.Producto)
+      }
+
+      this.syncResiduoByCodigo(detalle)
+      this.syncResiduoByNombre(detalle)
+      this.syncGeneradorByCodigo(detalle)
+
+      if (generadorValue && !detalle.nombreGenerador) {
+        detalle.nombreGenerador = generadorValue
+      }
+
+      this.syncGeneradorByNombre(detalle)
+      this.syncProductoData(detalle)
+
+      return detalle
     },
     findCliente(ruc, nombre) {
       const cleanRuc = String(ruc || '').trim()
@@ -1554,14 +1774,63 @@ td {
 
 .detail-wrapper {
   margin: 0 -20px;
+  overflow-x: hidden;
 }
 
-.detail-wrapper td {
-  padding: 10px;
+.detail-edit-table {
+  table-layout: fixed;
+  width: 100%;
 }
 
-.detail-wrapper input {
-  min-width: 180px;
+.detail-edit-table th,
+.detail-edit-table td {
+  padding: 8px;
+  white-space: normal;
+  vertical-align: middle;
+}
+
+.detail-edit-table th {
+  line-height: 1.2;
+}
+
+.detail-edit-table input {
+  min-width: 0;
+  height: 38px;
+  padding: 8px 9px;
+  font-size: 13px;
+}
+
+.detail-col-item {
+  width: 5%;
+}
+
+.detail-col-code {
+  width: 10%;
+}
+
+.detail-col-name {
+  width: 15%;
+}
+
+.detail-col-product {
+  width: 16%;
+}
+
+.detail-col-weight {
+  width: 13%;
+}
+
+.detail-col-zone {
+  width: 11%;
+}
+
+.detail-col-action {
+  width: 6%;
+}
+
+.detail-edit-table .icon-button {
+  width: 32px;
+  height: 32px;
 }
 
 .modal-actions {
@@ -1662,7 +1931,7 @@ td {
 .preview-sheet::v-deep .summary-grid {
   display: grid;
   grid-template-columns: 1fr 0.9fr;
-  gap: 9mm;
+  gap: 6mm;
   margin-bottom: 3mm;
 }
 
@@ -1675,7 +1944,22 @@ td {
 }
 
 .preview-sheet::v-deep .summary-right div {
-  grid-template-columns: 33mm 1fr;
+  justify-content: end;
+  grid-template-columns: max-content 20mm;
+  column-gap: 1.5mm;
+}
+
+.preview-sheet::v-deep .summary-right {
+  justify-self: end;
+  width: 72mm;
+}
+
+.preview-sheet::v-deep .summary-right strong {
+  text-align: right;
+}
+
+.preview-sheet::v-deep .summary-right span {
+  text-align: right;
 }
 
 .preview-sheet::v-deep .detail-table {

@@ -1,20 +1,20 @@
 <template>
-  <section class="productos-page">
+  <section class="generador-page">
     <div class="page-header">
       <div>
         <p class="eyebrow">Configuracion</p>
-        <h1>Productos</h1>
+        <h1>Generador</h1>
       </div>
       <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo producto
+        Nuevo generador
       </button>
     </div>
 
     <div class="content">
       <div class="table-header">
         <div>
-          <h2>Listado de productos</h2>
-          <span>{{ filteredProductos.length }} registros</span>
+          <h2>Listado de generadores</h2>
+          <span>{{ filteredGeneradores.length }} registros</span>
         </div>
         <div class="table-actions">
           <v-menu offset-y>
@@ -28,26 +28,29 @@
             </template>
 
             <v-list dense>
-              <v-list-item @click="exportProductos">
+              <v-list-item @click="exportGeneradores">
                 <v-list-item-title>Exportar</v-list-item-title>
               </v-list-item>
-              <v-list-item @click="openImportProductos">
+              <v-list-item @click="exportGeneradoresTemplate">
+                <v-list-item-title>Descargar plantilla</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="openImportGeneradores">
                 <v-list-item-title>Importar</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-menu>
 
           <input
-            ref="productosExcelInput"
+            ref="generadoresExcelInput"
             class="excel-input"
             type="file"
             accept=".xlsx"
-            @change="importProductos"
+            @change="importGeneradores"
           >
 
           <label class="search-field">
-            <span>Buscar por codigo, nombre o zona</span>
-            <input v-model.trim="search" type="search" placeholder="Ej. Zona A">
+            <span>Buscar por codigo o nombre</span>
+            <input v-model.trim="search" type="search" placeholder="Ej. GEN-001">
           </label>
         </div>
       </div>
@@ -57,38 +60,32 @@
             <tr>
               <th>Codigo</th>
               <th>Nombre</th>
-              <th>Codigo residuo</th>
-              <th>Nombre residuo</th>
-              <th>Zona de recepcion</th>
               <th>Estado</th>
               <th>Fecha creacion</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="producto in filteredProductos" :key="producto.id">
-              <td>{{ producto.codigo }}</td>
-              <td>{{ producto.nombre }}</td>
-              <td>{{ producto.codigoResiduo }}</td>
-              <td>{{ producto.nombreResiduo }}</td>
-              <td>{{ producto.zonaRecepcion }}</td>
+            <tr v-for="generador in filteredGeneradores" :key="generador.id">
+              <td>{{ generador.codigo }}</td>
+              <td>{{ generador.nombre }}</td>
               <td>
-                <span class="status" :class="{ 'status--inactive': !producto.estado }">
-                  {{ producto.estado ? 'Activo' : 'Inactivo' }}
+                <span class="status" :class="{ 'status--inactive': !generador.estado }">
+                  {{ generador.estado ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
-              <td>{{ formatDate(producto.fechaCreacion) }}</td>
+              <td>{{ formatDate(generador.fechaCreacion) }}</td>
               <td>
                 <div class="actions">
-                  <button class="icon-button" type="button" title="Editar" aria-label="Editar producto"
-                    @click="openEditModal(producto)">
+                  <button class="icon-button" type="button" title="Editar" aria-label="Editar generador"
+                    @click="openEditModal(generador)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
                       <path d="M13.5 6.5l4 4" />
                     </svg>
                   </button>
                   <button class="icon-button icon-button--danger" type="button" title="Eliminar"
-                    aria-label="Eliminar producto" @click="deleteProducto(producto.id)">
+                    aria-label="Eliminar generador" @click="deleteGenerador(generador.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 7h14" />
                       <path d="M10 11v6" />
@@ -101,13 +98,13 @@
               </td>
             </tr>
             <tr v-if="loading">
-              <td class="empty-state" colspan="8">
-                Cargando productos...
+              <td class="empty-state" colspan="5">
+                Cargando generadores...
               </td>
             </tr>
-            <tr v-else-if="filteredProductos.length === 0">
-              <td class="empty-state" colspan="8">
-                No se encontraron productos.
+            <tr v-else-if="filteredGeneradores.length === 0">
+              <td class="empty-state" colspan="5">
+                No se encontraron generadores.
               </td>
             </tr>
           </tbody>
@@ -116,9 +113,9 @@
     </div>
 
     <div v-if="isModalOpen" class="modal-backdrop">
-      <form class="modal" @submit.prevent="saveProducto">
+      <form class="modal" @submit.prevent="saveGenerador">
         <div class="modal-header">
-          <h2>{{ editingId ? 'Editar producto' : 'Nuevo producto' }}</h2>
+          <h2>{{ editingId ? 'Editar generador' : 'Nuevo generador' }}</h2>
           <button type="button" class="modal-close" aria-label="Cerrar modal" @click="closeModal">
             x
           </button>
@@ -133,7 +130,7 @@
                   v-model.trim="form.codigo"
                   type="text"
                   required
-                  placeholder="PROD-001"
+                  placeholder="GEN-001"
                   :disabled="form.autogenerar"
                 >
               </label>
@@ -147,58 +144,16 @@
             <v-col cols="12" md="5">
               <label>
                 Nombre
-                <input v-model.trim="form.nombre" type="text" required placeholder="Nombre del producto">
-              </label>
-            </v-col>
-            <v-col cols="12" md="4">
-              <label>
-                Codigo residuo
-                <input
-                  v-model.trim="form.codigoResiduo"
-                  type="text"
-                  list="residuos-codigo-list"
-                  placeholder="7000018"
-                  @input="syncResiduoByCodigo"
-                  @change="syncResiduoByCodigo"
-                >
-              </label>
-            </v-col>
-            <v-col cols="12" md="4">
-              <label>
-                Nombre residuo
-                <input
-                  v-model.trim="form.nombreResiduo"
-                  type="text"
-                  list="residuos-nombre-list"
-                  placeholder="Lodos"
-                  @input="syncResiduoByNombre"
-                  @change="syncResiduoByNombre"
-                >
-              </label>
-            </v-col>
-            <v-col cols="12" md="4">
-              <label>
-                Zona de recepcion
-                <input v-model.trim="form.zonaRecepcion" type="text" placeholder="Zona A">
+                <input v-model.trim="form.nombre" type="text" required placeholder="Nombre del generador">
               </label>
             </v-col>
             <v-col cols="12">
               <label class="checkbox-field">
                 <input v-model="form.estado" type="checkbox">
-                Producto activo
+                Generador activo
               </label>
             </v-col>
           </v-row>
-          <datalist id="residuos-codigo-list">
-            <option v-for="residuo in residuos" :key="residuo.id" :value="residuo.codigo">
-              {{ residuo.nombre }}
-            </option>
-          </datalist>
-          <datalist id="residuos-nombre-list">
-            <option v-for="residuo in residuos" :key="residuo.id" :value="residuo.nombre">
-              {{ residuo.codigo }}
-            </option>
-          </datalist>
         </div>
 
         <div class="modal-actions">
@@ -216,30 +171,26 @@
 
 <script>
 import {
-  createEmptyProductoForm,
-  getNextProductoCodigo,
-  normalizeProducto,
-  toProductoPayload
-} from '~/models/producto'
-import { normalizeResiduo } from '~/models/residuo'
+  createEmptyGeneradorForm,
+  getNextGeneradorCodigo,
+  normalizeGenerador,
+  toGeneradorPayload
+} from '~/models/generador'
 import {
   exportRowsToExcel,
   parseActiveValue,
   readRowsFromExcelFile
 } from '~/utils/exportExcel'
 
-const PRODUCTO_EXCEL_COLUMNS = [
+const GENERADOR_EXCEL_COLUMNS = [
   'Codigo',
   'Nombre',
-  'Codigo residuo',
-  'Nombre residuo',
-  'Zona de recepcion',
   'Estado',
   'Fecha creacion'
 ]
 
 export default {
-  name: 'ProductosPage',
+  name: 'GeneradorPage',
   data() {
     return {
       search: '',
@@ -247,44 +198,36 @@ export default {
       isModalOpen: false,
       editingId: null,
       form: this.getEmptyForm(),
-      productos: [],
-      residuos: []
+      generadores: []
     }
   },
   computed: {
-    filteredProductos() {
+    filteredGeneradores() {
       const term = this.search.toLowerCase()
 
-      if (!term) return this.productos
+      if (!term) return this.generadores
 
-      return this.productos.filter(producto =>
-        producto.codigo.toLowerCase().includes(term) ||
-        producto.nombre.toLowerCase().includes(term) ||
-        producto.codigoResiduo.toLowerCase().includes(term) ||
-        producto.nombreResiduo.toLowerCase().includes(term) ||
-        producto.zonaRecepcion.toLowerCase().includes(term)
+      return this.generadores.filter(generador =>
+        generador.codigo.toLowerCase().includes(term) ||
+        generador.nombre.toLowerCase().includes(term)
       )
     }
   },
   mounted() {
-    this.loadProductos()
+    this.loadGeneradores()
   },
   methods: {
     getEmptyForm() {
-      return createEmptyProductoForm()
+      return createEmptyGeneradorForm()
     },
-    async loadProductos() {
+    async loadGeneradores() {
       this.loading = true
 
       try {
-        const [productos, residuos] = await Promise.all([
-          this.$firebaseApi.list('productos'),
-          this.$firebaseApi.list('residuos')
-        ])
-        this.productos = productos.map(normalizeProducto)
-        this.residuos = residuos.map(normalizeResiduo).filter(residuo => residuo.estado)
+        const generadores = await this.$firebaseApi.list('generadores')
+        this.generadores = generadores.map(normalizeGenerador)
       } catch (error) {
-        alert('No se pudieron listar los productos')
+        alert('No se pudieron listar los generadores')
         // eslint-disable-next-line no-console
         console.error(error)
       } finally {
@@ -297,29 +240,26 @@ export default {
       this.setAutogeneratedCodigo()
       this.isModalOpen = true
     },
-    openEditModal(producto) {
-      this.editingId = producto.id
+    openEditModal(generador) {
+      this.editingId = generador.id
       this.form = {
-        codigo: producto.codigo,
+        codigo: generador.codigo,
         autogenerar: false,
-        nombre: producto.nombre,
-        codigoResiduo: producto.codigoResiduo,
-        nombreResiduo: producto.nombreResiduo,
-        zonaRecepcion: producto.zonaRecepcion,
-        estado: producto.estado
+        nombre: generador.nombre,
+        estado: generador.estado
       }
       this.isModalOpen = true
     },
     closeModal() {
       this.isModalOpen = false
     },
-    async saveProducto() {
+    async saveGenerador() {
       if (this.form.autogenerar) {
         this.setAutogeneratedCodigo()
       }
 
-      const existe = this.productos.some(
-        producto => producto.codigo === this.form.codigo && producto.id !== this.editingId
+      const existe = this.generadores.some(
+        generador => generador.codigo === this.form.codigo && generador.id !== this.editingId
       )
 
       if (existe) {
@@ -329,65 +269,73 @@ export default {
 
       try {
         if (this.editingId) {
-          const producto = await this.$firebaseApi.update(
-            'productos',
+          const generador = await this.$firebaseApi.update(
+            'generadores',
             this.editingId,
-            toProductoPayload(this.form)
+            toGeneradorPayload(this.form)
           )
-          this.productos = this.productos.map(currentProducto => {
-            return currentProducto.id === this.editingId
-              ? normalizeProducto(producto)
-              : currentProducto
+          this.generadores = this.generadores.map(currentGenerador => {
+            return currentGenerador.id === this.editingId
+              ? normalizeGenerador(generador)
+              : currentGenerador
           })
         } else {
-          const producto = await this.$firebaseApi.create(
-            'productos',
-            toProductoPayload(this.form)
+          const generador = await this.$firebaseApi.create(
+            'generadores',
+            toGeneradorPayload(this.form)
           )
-          this.productos.unshift(normalizeProducto(producto))
+          this.generadores.unshift(normalizeGenerador(generador))
         }
 
         this.closeModal()
       } catch (error) {
-        alert('No se pudo guardar el producto')
+        alert('No se pudo guardar el generador')
         // eslint-disable-next-line no-console
         console.error(error)
       }
     },
     setAutogeneratedCodigo() {
-      this.form.codigo = getNextProductoCodigo(this.productos)
+      this.form.codigo = getNextGeneradorCodigo(this.generadores)
     },
     handleAutogenerarChange() {
       if (this.form.autogenerar) {
         this.setAutogeneratedCodigo()
       }
     },
-    exportProductos() {
+    exportGeneradores() {
       exportRowsToExcel({
-        filename: 'productos',
-        sheetName: 'Productos',
-        rows: this.filteredProductos,
-        columns: [
-          { label: 'Codigo', value: producto => producto.codigo },
-          { label: 'Nombre', value: producto => producto.nombre },
-          { label: 'Codigo residuo', value: producto => producto.codigoResiduo },
-          { label: 'Nombre residuo', value: producto => producto.nombreResiduo },
-          { label: 'Zona de recepcion', value: producto => producto.zonaRecepcion },
-          { label: 'Estado', value: producto => producto.estado ? 'Activo' : 'Inactivo' },
-          { label: 'Fecha creacion', value: producto => this.formatDate(producto.fechaCreacion) }
-        ]
+        filename: 'generadores',
+        sheetName: 'Generadores',
+        rows: this.filteredGeneradores,
+        columns: this.getExcelColumns()
       })
     },
-    openImportProductos() {
-      this.$refs.productosExcelInput.click()
+    exportGeneradoresTemplate() {
+      exportRowsToExcel({
+        filename: 'plantilla-generadores',
+        sheetName: 'Generadores',
+        rows: [],
+        columns: this.getExcelColumns()
+      })
     },
-    async importProductos(event) {
+    getExcelColumns() {
+      return [
+        { label: 'Codigo', value: generador => generador.codigo },
+        { label: 'Nombre', value: generador => generador.nombre },
+        { label: 'Estado', value: generador => generador.estado ? 'Activo' : 'Inactivo' },
+        { label: 'Fecha creacion', value: generador => this.formatDate(generador.fechaCreacion) }
+      ]
+    },
+    openImportGeneradores() {
+      this.$refs.generadoresExcelInput.click()
+    },
+    async importGeneradores(event) {
       const file = event.target.files[0]
       event.target.value = ''
       if (!file) return
 
       try {
-        const result = await readRowsFromExcelFile(file, PRODUCTO_EXCEL_COLUMNS)
+        const result = await readRowsFromExcelFile(file, GENERADOR_EXCEL_COLUMNS)
 
         if (!result.matched) {
           alert('Este Excel no coincidio con las columnas esperadas.')
@@ -405,77 +353,40 @@ export default {
         for (const row of result.rows) {
           const codigo = String(row.Codigo || '').trim()
           const nombre = String(row.Nombre || '').trim()
-          let codigoResiduo = String(row['Codigo residuo'] || '').trim()
-          let nombreResiduo = String(row['Nombre residuo'] || '').trim()
 
           if (!codigo || !nombre) {
             skipped += 1
             continue
           }
 
-          const exists = this.productos.some(producto => producto.codigo === codigo)
+          const exists = this.generadores.some(generador => generador.codigo === codigo)
           if (exists) {
             skipped += 1
             continue
           }
 
-          const residuo = this.findResiduoByCodigo(codigoResiduo) || this.findResiduoByNombre(nombreResiduo)
-          if (residuo) {
-            codigoResiduo = residuo.codigo
-            nombreResiduo = residuo.nombre
-          }
-
-          const producto = await this.$firebaseApi.create('productos', {
+          const generador = await this.$firebaseApi.create('generadores', {
             codigo,
             nombre,
-            codigoResiduo,
-            nombreResiduo,
-            zonaRecepcion: row['Zona de recepcion'],
             estado: parseActiveValue(row.Estado)
           })
-          this.productos.unshift(normalizeProducto(producto))
+          this.generadores.unshift(normalizeGenerador(generador))
           created += 1
         }
 
-        alert(`Se agregaron ${created} productos. Filas omitidas: ${skipped}.`)
+        alert(`Se agregaron ${created} generadores. Filas omitidas: ${skipped}.`)
       } catch (error) {
         alert('No se pudo importar el Excel')
         // eslint-disable-next-line no-console
         console.error(error)
       }
     },
-    syncResiduoByCodigo() {
-      const residuo = this.findResiduoByCodigo(this.form.codigoResiduo)
-
-      if (residuo) {
-        this.form.codigoResiduo = residuo.codigo
-        this.form.nombreResiduo = residuo.nombre
-      }
-    },
-    syncResiduoByNombre() {
-      const residuo = this.findResiduoByNombre(this.form.nombreResiduo)
-
-      if (residuo) {
-        this.form.codigoResiduo = residuo.codigo
-        this.form.nombreResiduo = residuo.nombre
-      }
-    },
-    findResiduoByCodigo(codigo) {
-      const cleanCodigo = String(codigo || '').trim().toLowerCase()
-
-      return this.residuos.find(residuo => residuo.codigo.toLowerCase() === cleanCodigo)
-    },
-    findResiduoByNombre(nombre) {
-      const cleanNombre = String(nombre || '').trim().toLowerCase()
-
-      return this.residuos.find(residuo => residuo.nombre.toLowerCase() === cleanNombre)
-    },
-    async deleteProducto(id) {
+    async deleteGenerador(id) {
       try {
-        await this.$firebaseApi.remove('productos', id)
-        this.productos = this.productos.filter(producto => producto.id !== id)
+        await this.$firebaseApi.remove('generadores', id)
+        this.generadores = this.generadores.filter(generador => generador.id !== id)
       } catch (error) {
-        alert('No se pudo eliminar el producto')
+        alert('No se pudo eliminar el generador')
         // eslint-disable-next-line no-console
         console.error(error)
       }
@@ -492,7 +403,7 @@ export default {
 </script>
 
 <style scoped>
-.productos-page {
+.generador-page {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: 32px 0;
