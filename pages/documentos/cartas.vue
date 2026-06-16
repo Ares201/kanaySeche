@@ -16,8 +16,16 @@
           <h2>Listado de cartas</h2>
           <span>{{ filteredCartas.length }} registros</span>
         </div>
-
-        <div class="table-actions">
+      </div>
+      <v-row class="table-actions" dense align="end" justify="end">
+        <v-col class="table-action-col" cols="3">
+          <v-text-field v-model.trim="search" dense hide-details outlined type="search"
+            label="Buscar por cliente o correlativo" placeholder="Ej. CARTA-001" />
+        </v-col>
+        <v-col class="table-action-col" cols="3">
+          <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Filtrar por fecha" />
+        </v-col>
+        <v-col class="table-action-col table-action-col--excel" cols="2">
           <v-menu offset-y>
             <template #activator="{ on, attrs }">
               <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
@@ -37,21 +45,10 @@
               </v-list-item>
             </v-list>
           </v-menu>
+        </v-col>
 
-          <input
-            ref="cartasExcelInput"
-            class="excel-input"
-            type="file"
-            accept=".xlsx"
-            @change="importCartas"
-          >
-
-          <label class="search-field">
-            <span>Buscar por cliente o correlativo</span>
-            <input v-model.trim="search" type="search" placeholder="Ej. CARTA-001">
-          </label>
-        </div>
-      </div>
+        <input ref="cartasExcelInput" class="excel-input" type="file" accept=".xlsx" @change="importCartas">
+      </v-row>
 
       <div class="table-wrapper">
         <table>
@@ -72,33 +69,30 @@
               <td>{{ formatShortDate(carta.fecha) }}</td>
               <td>
                 <div class="actions">
-                  <v-btn
-                    icon
-                    small
-                    class="status-icon-button"
-                    :class="`status-icon-button--${getEstadoClass(carta.estadoProceso)}`"
-                    :title="getEstadoTitle(carta)"
-                    :aria-label="getEstadoTitle(carta)"
-                    :disabled="carta.estadoProceso === 'Entregado'"
-                    @click="advanceCartaEstado(carta)"
-                  >
+                  <v-btn icon small class="status-icon-button"
+                    :class="`status-icon-button--${getEstadoClass(carta.estadoProceso)}`" :title="getEstadoTitle(carta)"
+                    :aria-label="getEstadoTitle(carta)" :disabled="carta.estadoProceso === 'Entregado'"
+                    @click="advanceCartaEstado(carta)">
                     <v-icon small>
                       {{ getEstadoIcon(carta.estadoProceso) }}
                     </v-icon>
                   </v-btn>
-                  <button class="icon-button" type="button" title="Ver" aria-label="Ver carta" @click="openPreviewModal(carta)">
+                  <button class="icon-button" type="button" title="Ver" aria-label="Ver carta"
+                    @click="openPreviewModal(carta)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
                   </button>
-                  <button class="icon-button" type="button" title="Editar" aria-label="Editar carta" @click="openEditModal(carta)">
+                  <button class="icon-button" type="button" title="Editar" aria-label="Editar carta"
+                    @click="openEditModal(carta)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
                       <path d="M13.5 6.5l4 4" />
                     </svg>
                   </button>
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar" aria-label="Eliminar carta" @click="deleteCarta(carta.id)">
+                  <button class="icon-button icon-button--danger" type="button" title="Eliminar"
+                    aria-label="Eliminar carta" @click="deleteCarta(carta.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 7h14" />
                       <path d="M10 11v6" />
@@ -145,25 +139,12 @@
             <v-col cols="12" md="6">
               <label class="autocomplete-field">
                 Cliente
-                <input
-                  v-model.trim="clienteSearch"
-                  type="text"
-                  required
-                  autocomplete="off"
-                  placeholder="Escribe para buscar cliente"
-                  @focus="openClienteDropdown"
-                  @input="handleClienteSearch"
-                  @blur="closeClienteDropdown"
-                  @keydown.esc="closeClienteDropdown"
-                >
+                <input v-model.trim="clienteSearch" type="text" required autocomplete="off"
+                  placeholder="Escribe para buscar cliente" @focus="openClienteDropdown" @input="handleClienteSearch"
+                  @blur="closeClienteDropdown" @keydown.esc="closeClienteDropdown">
                 <div v-if="isClienteDropdownOpen" class="autocomplete-menu">
-                  <button
-                    v-for="cliente in filteredClientesOptions"
-                    :key="cliente.id"
-                    class="autocomplete-option"
-                    type="button"
-                    @mousedown.prevent="selectCliente(cliente)"
-                  >
+                  <button v-for="cliente in filteredClientesOptions" :key="cliente.id" class="autocomplete-option"
+                    type="button" @mousedown.prevent="selectCliente(cliente)">
                     <strong>{{ cliente.nombre }}</strong>
                     <span>{{ cliente.ruc }} - {{ cliente.contacto }}</span>
                   </button>
@@ -187,14 +168,8 @@
             <v-col cols="12" md="4">
               <label>
                 Contacto
-                <input v-model.trim="form.cliente.contactoNombre" type="text" required placeholder="Nombre del contacto">
-              </label>
-            </v-col>
-
-            <v-col cols="12" md="4">
-              <label>
-                Numero contacto
-                <input v-model.trim="form.cliente.contactoNumero" type="text" required placeholder="Anexo o codigo">
+                <input v-model.trim="form.cliente.contactoNombre" type="text" required
+                  placeholder="Nombre del contacto">
               </label>
             </v-col>
 
@@ -268,7 +243,8 @@
                     Descripcion (Documentos a enviar)
                     <input v-model.trim="detalle.descripcion" type="text" required placeholder="Detalle">
                   </label>
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar item" aria-label="Eliminar item" :disabled="form.detalles.length === 1" @click="removeDetalle(index)">
+                  <button class="icon-button icon-button--danger" type="button" title="Eliminar item"
+                    aria-label="Eliminar item" :disabled="form.detalles.length === 1" @click="removeDetalle(index)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 7h14" />
                       <path d="M10 11v6" />
@@ -352,6 +328,7 @@ export default {
   data() {
     return {
       search: '',
+      fechaFiltro: this.getTodayInputDate(),
       loading: false,
       isModalOpen: false,
       isPreviewOpen: false,
@@ -369,15 +346,18 @@ export default {
   computed: {
     filteredCartas() {
       const term = this.search.toLowerCase()
+      const fechaFiltro = this.fechaFiltro
 
-      if (!term) return this.cartas
+      if (!term && !fechaFiltro) return this.cartas
 
       return this.cartas.filter(carta => {
         const cliente = carta.cliente || {}
-        return (
+        const matchesSearch = !term ||
           (cliente.nombre || '').toLowerCase().includes(term) ||
           (carta.correlativo || '').toLowerCase().includes(term)
-        )
+        const matchesDate = !fechaFiltro || this.normalizeDateInput(carta.fecha) === fechaFiltro
+
+        return matchesSearch && matchesDate
       })
     },
     filteredClientesOptions() {
@@ -412,7 +392,6 @@ export default {
           ruc: '',
           direccion: '',
           contactoNombre: '',
-          contactoNumero: '',
           contactoTelefono: ''
         },
         asunto: DEFAULT_ASUNTO,
@@ -591,7 +570,7 @@ export default {
       const formatPeruDate = date => {
         if (!date) return ''
 
-        const parsedDate = new Date(date)
+        const parsedDate = this.parseLocalDate(date)
         if (Number.isNaN(parsedDate.getTime())) return ''
 
         const formatted = new Intl.DateTimeFormat('es-PE', {
@@ -870,7 +849,6 @@ export default {
         ruc: cliente.ruc,
         direccion: cliente.direccion,
         contactoNombre: cliente.contacto,
-        contactoNumero: cliente.numeroContacto,
         contactoTelefono: cliente.telefonoContacto
       }
       this.clienteSearch = cliente.nombre
@@ -910,7 +888,6 @@ export default {
           ruc: cliente.ruc || '',
           direccion: cliente.direccion || '',
           contactoNombre: cliente.contactoNombre || '',
-          contactoNumero: cliente.contactoNumero || '',
           contactoTelefono: cliente.contactoTelefono || ''
         },
         asunto: source.asunto || DEFAULT_ASUNTO,
@@ -1001,7 +978,6 @@ export default {
               ruc: row.RUC,
               direccion: row.Direccion,
               contactoNombre: row.Contacto,
-              contactoNumero: '',
               contactoTelefono: row.Telefono
             }
           }))
@@ -1026,10 +1002,38 @@ export default {
 
       return value
     },
+    parseLocalDate(value) {
+      if (typeof value === 'string') {
+        const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+
+        if (match) {
+          const [, year, month, day] = match
+          return new Date(Number(year), Number(month) - 1, Number(day))
+        }
+      }
+
+      return new Date(value)
+    },
+    normalizeDateInput(value) {
+      if (!value) return ''
+
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return value
+      }
+
+      const parsedDate = this.parseLocalDate(value)
+      if (Number.isNaN(parsedDate.getTime())) return ''
+
+      const year = parsedDate.getFullYear()
+      const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+      const day = String(parsedDate.getDate()).padStart(2, '0')
+
+      return `${year}-${month}-${day}`
+    },
     formatShortDate(date) {
       if (!date) return ''
 
-      const parsedDate = new Date(date)
+      const parsedDate = this.parseLocalDate(date)
       if (Number.isNaN(parsedDate.getTime())) return ''
 
       return new Intl.DateTimeFormat('es-PE', {
@@ -1122,9 +1126,13 @@ h3 {
 }
 
 .table-actions {
+  width: min(760px, 100%);
   display: flex;
-  align-items: flex-end;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
   gap: 12px;
+  margin: 16px 20px 18px auto;
 }
 
 .table-header span {
@@ -1132,18 +1140,13 @@ h3 {
   font-size: 14px;
 }
 
-.search-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: min(320px, 100%);
-  color: #475569;
-  font-size: 13px;
-  font-weight: 700;
+.table-action-col {
+  padding: 0;
 }
 
 .excel-button {
-  margin-bottom: 1px;
+  width: 100%;
+  min-height: 40px;
   font-weight: 700;
   text-transform: none;
 }
@@ -1152,7 +1155,6 @@ h3 {
   display: none;
 }
 
-.search-field input,
 .form-grid input,
 .form-grid textarea {
   width: 100%;
@@ -1164,7 +1166,6 @@ h3 {
   outline: none;
 }
 
-.search-field input:focus,
 .form-grid input:focus,
 .form-grid textarea:focus {
   border-color: #0f766e;
@@ -1485,16 +1486,21 @@ td {
 }
 
 @media (max-width: 640px) {
+
   .page-header,
   .table-header,
-  .table-actions,
   .details-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
+  .table-actions {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+
   .primary-button,
-  .excel-button,
   .details-header .secondary-button {
     width: 100%;
   }
