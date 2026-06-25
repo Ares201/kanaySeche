@@ -9,7 +9,6 @@
         Nueva carta
       </button>
     </div>
-
     <div class="content">
       <div class="table-header">
         <div>
@@ -19,8 +18,12 @@
       </div>
       <v-row class="table-actions" dense align="end" justify="end">
         <v-col class="table-action-col" cols="3">
+          <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
+            clearable />
+        </v-col>
+        <v-col class="table-action-col" cols="4">
           <v-text-field v-model.trim="search" dense hide-details outlined type="search"
-            label="Buscar por cliente o correlativo" placeholder="Ej. CARTA-001" />
+            label="Buscar cliente o correlativo" placeholder="Ej. CARTA-001" />
         </v-col>
         <v-col class="table-action-col" cols="3">
           <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Filtrar por fecha" />
@@ -152,7 +155,9 @@
                     Cargando clientes...
                   </div>
                   <div v-else-if="filteredClientesOptions.length === 0" class="autocomplete-empty">
-                    No hay clientes disponibles.
+                    <v-btn small color="green" size="x-large" outlined @mousedown.prevent="openQuickCliente">
+                      + Agregar cliente
+                    </v-btn>
                   </div>
                 </div>
               </label>
@@ -204,7 +209,7 @@
             <v-col v-if="showExtraFields" cols="12" md="4">
               <label>
                 Correlativo
-                <input v-model.trim="form.correlativo" type="text" required placeholder="CARTA-001-2026">
+                <input v-model.trim="form.correlativo" type="text" required placeholder="CARTA">
               </label>
             </v-col>
 
@@ -327,8 +332,10 @@ export default {
   },
   data() {
     return {
+      estados: CARTA_ESTADOS,
       search: '',
       fechaFiltro: this.getTodayInputDate(),
+      estadoFiltro: null,
       loading: false,
       isModalOpen: false,
       isPreviewOpen: false,
@@ -340,24 +347,34 @@ export default {
       clienteSearch: '',
       isClienteDropdownOpen: false,
       showExtraFields: false,
-      cartas: []
+      cartas: [],
     }
   },
   computed: {
     filteredCartas() {
       const term = this.search.toLowerCase()
       const fechaFiltro = this.fechaFiltro
+      const estadoFiltro = this.estadoFiltro
 
-      if (!term && !fechaFiltro) return this.cartas
+      if (!term && !fechaFiltro && !estadoFiltro) return this.cartas
 
       return this.cartas.filter(carta => {
         const cliente = carta.cliente || {}
-        const matchesSearch = !term ||
+
+        const matchesSearch =
+          !term ||
           (cliente.nombre || '').toLowerCase().includes(term) ||
           (carta.correlativo || '').toLowerCase().includes(term)
-        const matchesDate = !fechaFiltro || this.normalizeDateInput(carta.fecha) === fechaFiltro
 
-        return matchesSearch && matchesDate
+        const matchesDate =
+          !fechaFiltro ||
+          this.normalizeDateInput(carta.fecha) === fechaFiltro
+
+        const matchesEstado =
+          !estadoFiltro ||
+          carta.estadoProceso === estadoFiltro
+
+        return matchesSearch && matchesDate && matchesEstado
       })
     },
     filteredClientesOptions() {
@@ -381,6 +398,9 @@ export default {
     this.loadClientes()
   },
   methods: {
+    openQuickCliente() {
+      alert('Agregar cliente')
+    },
     getEmptyForm() {
       return {
         id: '',
@@ -630,12 +650,26 @@ export default {
               .page {
                 width: 210mm;
                 height: 297mm;
+                position: relative;
                 padding:
-                  42mm
+                  60mm
                   24mm
                   25mm
                   30mm;
+              }
+
+              .membrete {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 210mm;
+                height: 297mm;
+                z-index: 0;
+              }
+
+              .contenido-documento {
                 position: relative;
+                z-index: 1;
               }
 
               .fecha {
@@ -711,45 +745,55 @@ export default {
           </head>
           <body>
             <div class="page">
-              <div class="fecha">
-                ${escapeHtml(carta.lugar)}, ${escapeHtml(formatPeruDate(carta.fecha))}
-              </div>
+              <img
+                src="${window.location.origin}/membrete.jpg"
+                class="membrete"
+                alt="Membrete"
+              />
 
-              <div class="correlativo">
-                ${escapeHtml(carta.correlativo)}
-              </div>
+              <div class="contenido-documento">
 
-              <div class="bloque">
-                <strong>Señores:</strong><br>
-                <strong>${escapeHtml(cliente.nombre)}</strong><br>
-                ${escapeHtml(cliente.direccion)}
-              </div>
+                <div class="fecha">
+                  ${escapeHtml(carta.lugar)}, ${escapeHtml(formatPeruDate(carta.fecha))}
+                </div>
 
-              <div class="bloque">
-                <strong>Atención:</strong><br>
-                <strong>${escapeHtml(cliente.contactoNombre)}</strong><br>
-                Contacto: ${escapeHtml(cliente.contactoTelefono)}
-              </div>
+                <div class="correlativo">
+                  ${escapeHtml(carta.correlativo)}
+                </div>
 
-              <div class="asunto">
-                <strong>ASUNTO:</strong>
-                ${escapeHtml(carta.asunto)}
-              </div>
+                <div class="bloque">
+                  <strong>Señores:</strong><br>
+                  <strong>${escapeHtml(cliente.nombre)}</strong><br>
+                  ${escapeHtml(cliente.direccion)}
+                </div>
 
-              <div class="contenido">
-                <p>
-                  ${textToHtml(carta.contexto)}
-                </p>
+                <div class="bloque">
+                  <strong>Atención:</strong><br>
+                  <strong>${escapeHtml(cliente.contactoNombre)}</strong><br>
+                  Contacto: ${escapeHtml(cliente.contactoTelefono)}
+                </div>
 
-                ${detallesHtml}
+                <div class="asunto">
+                  <strong>ASUNTO:</strong>
+                  ${escapeHtml(carta.asunto)}
+                </div>
 
-                <p>
-                  ${textToHtml(carta.despedida)}
-                </p>
-              </div>
+                <div class="contenido">
+                  <p>
+                    ${textToHtml(carta.contexto)}
+                  </p>
 
-              <div class="firma">
-                <p>Atentamente,</p>
+                  ${detallesHtml}
+
+                  <p>
+                    ${textToHtml(carta.despedida)}
+                  </p>
+                </div>
+
+                <div class="firma">
+                  <p>Atentamente,</p>
+                </div>
+
               </div>
             </div>
           </body>
@@ -917,8 +961,17 @@ export default {
     },
     getNextCorrelativo() {
       const year = new Date().getFullYear()
-      const nextNumber = this.cartas ? this.cartas.length + 1 : 1
-      return `CARTA-${String(nextNumber).padStart(3, '0')}-${year}`
+      const month = String(new Date().getMonth() + 1).padStart(2, '0')
+      if (!this.cartas || this.cartas.length === 0) {
+        return `SGP-CH-${month}.${year}-0001`
+      }
+      const ultimaCarta = this.cartas[0]
+      const ultimoNumero = parseInt(
+        ultimaCarta.correlativo.split('-').pop(),
+        10
+      )
+      const siguiente = String(ultimoNumero + 1).padStart(4, '0')
+      return `SGP-CH-${month}.${year}-${siguiente}`
     },
     getTodayInputDate() {
       const today = new Date()
@@ -1448,7 +1501,7 @@ td {
 
 .secondary-button--small {
   min-height: 34px;
-  padding: 0 12px;
+  padding: 0px 12px;
 }
 
 .preview-header,

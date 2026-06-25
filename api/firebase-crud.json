@@ -1,5 +1,17 @@
 {
   "apis": {
+    "personal": {
+      "collection": "personal",
+      "model": "personal",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
+    },
     "envases": {
       "collection": "envases",
       "model": "envase",
