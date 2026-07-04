@@ -14,13 +14,8 @@
         </div>
       </NuxtLink>
 
-      <v-btn
-        icon
-        class="theme-button"
-        :aria-label="isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro'"
-        :title="isDarkMode ? 'Modo claro' : 'Modo oscuro'"
-        @click="toggleDarkMode"
-      >
+      <v-btn icon class="theme-button" :aria-label="isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro'"
+        :title="isDarkMode ? 'Modo claro' : 'Modo oscuro'" @click="toggleDarkMode">
         <v-icon>{{ isDarkMode ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
     </header>
@@ -53,26 +48,26 @@
         </button>
 
         <div v-show="configuracionOpen" class="submenu">
-          <!-- <NuxtLink class="nav-link" to="/configuracion/envases" @click.native="closeMenu">
+          <NuxtLink class="nav-link" to="/configuracion/envases" @click.native="closeMenu">
             Envases
-          </NuxtLink> -->
+          </NuxtLink>
           <NuxtLink class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">
             Residuos
           </NuxtLink>
           <!-- <NuxtLink class="nav-link" to="/configuracion/productos" @click.native="closeMenu">
             Productos
           </NuxtLink> -->
-          <NuxtLink class="nav-link" to="/configuracion/generador" @click.native="closeMenu">
+          <!-- <NuxtLink class="nav-link" to="/configuracion/generador" @click.native="closeMenu">
             Generador
-          </NuxtLink>
+          </NuxtLink> -->
           <NuxtLink class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">
             Clientes
           </NuxtLink>
 
-          <NuxtLink class="nav-link" to="/configuracion/personal" @click.native="closeMenu">
+          <!-- <NuxtLink class="nav-link" to="/configuracion/personal" @click.native="closeMenu">
             Personal
-          </NuxtLink>
-          
+          </NuxtLink> -->
+
           <!-- <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">
             Vehiculos
           </NuxtLink> -->
@@ -88,7 +83,7 @@
             Cartas
           </NuxtLink>
           <!-- <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
-            Firmar PDF
+            Tools PDF
           </NuxtLink> -->
         </div>
       </nav>

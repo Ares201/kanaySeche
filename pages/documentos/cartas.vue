@@ -94,7 +94,14 @@
                       <path d="M13.5 6.5l4 4" />
                     </svg>
                   </button>
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar"
+                  <button style="color: red;" class="icon-button" type="button" title="Anular" aria-label="Anular carta"
+                    @click="anularCarta(carta.id)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M8 16l8-8" />
+                    </svg>
+                  </button>
+                  <!-- <button class="icon-button icon-button--danger" type="button" title="Eliminar"
                     aria-label="Eliminar carta" @click="deleteCarta(carta.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 7h14" />
@@ -103,7 +110,7 @@
                       <path d="M8 7l1 13h6l1-13" />
                       <path d="M9 7V4h6v3" />
                     </svg>
-                  </button>
+                  </button> -->
                 </div>
               </td>
             </tr>
@@ -166,7 +173,7 @@
             <v-col cols="12" md="6">
               <label>
                 Direccion
-                <input v-model.trim="form.cliente.direccion" type="text" required placeholder="Av. Principal 123">
+                <input v-model.trim="form.cliente.direccion" type="text" placeholder="Av. Principal 123">
               </label>
             </v-col>
 
@@ -312,7 +319,7 @@ const DEFAULT_ASUNTO = 'Presentación de Documentos del Servicio Ambiental del /
 const DEFAULT_CONTEXTO = `De nuestra consideración:
 La presente tiene por finalidad saludarlo cordialmente en nombre de la Empresa KANAY S.A.C. – Séché Group Perú y a su vez hacerles llegar la documentación del Servicio de Disposición Final, según detalle:`
 const DEFAULT_DESPEDIDA = 'Sin otro particular me despido y le reiteramos nuestro atento saludo.'
-const CARTA_ESTADOS = ['Emitido', 'Enviado', 'Entregado']
+const CARTA_ESTADOS = ['Emitido', 'Enviado', 'Entregado', 'Anulado']
 const CARTA_EXCEL_COLUMNS = [
   'Correlativo',
   'Cliente',
@@ -476,15 +483,16 @@ export default {
     getEstadoClass(estado) {
       return String(estado || 'Emitido').toLowerCase()
     },
-    getEstadoIcon(estado) {
-      const icons = {
-        Emitido: 'mdi-file-document-check-outline',
-        Enviado: 'mdi-send',
-        Entregado: 'mdi-check-circle-outline'
-      }
+getEstadoIcon(estado) {
+  const icons = {
+    Emitido: 'mdi-file-document-check-outline',
+    Enviado: 'mdi-send',
+    Entregado: 'mdi-check-circle-outline',
+    Anulado: 'mdi-cancel'
+  }
 
-      return icons[estado] || icons.Emitido
-    },
+  return icons[estado] || icons.Emitido
+},
     getEstadoTitle(carta) {
       const nextEstado = this.getNextEstadoProceso(carta.estadoProceso)
 
@@ -561,6 +569,30 @@ export default {
         console.error(error)
       }
     },
+
+    async anularCarta(id) {
+      if (!window.confirm('¿Deseas anular esta carta?')) return
+
+      try {
+        const updatedCarta = await this.$firebaseApi.update('cartas', id, {
+          estadoProceso: 'Anulado'
+        })
+
+        this.cartas = this.cartas.map(carta => {
+          return carta.id === id
+            ? this.normalizeCarta({
+              ...carta,
+              ...updatedCarta,
+              estadoProceso: 'Anulado'
+            })
+            : carta
+        })
+      } catch (error) {
+        alert('No se pudo anular la carta')
+        console.error(error)
+      }
+    },
+
     async deleteCarta(id) {
       if (!window.confirm('Deseas eliminar esta carta?')) return
 
@@ -652,7 +684,7 @@ export default {
                 height: 297mm;
                 position: relative;
                 padding:
-                  60mm
+                  30mm
                   24mm
                   25mm
                   30mm;
@@ -1100,6 +1132,12 @@ export default {
 </script>
 
 <style scoped>
+.status-icon-button--anulado {
+  color: #dc2626 !important;
+  border-color: #fecaca;
+  background: #fee2e2;
+}
+
 .cartas-page {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
