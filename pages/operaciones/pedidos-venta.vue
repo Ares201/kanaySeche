@@ -41,13 +41,7 @@
             </v-list>
           </v-menu>
 
-          <input
-            ref="pedidosExcelInput"
-            class="excel-input"
-            type="file"
-            accept=".xlsx"
-            @change="importPedidos"
-          >
+          <input ref="pedidosExcelInput" class="excel-input" type="file" accept=".xlsx" @change="importPedidos">
 
           <label class="search-field">
             <span>Buscar por PV, cliente o placa</span>
@@ -62,38 +56,41 @@
             <tr>
               <th>PV</th>
               <th>Cliente</th>
-              <th>Placa</th>
-              <th>Fecha</th>
+              <!-- <th>Placa</th> -->
+              <!-- <th>Fecha</th> -->
               <th>Hora ingreso</th>
               <th>Peso neto</th>
-              <th>Items</th>
+              <!-- <th>Items</th> -->
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="pedido in filteredPedidos" :key="pedido.id">
+              <td>{{ formatDateInput(pedido.fecha) }}</td>
               <td>{{ pedido.codigo }}</td>
               <td>{{ pedido.cliente.nombre }}</td>
-              <td>{{ pedido.placa }}</td>
-              <td>{{ formatDateInput(pedido.fecha) }}</td>
-              <td>{{ pedido.horaIngreso }}</td>
+              <!-- <td>{{ pedido.placa }}</td> -->
+              <!-- <td>{{ pedido.horaIngreso }}</td> -->
               <td>{{ formatWeight(pedido.pesoNeto) }}</td>
-              <td>{{ pedido.detalle.length }}</td>
+              <!-- <td>{{ pedido.detalle.length }}</td> -->
               <td>
                 <div class="actions">
-                  <button class="icon-button" type="button" title="Preview" aria-label="Preview PV" @click="openPreviewModal(pedido)">
+                  <button class="icon-button" type="button" title="Preview" aria-label="Preview PV"
+                    @click="openPreviewModal(pedido)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
                   </button>
-                  <button class="icon-button" type="button" title="Editar" aria-label="Editar PV" @click="openEditModal(pedido)">
+                  <button class="icon-button" type="button" title="Editar" aria-label="Editar PV"
+                    @click="openEditModal(pedido)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
                       <path d="M13.5 6.5l4 4" />
                     </svg>
                   </button>
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar" aria-label="Eliminar PV" @click="deletePedido(pedido.id)">
+                  <button class="icon-button icon-button--danger" type="button" title="Eliminar"
+                    aria-label="Eliminar PV" @click="deletePedido(pedido.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 7h14" />
                       <path d="M10 11v6" />
@@ -134,30 +131,19 @@
             <v-col cols="12" md="3">
               <label>
                 Correlativo
-                <input v-model.trim="form.codigo" type="text" readonly>
+                <input v-model.trim="form.codigo" type="text">
               </label>
             </v-col>
 
             <v-col cols="12" md="5">
               <label class="autocomplete-field">
                 Cliente
-                <input
-                  v-model.trim="clienteSearch"
-                  type="search"
-                  required
-                  placeholder="Buscar cliente"
-                  autocomplete="off"
-                  @focus="clienteOptionsOpen = true"
-                  @input="handleClienteInput"
-                  @blur="closeClienteOptions"
-                >
+                <input v-model.trim="clienteSearch" type="search" required placeholder="Buscar cliente"
+                  autocomplete="off" @focus="clienteOptionsOpen = true" @input="handleClienteInput"
+                  @blur="closeClienteOptions">
                 <div v-if="clienteOptionsOpen" class="autocomplete-list">
-                  <button
-                    v-for="cliente in filteredClientesOptions"
-                    :key="cliente.id"
-                    type="button"
-                    @mousedown.prevent="selectCliente(cliente)"
-                  >
+                  <button v-for="cliente in filteredClientesOptions" :key="cliente.id" type="button"
+                    @mousedown.prevent="selectCliente(cliente)">
                     <strong>{{ cliente.nombre }}</strong>
                     <span>{{ cliente.ruc }}</span>
                   </button>
@@ -174,24 +160,12 @@
             <v-col cols="12" md="4">
               <label class="autocomplete-field">
                 Placa
-                <input
-                  v-model.trim="form.placa"
-                  type="search"
-                  required
-                  placeholder="Buscar placa"
-                  autocomplete="off"
-                  :disabled="!form.clienteId"
-                  @focus="placaOptionsOpen = true"
-                  @input="placaOptionsOpen = true"
-                  @blur="closePlacaOptions"
-                >
+                <input v-model.trim="form.placa" type="search" required placeholder="Buscar placa" autocomplete="off"
+                  :disabled="!form.clienteId" @focus="placaOptionsOpen = true" @input="placaOptionsOpen = true"
+                  @blur="closePlacaOptions">
                 <div v-if="placaOptionsOpen" class="autocomplete-list">
-                  <button
-                    v-for="vehiculo in filteredPlacaOptions"
-                    :key="vehiculo.placa"
-                    type="button"
-                    @mousedown.prevent="selectPlaca(vehiculo)"
-                  >
+                  <button v-for="vehiculo in filteredPlacaOptions" :key="vehiculo.placa" type="button"
+                    @mousedown.prevent="selectPlaca(vehiculo)">
                     <strong>{{ vehiculo.placa }}</strong>
                     <span>{{ vehiculo.descripcion || 'Sin descripcion' }}</span>
                   </button>
@@ -242,6 +216,18 @@
                 <input :value="formatWeight(pesoNeto)" type="text" readonly>
               </label>
             </v-col>
+            <v-col>
+              <label>
+                Peso Cliente
+                <input type="text" readonly :value="formatWeight(totalPesoCliente)">
+              </label>
+            </v-col>
+            <v-col>
+              <label>
+                Diferencia
+                <input type="text" readonly :value="formatWeight(diferenciaPeso)">
+              </label>
+            </v-col>
           </v-row>
 
           <div class="detail-header">
@@ -274,13 +260,7 @@
                 </v-list>
               </v-menu>
 
-              <input
-                ref="detalleExcelInput"
-                class="excel-input"
-                type="file"
-                accept=".xlsx"
-                @change="importDetalle"
-              >
+              <input ref="detalleExcelInput" class="excel-input" type="file" accept=".xlsx" @change="importDetalle">
             </div>
           </div>
 
@@ -288,9 +268,9 @@
             <table class="detail-edit-table">
               <colgroup>
                 <col class="detail-col-item">
-                <col class="detail-col-code">
+                <!-- <col class="detail-col-code"> -->
                 <col class="detail-col-name">
-                <col class="detail-col-code">
+                <!-- <col class="detail-col-code"> -->
                 <col class="detail-col-name">
                 <col class="detail-col-product">
                 <col class="detail-col-weight">
@@ -300,9 +280,9 @@
               <thead>
                 <tr>
                   <th>Item</th>
-                  <th>Codigo residuo</th>
+                  <!-- <th>Codigo residuo</th> -->
                   <th>Nombre residuo</th>
-                  <th>Generador</th>
+                  <!-- <th>Generador</th> -->
                   <th>Nombre generador</th>
                   <th>Producto</th>
                   <th>Peso declarado por cliente</th>
@@ -313,7 +293,7 @@
               <tbody>
                 <tr v-for="(row, index) in form.detalle" :key="index">
                   <td>{{ index + 1 }}</td>
-                  <td>
+                  <!-- <td>
                     <input
                       v-model.trim="row.codigoResiduo"
                       type="text"
@@ -322,18 +302,12 @@
                       @input="syncResiduoByCodigo(row)"
                       @change="syncResiduoByCodigo(row)"
                     >
-                  </td>
+                  </td> -->
                   <td>
-                    <input
-                      v-model.trim="row.nombreResiduo"
-                      type="text"
-                      list="residuos-nombre-list"
-                      placeholder="Residuo"
-                      @input="syncResiduoByNombre(row)"
-                      @change="syncResiduoByNombre(row)"
-                    >
+                    <input v-model.trim="row.nombreResiduo" type="text" list="residuos-nombre-list"
+                      placeholder="Residuo" @input="syncResiduoByNombre(row)" @change="syncResiduoByNombre(row)">
                   </td>
-                  <td>
+                  <!-- <td>
                     <input
                       v-model.trim="row.codigoGenerador"
                       type="text"
@@ -342,26 +316,14 @@
                       @input="syncGeneradorByCodigo(row)"
                       @change="syncGeneradorByCodigo(row)"
                     >
+                  </td> -->
+                  <td>
+                    <input v-model.trim="row.nombreGenerador" type="text" list="generadores-nombre-list"
+                      placeholder="Generador" @input="syncGeneradorByNombre(row)" @change="syncGeneradorByNombre(row)">
                   </td>
                   <td>
-                    <input
-                      v-model.trim="row.nombreGenerador"
-                      type="text"
-                      list="generadores-nombre-list"
-                      placeholder="Generador"
-                      @input="syncGeneradorByNombre(row)"
-                      @change="syncGeneradorByNombre(row)"
-                    >
-                  </td>
-                  <td>
-                    <input
-                      v-model.trim="row.producto"
-                      type="text"
-                      list="productos-list"
-                      placeholder="Producto"
-                      @input="syncProductoData(row)"
-                      @change="syncProductoData(row)"
-                    >
+                    <input v-model.trim="row.producto" type="text" list="productos-list" placeholder="Producto"
+                      @input="syncProductoData(row)" @change="syncProductoData(row)">
                   </td>
                   <td>
                     <input v-model.number="row.pesoDeclaradoCliente" type="number" min="0" step="0.01">
@@ -370,7 +332,8 @@
                     <input v-model.trim="row.zonaRecepcion" type="text" placeholder="Zona">
                   </td>
                   <td>
-                    <button class="icon-button icon-button--danger" type="button" title="Quitar item" aria-label="Quitar item" @click="removeDetalleRow(index)">
+                    <button class="icon-button icon-button--danger" type="button" title="Quitar item"
+                      aria-label="Quitar item" @click="removeDetalleRow(index)">
                       <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M5 12h14" />
                       </svg>
@@ -406,7 +369,6 @@
             </datalist>
           </div>
         </div>
-
         <div class="modal-actions">
           <button class="secondary-button" type="button" @click="closeModal">
             Cancelar
@@ -517,6 +479,16 @@ export default {
     }
   },
   computed: {
+    totalPesoCliente() {
+      return (this.form.detalle || []).reduce((total, row) => {
+        return total + (Number(row.pesoDeclaradoCliente) || 0)
+      }, 0)
+    },
+
+    diferenciaPeso() {
+      return this.pesoNeto - this.totalPesoCliente
+    },
+
     filteredPedidos() {
       const term = this.search.toLowerCase()
 
@@ -557,9 +529,9 @@ export default {
       const fallbackVehiculos = this.selectedCliente.vehiculos || []
       const byPlaca = new Map()
 
-      ;[...vehiculosFromMaster, ...fallbackVehiculos].forEach(vehiculo => {
-        if (vehiculo.placa) byPlaca.set(vehiculo.placa, vehiculo)
-      })
+        ;[...vehiculosFromMaster, ...fallbackVehiculos].forEach(vehiculo => {
+          if (vehiculo.placa) byPlaca.set(vehiculo.placa, vehiculo)
+        })
 
       return Array.from(byPlaca.values())
     },
@@ -910,7 +882,7 @@ export default {
             <div class="page-number">Page 1 of 1</div>
           </header>
 
-          <h1>Control de Ingreso de Residuos Peligrosos</h1>
+          <h1>Control de Ingreso <span style="font-weight: bold;">Provisional</span> de Residuos Peligrosos</h1>
 
           <section class="summary-grid">
             <div class="summary-left">
@@ -933,7 +905,6 @@ export default {
             <thead>
               <tr>
                 <th>Item</th>
-                <th>N° Boleta</th>
                 <th>Producto</th>
                 <th>Generador</th>
                 <th>Eje<br>Norte/Eje</th>
@@ -949,6 +920,7 @@ export default {
 
           <section class="observations-grid">
             <div class="observations-cell">Observaciones</div>
+            <div class="ZonaRecepcion-cell">Zona de recepcion</div>
             <div class="responsable-cell">Responsable</div>
             <div class="containers-title">Observaciones sobre los contenedores:</div>
             <div class="container-row">Depositos</div>
@@ -966,11 +938,11 @@ export default {
           <footer class="signature-grid">
             <div>
               <span></span>
-              VÂ°BÂ° EPC TRANSPORTE
+              VB° EPC TRANSPORTE
             </div>
             <div>
               <span></span>
-              VÂ°BÂ° LABORATORIO
+              VB° LABORATORIO
             </div>
           </footer>
         </main>
@@ -980,7 +952,6 @@ export default {
       return `
         <tr>
           <td>${index + 1}</td>
-          <td></td>
           <td>${this.escapeHtml(row.producto)}</td>
           <td>${this.escapeHtml(row.nombreGenerador || row.generador)}</td>
           <td>${this.escapeHtml(row.eje)}</td>
@@ -1103,8 +1074,10 @@ export default {
         .detail-table th:nth-child(7) { width: 30mm; }
         .detail-table th:nth-child(8) { width: 23mm; }
         .observations-grid {
+          margin-top: 3mm;
           display: grid;
           grid-template-columns: 1fr 45mm 45mm;
+          border-top: 1px solid #000;
           border-left: 1px solid #000;
           border-right: 1px solid #000;
           border-bottom: 1px solid #000;
@@ -1120,8 +1093,7 @@ export default {
           border-right: 0;
         }
         .observations-cell {
-          grid-column: 1 / 3;
-          min-height: 20mm !important;
+          grid-column: 1 / 2;
         }
         .responsable-cell {
           display: flex;
@@ -1526,7 +1498,7 @@ h3 {
 }
 
 .table-header,
-.table-header > div,
+.table-header>div,
 .detail-header {
   display: flex;
   gap: 12px;
@@ -1547,7 +1519,7 @@ h3 {
   border-bottom: 1px solid #e2e8f0;
 }
 
-.table-header > div {
+.table-header>div {
   flex-direction: column;
   gap: 4px;
 }
@@ -1986,28 +1958,29 @@ td {
 }
 
 .preview-sheet::v-deep .observations-grid {
+  margin-top: 3mm;
   display: grid;
   grid-template-columns: 1fr 45mm 45mm;
+  border-top: 1px solid #000;
   border-left: 1px solid #000;
   border-right: 1px solid #000;
   border-bottom: 1px solid #000;
   font-size: 8px;
 }
 
-.preview-sheet::v-deep .observations-grid > div {
+.preview-sheet::v-deep .observations-grid>div {
   min-height: 6mm;
   border-right: 1px solid #000;
   border-bottom: 1px solid #000;
   padding: 1.5mm;
 }
 
-.preview-sheet::v-deep .observations-grid > div:nth-child(3n) {
+.preview-sheet::v-deep .observations-grid>div:nth-child(3n) {
   border-right: 0;
 }
 
 .preview-sheet::v-deep .observations-cell {
-  grid-column: 1 / 3;
-  min-height: 20mm !important;
+  grid-column: 1 / 2;
 }
 
 .preview-sheet::v-deep .responsable-cell {
@@ -2039,6 +2012,7 @@ td {
 }
 
 @media (max-width: 640px) {
+
   .page-header,
   .table-header,
   .table-actions,
