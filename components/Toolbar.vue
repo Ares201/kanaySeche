@@ -31,17 +31,6 @@
       </div>
 
       <nav class="nav">
-        <button class="module-button" type="button" @click="toggleOperaciones">
-          <span>Operaciones</span>
-          <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
-        </button>
-
-        <div v-show="operacionesOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">
-            Pedido de venta
-          </NuxtLink>
-        </div>
-
         <button class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>
@@ -71,6 +60,19 @@
           <!-- <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">
             Vehiculos
           </NuxtLink> -->
+        </div>
+        <button class="module-button" type="button" @click="toggleOperaciones">
+          <span>Operaciones</span>
+          <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
+        </button>
+
+        <div v-show="operacionesOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">
+            Pedido de venta
+          </NuxtLink>
+          <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">
+            Recepcion de cisternas
+          </NuxtLink>
         </div>
 
         <button class="module-button module-button--spaced" type="button" @click="toggleDocumentos">

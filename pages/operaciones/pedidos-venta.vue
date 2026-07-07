@@ -484,7 +484,6 @@ export default {
         return total + (Number(row.pesoDeclaradoCliente) || 0)
       }, 0)
     },
-
     diferenciaPeso() {
       return this.pesoNeto - this.totalPesoCliente
     },
