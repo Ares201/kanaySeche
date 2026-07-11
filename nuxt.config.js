@@ -48,5 +48,9 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
+    transpile: [
+      'chart.js',
+      'vue-chartjs' // si lo estás usando
+    ]
   }
 }

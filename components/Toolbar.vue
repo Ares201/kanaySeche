@@ -31,6 +31,9 @@
       </div>
 
       <nav class="nav">
+        <!-- <NuxtLink class="nav-link" to="/" @click.native="closeMenu">
+          Dashboard
+        </NuxtLink> -->
         <button class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>

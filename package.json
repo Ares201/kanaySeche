@@ -11,6 +11,7 @@
   "dependencies": {
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/vuetify": "^1.12.3",
+    "chart.js": "^4.5.1",
     "core-js": "^3.25.3",
     "firebase": "^8.10.1",
     "html2pdf.js": "^0.10.1",
