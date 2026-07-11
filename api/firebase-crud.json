@@ -107,6 +107,18 @@
         "update": "update",
         "delete": "remove"
       }
+    },
+    "ingresosCisterna": {
+      "collection": "ingresosCisterna",
+      "model": "ingresoCisterna",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
     }
   }
 }

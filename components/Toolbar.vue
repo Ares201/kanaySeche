@@ -57,9 +57,9 @@
             Personal
           </NuxtLink> -->
 
-          <!-- <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">
+          <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">
             Vehiculos
-          </NuxtLink> -->
+          </NuxtLink>
         </div>
         <button class="module-button" type="button" @click="toggleOperaciones">
           <span>Operaciones</span>
