@@ -141,3 +141,28 @@ export function normalizeExcelDate(excelDate) {
   }
   return ''
 }
+
+export function parseDate(dateInput) {
+  if (!dateInput) return null
+  if (dateInput instanceof Date) return dateInput
+  if (typeof dateInput === 'string') {
+    // Si es ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm)
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateInput)) {
+      return new Date(dateInput)
+    }
+    // Si es "DD/MM/YYYY" (formato que devuelve formatDateOnly)
+    const partes = dateInput.split('/')
+    if (partes.length === 3) {
+      const dia = parseInt(partes[0], 10)
+      const mes = parseInt(partes[1], 10) - 1
+      const anio = parseInt(partes[2], 10)
+      return new Date(anio, mes, dia)
+    }
+    return new Date(dateInput)
+  }
+  if (typeof dateInput === 'object' && dateInput.seconds !== undefined) {
+    // Firestore timestamp
+    return new Date(dateInput.seconds * 1000 + (dateInput.nanoseconds || 0) / 1e6)
+  }
+  return new Date(dateInput)
+}

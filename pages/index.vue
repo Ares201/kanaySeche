@@ -3,8 +3,8 @@
     <!-- Encabezado -->
     <div class="dashboard-header">
       <div>
-        <p class="eyebrow">Resumen</p>
-        <h1>Dashboard de Ingresos</h1>
+        <p class="eyebrow">Dashboard</p>
+        <h1>Gráficos</h1>
       </div>
     </div>
 
@@ -12,45 +12,75 @@
     <div class="filters">
       <div class="filter-group">
         <label>Desde</label>
-        <input v-model="fechaInicio" type="date" @change="actualizarDashboard" />
+        <input v-model="fechaInicio" type="date" />
       </div>
       <div class="filter-group">
         <label>Hasta</label>
-        <input v-model="fechaFin" type="date" @change="actualizarDashboard" />
+        <input v-model="fechaFin" type="date" />
       </div>
       <button class="secondary-button" @click="resetFiltros">Resetear</button>
       <button class="secondary-button" @click="mostrarTodo">Mostrar todo</button>
     </div>
 
-    <!-- Tarjetas de estadísticas -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <span class="stat-label">Total ingresos</span>
-        <span class="stat-value">{{ totalIngresos }}</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Promedio diario</span>
-        <span class="stat-value">{{ promedioDiario }}</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Días con datos</span>
-        <span class="stat-value">{{ diasConDatos }}</span>
-      </div>
-    </div>
+    <v-row>
+      <!-- Columna izquierda: Ingresos Cisterna -->
+      <v-col cols="12" md="6">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total ingresos</span>
+            <span class="stat-value">{{ totalIngresos }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Promedio diario</span>
+            <span class="stat-value">{{ promedioDiario }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Días con datos</span>
+            <span class="stat-value">{{ diasConDatos }}</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <h3>Ingresos Cisterna</h3>
+          <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
+          <canvas v-else ref="chartCanvas" height="250"></canvas>
+        </div>
+      </v-col>
 
-    <!-- Gráfico -->
-    <div class="chart-container">
-      <h3>Ingresos por día</h3>
-      <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
-      <canvas v-else ref="chartCanvas" height="250"></canvas>
-    </div>
+      <!-- Columna derecha: Estado de Cartas -->
+      <v-col cols="12" md="6">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Emitidos</span>
+            <span class="stat-value">{{ totalEmitidos }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Enviados</span>
+            <span class="stat-value">{{ totalEnviados }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Entregados</span>
+            <span class="stat-value">{{ totalEntregados }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Anulados</span>
+            <span class="stat-value">{{ totalAnulados }}</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <h3>Estado de Cartas</h3>
+          <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
+          <canvas v-else ref="chartCanvas2" height="250"></canvas>
+        </div>
+      </v-col>
+    </v-row>
   </section>
 </template>
 
 <script>
 import Chart from 'chart.js/auto'
-import { formatDateOnly } from '~/utils/formatters'
 import { normalizeIngresoCisterna } from '~/models/ingresoCisterna'
+// IMPORTANTE: Asegúrate de tener un normalizeCarta o usa normalizeCliente si es el mismo
+import { normalizeCliente } from '~/models/cliente' // o normalizeCarta
 
 export default {
   name: 'IndexPage',
@@ -58,71 +88,40 @@ export default {
     return {
       loading: false,
       ingresos: [],
+      cartas: [],
       fechaInicio: '',
       fechaFin: '',
-      chartInstance: null
+      chartInstance: null,
+      chartInstance2: null,
     }
   },
-  computed: {
-    // Convierte fechAIngreso a Date de forma robusta
-    parseDate(dateInput) {
-      if (!dateInput) return null
-      if (dateInput instanceof Date) return dateInput
-      if (typeof dateInput === 'string') {
-        // Si es ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm)
-        if (/^\d{4}-\d{2}-\d{2}/.test(dateInput)) {
-          return new Date(dateInput)
-        }
-        // Si es "DD/MM/YYYY" (formato que devuelve formatDateOnly)
-        const partes = dateInput.split('/')
-        if (partes.length === 3) {
-          const dia = parseInt(partes[0], 10)
-          const mes = parseInt(partes[1], 10) - 1
-          const anio = parseInt(partes[2], 10)
-          return new Date(anio, mes, dia)
-        }
-        return new Date(dateInput)
-      }
-      if (typeof dateInput === 'object' && dateInput.seconds !== undefined) {
-        // Firestore timestamp
-        return new Date(dateInput.seconds * 1000 + (dateInput.nanoseconds || 0) / 1e6)
-      }
-      return new Date(dateInput)
-    },
 
+  computed: {
     ingresosFiltrados() {
-      // Si no hay filtros, devolver todos
+      if (!this.ingresos.length) return []
       if (!this.fechaInicio && !this.fechaFin) return this.ingresos
 
-      const inicio = this.fechaInicio ? new Date(this.fechaInicio) : null
-      const fin = this.fechaFin ? new Date(this.fechaFin) : null
-      if (fin) fin.setHours(23, 59, 59, 999)
-
-      return this.ingresos.filter(i => {
-        const fecha = this.parseDate(i.fechaIngreso)
-        if (!fecha) return false
-        if (inicio && fecha < inicio) return false
-        if (fin && fecha > fin) return false
+      return this.ingresos.filter(item => {
+        const fechaItem = this.obtenerFechaString(item.fechaIngreso)
+        if (!fechaItem) return false
+        if (this.fechaInicio && fechaItem < this.fechaInicio) return false
+        if (this.fechaFin && fechaItem > this.fechaFin) return false
         return true
       })
     },
 
-    datosGrafico() {
+    datosGraficoIngresos() {
       const grupos = {}
       this.ingresosFiltrados.forEach(i => {
-        const dia = formatDateOnly(i.fechaIngreso)
-        grupos[dia] = (grupos[dia] || 0) + 1
+        const dia = this.formatearFechaDDMMYYYY(i.fechaIngreso)
+        if (dia) grupos[dia] = (grupos[dia] || 0) + 1
       })
       const fechas = Object.keys(grupos).sort((a, b) => {
-        // Ordenar por fecha real (DD/MM/YYYY)
         const [d1, m1, y1] = a.split('/').map(Number)
         const [d2, m2, y2] = b.split('/').map(Number)
         return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2)
       })
-      return {
-        labels: fechas,
-        counts: fechas.map(f => grupos[f])
-      }
+      return { labels: fechas, counts: fechas.map(f => grupos[f]) }
     },
 
     totalIngresos() {
@@ -135,63 +134,171 @@ export default {
     },
 
     diasConDatos() {
-      return this.datosGrafico.labels.length
-    }
+      return this.datosGraficoIngresos.labels.length
+    },
+
+    // ------------------------------------------------------------
+    // CARTAS FILTRADAS
+    // ------------------------------------------------------------
+    cartasFiltradas() {
+      if (!this.cartas.length) return []
+      if (!this.fechaInicio && !this.fechaFin) return this.cartas
+
+      return this.cartas.filter(item => {
+        // Usamos fechaCreacion (timestamp) o fecha (string) - priorizamos fechaCreacion
+        const fechaItem = this.obtenerFechaString(item.fechaCreacion || item.fecha)
+        if (!fechaItem) return false
+        if (this.fechaInicio && fechaItem < this.fechaInicio) return false
+        if (this.fechaFin && fechaItem > this.fechaFin) return false
+        return true
+      })
+    },
+
+    // Totales por estadoProceso
+    totalEmitidos() {
+      return this.cartasFiltradas.filter(c => c.estadoProceso === 'Emitido').length
+    },
+    totalEnviados() {
+      return this.cartasFiltradas.filter(c => c.estadoProceso === 'Enviado').length
+    },
+    totalEntregados() {
+      return this.cartasFiltradas.filter(c => c.estadoProceso === 'Entregado').length
+    },
+    totalAnulados() {
+      return this.cartasFiltradas.filter(c => c.estadoProceso === 'Anulado').length
+    },
+
+    datosGraficoEstados() {
+      const estados = ['Emitido', 'Enviado', 'Entregado', 'Anulado']
+      const counts = estados.map(e => this.cartasFiltradas.filter(c => c.estadoProceso === e).length)
+      return { labels: estados, counts }
+    },
   },
+
   watch: {
-    ingresosFiltrados: {
-      deep: true,
-      handler() {
-        this.renderizarGrafico()
-      }
-    }
+    ingresosFiltrados() {
+      this.renderizarGraficoIngresos()
+    },
+    cartasFiltradas() {
+      this.renderizarGraficoEstados()
+    },
   },
+
   mounted() {
     this.cargarDatos()
+    console.log('Cartas', this.cartas)
   },
+
   beforeUnmount() {
     if (this.chartInstance) {
       this.chartInstance.destroy()
       this.chartInstance = null
     }
+    if (this.chartInstance2) {
+      this.chartInstance2.destroy()
+      this.chartInstance2 = null
+    }
   },
+
   methods: {
+    // ------------------------------------------------------------
+    // UTILIDADES DE FECHAS
+    // ------------------------------------------------------------
+    obtenerFechaString(fecha) {
+      if (!fecha) return null
+      let dateObj
+      if (fecha instanceof Date) {
+        dateObj = fecha
+      } else if (typeof fecha === 'object' && fecha.seconds !== undefined) {
+        // Firestore timestamp
+        dateObj = new Date(fecha.seconds * 1000 + fecha.nanoseconds / 1000000)
+      } else if (typeof fecha === 'string') {
+        // Si es string en formato YYYY-MM-DD o ISO
+        dateObj = new Date(fecha)
+      } else {
+        dateObj = new Date(fecha)
+      }
+      if (isNaN(dateObj.getTime())) return null
+      const y = dateObj.getFullYear()
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0')
+      const d = String(dateObj.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
+    },
+
+    formatearFechaDDMMYYYY(fecha) {
+      const fechaStr = this.obtenerFechaString(fecha)
+      if (!fechaStr) return null
+      const [y, m, d] = fechaStr.split('-')
+      return `${d}/${m}/${y}`
+    },
+
+    formatearInputDate(date) {
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const d = String(date.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
+    },
+
+    // ------------------------------------------------------------
+    // CARGA DE DATOS
+    // ------------------------------------------------------------
     async cargarDatos() {
       this.loading = true
+      const hoy = new Date()
+
+      this.fechaInicio = this.formatearInputDate(
+        new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+      )
+      this.fechaFin = this.formatearInputDate(hoy)
+
       try {
-        const docs = await this.$firebaseApi.list('ingresosCisterna')
-        this.ingresos = docs.map(normalizeIngresoCisterna).filter(i => i.estado !== false)
-        console.log('Ingresos cargados:', this.ingresos.length)
-        // Por defecto, mostrar todos (sin filtros)
-        this.mostrarTodo()
+        const [ingresosDocs, cartasDocs] = await Promise.all([
+          this.$firebaseApi.list('ingresosCisterna'),
+          this.$firebaseApi.list('cartas'),
+          console.log('Cartas docs', cartasDocs)
+        ])
+
+        this.ingresos = ingresosDocs
+          .map(normalizeIngresoCisterna)
+          .filter(i => i.estado !== false)
+
+        // Normaliza las cartas. Si no tienes normalizeCarta, usa el mapper directo
+        this.cartas = cartasDocs.map(doc => {
+          // Si normalizeCliente funciona, úsalo; sino, haz un mapeo manual
+          return normalizeCliente(doc) // o normalizeCarta(doc)
+        })
+
+        // Opcional: filtrar cartas inactivas si tienen campo estado
+        // this.cartas = this.cartas.filter(c => c.estado !== false)
+
       } catch (error) {
-        console.error('Error cargando ingresos:', error)
+        console.error('Error al cargar datos:', error)
         alert('No se pudieron cargar los datos')
       } finally {
         this.loading = false
       }
     },
 
+    resetFiltros() {
+      const hoy = new Date()
+      this.fechaInicio = this.formatearInputDate(
+        new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+      )
+      this.fechaFin = this.formatearInputDate(hoy)
+    },
+
     mostrarTodo() {
       this.fechaInicio = ''
       this.fechaFin = ''
-      this.renderizarGrafico()
     },
 
-    resetFiltros() {
-      // Puedes definir un rango por defecto (ej. último mes) o simplemente mostrar todo
-      this.mostrarTodo()
-    },
-
-    actualizarDashboard() {
-      // El watch se encarga
-    },
-
-    renderizarGrafico() {
+    // ------------------------------------------------------------
+    // RENDERIZADO DE GRÁFICOS
+    // ------------------------------------------------------------
+    renderizarGraficoIngresos() {
       this.$nextTick(() => {
         const canvas = this.$refs.chartCanvas
         if (!canvas) return
-
         const ctx = canvas.getContext('2d')
 
         if (this.chartInstance) {
@@ -199,9 +306,7 @@ export default {
           this.chartInstance = null
         }
 
-        const { labels, counts } = this.datosGrafico
-        console.log('Datos para gráfico:', { labels, counts })
-
+        const { labels, counts } = this.datosGraficoIngresos
         if (labels.length === 0) {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
           ctx.fillStyle = '#94a3b8'
@@ -211,20 +316,17 @@ export default {
           return
         }
 
-        // Crear gráfico
         this.chartInstance = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: labels,
-            datasets: [
-              {
-                label: 'Ingresos',
-                data: counts,
-                backgroundColor: '#0f766e',
-                borderRadius: 4,
-                barPercentage: 0.6
-              }
-            ]
+            datasets: [{
+              label: 'Ingresos',
+              data: counts,
+              backgroundColor: '#0f766e',
+              borderRadius: 4,
+              barPercentage: 0.6
+            }]
           },
           options: {
             responsive: true,
@@ -251,13 +353,72 @@ export default {
           }
         })
       })
+    },
+
+    renderizarGraficoEstados() {
+      this.$nextTick(() => {
+        const canvas = this.$refs.chartCanvas2
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+
+        if (this.chartInstance2) {
+          this.chartInstance2.destroy()
+          this.chartInstance2 = null
+        }
+
+        const { labels, counts } = this.datosGraficoEstados
+        const total = counts.reduce((a, b) => a + b, 0)
+
+        if (total === 0) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.fillStyle = '#94a3b8'
+          ctx.font = '14px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.fillText('No hay datos', canvas.width / 2, canvas.height / 2)
+          return
+        }
+
+        this.chartInstance2 = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Cantidad',
+              data: counts,
+              backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444'],
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) => `${context.raw} carta(s)`
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 }
+              },
+              y: {
+                grid: { display: false }
+              }
+            }
+          }
+        })
+      })
     }
   }
 }
 </script>
 
 <style scoped>
-/* Estilos iguales que antes... */
 .home-page {
   width: min(960px, calc(100% - 32px));
   margin: 0 auto;
@@ -337,13 +498,13 @@ h1 {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .stat-card {
-  padding: 16px;
+  padding: 12px;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -360,8 +521,8 @@ h1 {
 
 .stat-value {
   display: block;
-  margin-top: 6px;
-  font-size: 24px;
+  margin-top: 4px;
+  font-size: 22px;
   font-weight: 700;
   color: #0f172a;
 }
@@ -371,6 +532,7 @@ h1 {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
+  margin-top: 8px;
 }
 
 .chart-container h3 {

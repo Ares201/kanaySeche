@@ -483,16 +483,16 @@ export default {
     getEstadoClass(estado) {
       return String(estado || 'Emitido').toLowerCase()
     },
-getEstadoIcon(estado) {
-  const icons = {
-    Emitido: 'mdi-file-document-check-outline',
-    Enviado: 'mdi-send',
-    Entregado: 'mdi-check-circle-outline',
-    Anulado: 'mdi-cancel'
-  }
+    getEstadoIcon(estado) {
+      const icons = {
+        Emitido: 'mdi-file-document-check-outline',
+        Enviado: 'mdi-send',
+        Entregado: 'mdi-check-circle-outline',
+        Anulado: 'mdi-cancel'
+      }
 
-  return icons[estado] || icons.Emitido
-},
+      return icons[estado] || icons.Emitido
+    },
     getEstadoTitle(carta) {
       const nextEstado = this.getNextEstadoProceso(carta.estadoProceso)
 
