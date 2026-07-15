@@ -134,13 +134,34 @@
         <div class="modal-header">
           <h2>{{ editingId ? 'Editar carta' : 'Nueva carta' }}</h2>
           <div class="modal-header-actions">
+
             <label class="radio-toggle">
-              <input :checked="showExtraFields" type="radio" @click.prevent="showExtraFields = !showExtraFields">
+              <input 
+                v-model="form.direccionAlterna"
+                type="checkbox"
+                @change="toggleRecojoPlanta"
+              >
+              Recojo en planta
+            </label>
+
+            <label class="radio-toggle">
+              <input 
+                :checked="showExtraFields" 
+                type="radio" 
+                @click.prevent="showExtraFields = !showExtraFields"
+              >
               Mostrar campos
             </label>
-            <button type="button" class="modal-close" aria-label="Cerrar modal" @click="closeModal">
+
+            <button 
+              type="button" 
+              class="modal-close" 
+              aria-label="Cerrar modal" 
+              @click="closeModal"
+            >
               x
             </button>
+
           </div>
         </div>
 
@@ -171,44 +192,49 @@
             </v-col>
 
             <v-col cols="12" md="6">
-              <label>
-                Direccion
-                <input v-model.trim="form.cliente.direccion" type="text" placeholder="Av. Principal 123">
-              </label>
-            </v-col>
+              <label>Direccion
+                <input v-model.trim="form.cliente.direccion"
+                  :disabled="form.direccionAlterna"
+                  type="text"
+                  placeholder="Av. Principal 123"
+                  style="flex:1;">
+              </label>    
+            </v-col>    
 
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="6">
               <label>
                 Contacto
-                <input v-model.trim="form.cliente.contactoNombre" type="text" required
+                <input v-model.trim="form.cliente.contactoNombre" type="text"
                   placeholder="Nombre del contacto">
               </label>
             </v-col>
 
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="6">
               <label>
                 Telefono
-                <input v-model.trim="form.cliente.contactoTelefono" type="text" required placeholder="999 999 999">
+                <input v-model.trim="form.cliente.contactoTelefono" type="text" placeholder="999 999 999">
               </label>
             </v-col>
 
-            <v-col cols="12">
-              <label>
-                Asunto
-                <input v-model.trim="form.asunto" type="text" required>
-              </label>
-            </v-col>
+            <v-row dense>
+              <v-col cols="12" md="10">
+                <label>
+                  Asunto
+                  <input :value="form.asunto" type="text" readonly>
+                </label>
+              </v-col>
+
+              <v-col cols="12" md="2">
+                <label>
+                  Fecha del servicio
+                  <input v-model="form.fecha" type="date" required @change="actualizarAsunto"/>
+                </label>
+              </v-col>
+            </v-row>
 
             <v-col v-if="showExtraFields" cols="12" md="4">
               <label>
-                Lugar
-                <input v-model.trim="form.lugar" type="text" required placeholder="Lima">
-              </label>
-            </v-col>
-
-            <v-col v-if="showExtraFields" cols="12" md="4">
-              <label>
-                Fecha
+                Fecha de emisión
                 <input v-model="form.fecha" type="date" required>
               </label>
             </v-col>
@@ -227,7 +253,7 @@
               </label>
             </v-col>
 
-            <v-col v-if="showExtraFields" cols="12" md="8">
+            <v-col v-if="showExtraFields" cols="12" md="12">
               <label>
                 Despedida
                 <textarea v-model.trim="form.despedida" rows="2" required placeholder="Texto de despedida" />
@@ -244,28 +270,120 @@
             <v-col cols="12">
               <div class="details-header">
                 <h3>Detalles</h3>
-                <button class="secondary-button secondary-button--small" type="button" @click="addDetalle">
-                  Agregar item
-                </button>
+                <v-menu offset-y>
+                  <template #activator="{ on, attrs }">
+                    <button
+                      class="secondary-button secondary-button--small"
+                      v-bind="attrs"
+                      v-on="on"
+                      type="button"
+                    >
+                      Añadir
+                    </button>
+                  </template>
+                  
+                  <v-list dense>
+
+                    <v-list-item @click="addDetalle('Manifiesto Generador')">
+                      <v-list-item-title>Manifiesto Generador</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Manifiesto Transportista')">
+                      <v-list-item-title>Manifiesto Transportista</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Manifiesto Disposición Final')">
+                      <v-list-item-title>Manifiesto Disposición Final</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Manifiesto Control Administrativo')">
+                      <v-list-item-title>Manifiesto Control Administrativo</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Guía Transportista')">
+                      <v-list-item-title>Guía Transportista</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Guía Remitente')">
+                      <v-list-item-title>Guía Remitente</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Ticket de Pesaje')">
+                      <v-list-item-title>Ticket de Pesaje</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Acta Notarial')">
+                      <v-list-item-title>Acta Notarial</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="addDetalle('Otros')">
+                      <v-list-item-title>Otros...</v-list-item-title>
+                    </v-list-item>
+
+                  </v-list>
+
+                </v-menu>
               </div>
 
               <div class="details-list">
-                <div v-for="(detalle, index) in form.detalles" :key="index" class="detail-row">
+
+                <div 
+                  v-for="(detalle, index) in form.detalles" 
+                  :key="index" 
+                  class="detail-row"
+                >
+
                   <label>
-                    Descripcion (Documentos a enviar)
-                    <input v-model.trim="detalle.descripcion" type="text" required placeholder="Detalle">
+                    N°
+                    <input 
+                      v-model.number="detalle.numero"
+                      type="number"
+                      min="1"
+                      @input="actualizarNumero(detalle)"
+                    >
                   </label>
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar item"
-                    aria-label="Eliminar item" :disabled="form.detalles.length === 1" @click="removeDetalle(index)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M5 7h14" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                      <path d="M8 7l1 13h6l1-13" />
-                      <path d="M9 7V4h6v3" />
-                    </svg>
+
+
+                  <label>
+                    Número texto
+                    <input 
+                      :value="detalle.numeroTexto"
+                      type="text"
+                      readonly
+                    >
+                  </label>
+
+
+                  <label>
+                    Documento
+                    <input
+                      v-model="detalle.descripcion"
+                      type="text"
+                      :readonly="!detalle.editable"
+                      :placeholder="detalle.editable ? 'Escriba el documento...' : ''"
+                    />
+                  </label>
+
+                  <button
+                    class="icon-button"
+                    type="button"
+                    title="Agregar (Retornar)"
+                    @click="toggleRetornar(detalle)"
+                  >
+                    ↩
                   </button>
+
+                  <button
+                    class="icon-button icon-button--danger"
+                    type="button"
+                    title="Eliminar item"
+                    @click="removeDetalle(index)"
+                  >
+                    🗑
+                  </button>
+
                 </div>
+
               </div>
             </v-col>
           </v-row>
@@ -315,7 +433,7 @@ import CartaPreview from '~/components/CartaPreview.vue'
 import { normalizeCliente } from '~/models/cliente'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
 
-const DEFAULT_ASUNTO = 'Presentación de Documentos del Servicio Ambiental del /.'
+const DEFAULT_ASUNTO = 'Presentación de Documentos del Servicio Ambiental del'
 const DEFAULT_CONTEXTO = `De nuestra consideración:
 La presente tiene por finalidad saludarlo cordialmente en nombre de la Empresa KANAY S.A.C. – Séché Group Perú y a su vez hacerles llegar la documentación del Servicio de Disposición Final, según detalle:`
 const DEFAULT_DESPEDIDA = 'Sin otro particular me despido y le reiteramos nuestro atento saludo.'
@@ -414,6 +532,7 @@ export default {
         lugar: 'Lima',
         fecha: this.getTodayInputDate(),
         correlativo: this.getNextCorrelativo(),
+        direccionAlterna: false,
         cliente: {
           nombre: '',
           ruc: '',
@@ -423,9 +542,7 @@ export default {
         },
         asunto: DEFAULT_ASUNTO,
         contexto: DEFAULT_CONTEXTO,
-        detalles: [
-          { descripcion: '' }
-        ],
+        detalles: [],
         despedida: DEFAULT_DESPEDIDA,
         estadoProceso: 'Emitido',
         fechaCreacion: new Date()
@@ -439,7 +556,6 @@ export default {
         this.cartas = cartas.map(this.normalizeCarta)
       } catch (error) {
         alert('No se pudieron listar las cartas')
-        // eslint-disable-next-line no-console
         console.error(error)
       } finally {
         this.loading = false
@@ -455,7 +571,6 @@ export default {
           .filter(cliente => cliente.estado)
       } catch (error) {
         this.clientes = []
-        // eslint-disable-next-line no-console
         console.error(error)
       } finally {
         this.clientesLoading = false
@@ -518,7 +633,6 @@ export default {
         })
       } catch (error) {
         alert('No se pudo actualizar el estado de la carta')
-        // eslint-disable-next-line no-console
         console.error(error)
       }
     },
@@ -565,7 +679,6 @@ export default {
         this.closeModal()
       } catch (error) {
         alert('No se pudo guardar la carta')
-        // eslint-disable-next-line no-console
         console.error(error)
       }
     },
@@ -600,7 +713,6 @@ export default {
         await this.delete(id)
       } catch (error) {
         alert('No se pudo eliminar la carta')
-        // eslint-disable-next-line no-console
         console.error(error)
       }
     },
@@ -610,6 +722,23 @@ export default {
     },
     closePreviewModal() {
       this.isPreviewOpen = false
+    },
+    toggleRetornar(detalle) {
+      const texto = ' (Retornar)'
+
+      if (detalle.descripcion.endsWith(texto)) {
+        detalle.descripcion = detalle.descripcion.slice(0, -texto.length)
+      } else {
+        detalle.descripcion += texto
+      }
+    },
+    actualizarAsunto() {
+      if (!this.form.fecha) {
+        this.form.asunto = DEFAULT_ASUNTO
+        return
+      }
+      const [year, month, day] = this.form.fecha.split('-')
+      this.form.asunto = `Presentación de Documentos del Servicio Ambiental del ${day}/${month}/${year}`
     },
     printCarta(carta = this.selectedCarta) {
       const escapeHtml = value => String(value || '')
@@ -640,10 +769,14 @@ export default {
         : []
       const detallesHtml = detalles.length
         ? `
-          <ul class="detalles">
-            ${detalles.map(detalle => `<li>${textToHtml(detalle.descripcion)}</li>`).join('')}
-          </ul>
-        `
+            <ul class="detalles">
+              ${detalles.map(detalle => `
+                <li>
+                  ${detalle.numeroTexto} ${textToHtml(detalle.descripcion)}
+                </li>
+              `).join('')}
+            </ul>
+          `
         : ''
 
       const imprimir = `
@@ -719,14 +852,28 @@ export default {
                 margin-bottom: 24px;
               }
 
-              .bloque {
-                margin-bottom: 18px;
+              .bloque-datos {
+                margin-bottom: 22px; /* espacio entre los datos y el asunto */
                 font-size: 13px;
-                line-height: 1.6;
               }
 
-              .bloque strong {
-                font-weight: 700;
+              .fila {
+                display: flex;
+                margin-bottom: 4px;
+                align-items: flex-start;
+              }
+
+              .fila:last-child {
+                margin-bottom: 0;
+              }
+
+              .fila strong {
+                width: 85px;
+                flex-shrink: 0;
+              }
+
+              .fila span {
+                flex: 1;
               }
 
               .asunto {
@@ -793,16 +940,34 @@ export default {
                   ${escapeHtml(carta.correlativo)}
                 </div>
 
-                <div class="bloque">
-                  <strong>Señores:</strong><br>
-                  <strong>${escapeHtml(cliente.nombre)}</strong><br>
-                  ${escapeHtml(cliente.direccion)}
-                </div>
+                <div class="bloque-datos">
 
-                <div class="bloque">
-                  <strong>Atención:</strong><br>
-                  <strong>${escapeHtml(cliente.contactoNombre)}</strong><br>
-                  Contacto: ${escapeHtml(cliente.contactoTelefono)}
+                  <div class="fila">
+                    <strong>Señores:</strong>
+                    <span>${escapeHtml(cliente.nombre)}</span>
+                  </div>
+
+                  ${cliente.direccion ? `
+                    <div class="fila">
+                      <strong>Dirección:</strong>
+                      <span>${escapeHtml(cliente.direccion)}</span>
+                    </div>
+                  ` : ''}
+
+                  ${cliente.contactoNombre ? `
+                    <div class="fila">
+                      <strong>Atención:</strong>
+                      <span>${escapeHtml(cliente.contactoNombre)}</span>
+                    </div>
+                  ` : ''}
+
+                  ${cliente.contactoTelefono ? `
+                    <div class="fila fila-contacto">
+                      <strong>Contacto:</strong>
+                      <span>${escapeHtml(cliente.contactoTelefono)}</span>
+                    </div>
+                  ` : ''}
+
                 </div>
 
                 <div class="asunto">
@@ -889,12 +1054,86 @@ export default {
         document.body.removeChild(pdfContainer)
       }
     },
-    addDetalle() {
-      this.form.detalles.push({ descripcion: '' })
+    addDetalle(tipo) {
+      const numero = 1
+
+      this.form.detalles.push({
+        numero,
+        numeroTexto: this.numeroEnTexto(numero),
+        descripcion: tipo === 'Otros' ? '' : tipo,
+        editable: tipo === 'Otros'
+      })
+    },
+    numeroEnTexto(numero) {
+      const unidades = [
+        '',
+        'Uno',
+        'Dos',
+        'Tres',
+        'Cuatro',
+        'Cinco',
+        'Seis',
+        'Siete',
+        'Ocho',
+        'Nueve'
+      ]
+      const especiales = {
+        10: 'Diez',
+        11: 'Once',
+        12: 'Doce',
+        13: 'Trece',
+        14: 'Catorce',
+        15: 'Quince',
+        16: 'Dieciséis',
+        17: 'Diecisiete',
+        18: 'Dieciocho',
+        19: 'Diecinueve'
+      }
+      const decenas = {
+        20: 'Veinte',
+        30: 'Treinta',
+        40: 'Cuarenta',
+        50: 'Cincuenta',
+        60: 'Sesenta',
+        70: 'Setenta',
+        80: 'Ochenta',
+        90: 'Noventa'
+      }
+      if (numero < 10) {
+        return `(${unidades[numero]})`
+      }
+      if (especiales[numero]) {
+        return `(${especiales[numero]})`
+      }
+      if (numero === 100) {
+        return '(Cien)'
+      }
+      if (numero === 20) {
+        return '(Veinte)'
+      }
+      if (numero < 30) {
+        return `(Veinti${unidades[numero - 20].toLowerCase()})`
+      }
+      const d = Math.floor(numero / 10) * 10
+      const u = numero % 10
+      if (u === 0) {
+        return `(${decenas[d]})`
+      }
+      return `(${decenas[d]} y ${unidades[u]})`
+    },
+    actualizarNumero(detalle) {
+      detalle.numeroTexto = this.numeroEnTexto(detalle.numero)
     },
     removeDetalle(index) {
       if (this.form.detalles.length === 1) return
       this.form.detalles.splice(index, 1)
+    },
+    toggleRecojoPlanta() {
+      if (this.form.direccionAlterna) {
+        this.form.cliente.direccion = 'Recojo en planta'
+      } else {
+        this.form.cliente.direccion = ''
+      }
     },
     applyDefaultText() {
       if (!this.form.asunto) {
@@ -969,7 +1208,11 @@ export default {
         asunto: source.asunto || DEFAULT_ASUNTO,
         contexto: source.contexto || DEFAULT_CONTEXTO,
         detalles: detalles.map(detalle => ({
-          descripcion: detalle && detalle.descripcion ? detalle.descripcion : ''
+          numero: detalle.numero || 1,
+          numeroTexto:
+            detalle.numeroTexto ||
+            this.numeroEnTexto(detalle.numero || 1),
+          descripcion: detalle.descripcion || ''
         })),
         despedida: source.despedida || DEFAULT_DESPEDIDA,
         estadoProceso: CARTA_ESTADOS.includes(source.estadoProceso) ? source.estadoProceso : 'Emitido',
@@ -1438,6 +1681,7 @@ td {
   height: 16px;
   margin: 0;
   accent-color: #0f766e;
+  cursor: pointer;
 }
 
 .form-grid {
@@ -1516,9 +1760,9 @@ td {
 
 .detail-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
-  align-items: end;
+  grid-template-columns: 80px 120px 1fr 40px 40px;
   gap: 10px;
+  align-items: end;
 }
 
 .modal-actions {

@@ -8,17 +8,36 @@
       {{ safeCarta.correlativo }}
     </p>
 
-    <p class="recipient">
-      <strong>Señores:</strong><br>
-      <strong>{{ safeCliente.nombre }}</strong><br>
-      <span>{{ safeCliente.direccion }}</span>
-    </p>
+    <div class="bloque-datos">
+      <div class="fila">
+        <strong>Señores:</strong>
+        <span>{{ carta.cliente.nombre }}</span>
+      </div>
 
-    <p class="attention">
-      <strong>Atención:</strong><br>
-      <strong>{{ safeCliente.contactoNombre }}</strong><br>
-      <span>Contacto: {{ safeCliente.contactoTelefono }}</span>
-    </p>
+      <div
+        v-if="carta.cliente.direccion"
+        class="fila"
+      >
+        <strong>Dirección:</strong>
+        <span>{{ carta.cliente.direccion }}</span>
+      </div>
+
+      <div
+        v-if="carta.cliente.contactoNombre"
+        class="fila"
+      >
+        <strong>Atención:</strong>
+        <span>{{ carta.cliente.contactoNombre }}</span>
+      </div>
+
+      <div
+        v-if="carta.cliente.contactoTelefono"
+        class="fila fila-contacto"
+      >
+        <strong>Contacto:</strong>
+        <span>{{ carta.cliente.contactoTelefono }}</span>
+      </div>
+    </div>
 
     <p class="asunto">
       <strong>ASUNTO:</strong> {{ safeCarta.asunto }}
@@ -238,6 +257,29 @@ p {
 
   p {
     margin-bottom: 9px;
+  }
+  .bloque-datos {
+    margin-bottom: 22px;
+    font-size: 13px;
+  }
+
+  .fila {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 4px;
+  }
+
+  .fila strong {
+    width: 85px;
+    flex-shrink: 0;
+  }
+
+  .fila span {
+    flex: 1;
+  }
+
+  .fila-contacto {
+    margin-bottom: 18px;
   }
 }
 </style>
