@@ -420,9 +420,7 @@ export default {
 
 <style scoped>
 .home-page {
-  width: min(960px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 32px 0;
+  padding: 30px;
 }
 
 .dashboard-header {

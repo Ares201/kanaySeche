@@ -31,9 +31,53 @@
       </div>
 
       <nav class="nav">
-        <!-- <NuxtLink class="nav-link" to="/" @click.native="closeMenu">
-          Dashboard
-        </NuxtLink> -->
+        <NuxtLink class="nav-link" to="/" @click.native="closeMenu">
+          Inicio - Graficos
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="nav-icon">
+            <path d="M3 10.5L12 3l9 7.5" />
+            <path d="M5 9.5V21h14V9.5" />
+            <path d="M9 21v-6h6v6" />
+          </svg>
+          <span></span>
+        </NuxtLink>
+        <button class="module-button" type="button" @click="togglePlanificacion">
+          <span>Panificacion</span>
+          <span class="chevron" :class="{ 'chevron--open': planificacionOpen }">›</span>
+        </button>
+
+        <div v-show="planificacionOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/planificacion/ordenRecepcion" @click.native="closeMenu">
+            Orden de recepcion
+          </NuxtLink>
+        </div>
+
+        <button class="module-button" type="button" @click="toggleOperaciones">
+          <span>Operaciones</span>
+          <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
+        </button>
+
+        <div v-show="operacionesOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">
+            Pedido de venta
+          </NuxtLink>
+          <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">
+            Recepcion de cisternas
+          </NuxtLink>
+        </div>
+
+        <button class="module-button module-button--spaced" type="button" @click="toggleDocumentos">
+          <span>Documentos</span>
+          <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
+        </button>
+
+        <div v-show="documentosOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
+            Cartas
+          </NuxtLink>
+          <!-- <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
+            Tools PDF
+          </NuxtLink> -->
+        </div>
         <button class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>
@@ -64,33 +108,6 @@
             Vehiculos
           </NuxtLink>
         </div>
-        <button class="module-button" type="button" @click="toggleOperaciones">
-          <span>Operaciones</span>
-          <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
-        </button>
-
-        <div v-show="operacionesOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">
-            Pedido de venta
-          </NuxtLink>
-          <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">
-            Recepcion de cisternas
-          </NuxtLink>
-        </div>
-
-        <button class="module-button module-button--spaced" type="button" @click="toggleDocumentos">
-          <span>Documentos</span>
-          <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
-        </button>
-
-        <div v-show="documentosOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
-            Cartas
-          </NuxtLink>
-          <!-- <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
-            Tools PDF
-          </NuxtLink> -->
-        </div>
       </nav>
     </aside>
   </div>
@@ -102,6 +119,7 @@ export default {
   data() {
     return {
       isOpen: false,
+      planificacionOpen: true,
       operacionesOpen: true,
       configuracionOpen: true,
       documentosOpen: true
@@ -118,6 +136,9 @@ export default {
     },
     closeMenu() {
       this.isOpen = false
+    },
+    togglePlanificacion() {
+      this.planificacionOpen = !this.planificacionOpen
     },
     toggleOperaciones() {
       this.operacionesOpen = !this.operacionesOpen
@@ -136,6 +157,22 @@ export default {
 </script>
 
 <style scoped>
+.nav-link {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #66BB6A;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .toolbar {
   position: sticky;
   top: 0;
