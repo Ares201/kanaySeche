@@ -393,6 +393,7 @@ export default {
 
       // Formatear fecha
       this.form.fechaIngreso = this.formatToDatetimeLocal(ingreso.fechaIngreso)
+      this.form.fechaSalida = this.formatToDatetimeLocal(ingreso.fechaSalida)
 
       this.isModalOpen = true
     },
@@ -524,7 +525,7 @@ export default {
             <!-- CABECERA: logo + correlativo -->
             <div class="panel" style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
               <img
-                src="${window.location.origin}/images.png"
+                src="${window.location.origin}/kanay.jpeg"
                 class="Logo"
                 alt="Logo"
               />
@@ -767,8 +768,10 @@ export default {
           font-size: 8.5pt;
           color: var(--text-muted);
         }
-        img {
-          max-height: 60px;
+        .Logo {
+          width: 260px;
+          height: auto;
+          display: block;
         }
       `
     },
@@ -778,7 +781,8 @@ export default {
       const rows = this.filteredIngresos.map(i => {
         return {
           Correlativo: i.correlativo,
-          'Fecha ingreso': i.fechaIngreso,
+          'Fecha ingreso': i.fechaIngreso ? formatDate(i.fechaIngreso) : '',
+          'Fecha salida': i.fechaSalida ? formatDate(i.fechaSalida) : '',
           Transportista: i.transportista,
           Placa: i.placa,
           Comprobante: i.comprobante,
@@ -792,6 +796,7 @@ export default {
       const columns = [
         { label: 'Correlativo', value: row => row.Correlativo },
         { label: 'Fecha ingreso', value: row => row['Fecha ingreso'] },
+        { label: 'Fecha salida', value: row => row['Fecha salida'] },
         { label: 'Transportista', value: row => row.Transportista },
         { label: 'Placa', value: row => row.Placa },
         { label: 'Comprobante', value: row => row.Comprobante },
@@ -813,6 +818,7 @@ export default {
       const rows = [{
         Correlativo: 'CIS-0001',
         'Fecha ingreso': getNowDateTimeInput(),
+        'Fecha salida': getNowDateTimeInput(),
         Transportista: 'Transportista ejemplo',
         Placa: 'ABC-123',
         Comprobante: 'GRR-001-00015',
@@ -825,6 +831,7 @@ export default {
       const columns = [
         { label: 'Correlativo', value: row => row.Correlativo },
         { label: 'Fecha ingreso', value: row => row['Fecha ingreso'] },
+        { label: 'Fecha salida', value: row => row['Fecha salida'] },
         { label: 'Transportista', value: row => row.Transportista },
         { label: 'Placa', value: row => row.Placa },
         { label: 'Comprobante', value: row => row.Comprobante },
@@ -854,7 +861,7 @@ export default {
 
       // Encabezados esperados (sin RUC)
       const expectedHeaders = [
-        'Correlativo', 'Fecha ingreso', 'Transportista', 'Placa',
+        'Correlativo', 'Fecha ingreso', 'Fecha salida', 'Transportista', 'Placa',
         'Comprobante', 'Peso Bruto', 'Peso Tara', 'Peso Neto',
         'Destino', 'Prueba laboratorio'
       ]
@@ -871,6 +878,7 @@ export default {
           const form = createEmptyIngresoCisternaForm()
           form.correlativo = row.Correlativo || this.getNextCorrelativo()
           form.fechaIngreso = row['Fecha ingreso'] || getNowDateTimeInput()
+          form.fechaSalida = row['Fecha salida'] || ''
           form.pruebaLaboratorio = row['Prueba laboratorio'] || 'No'
           // No asignamos clienteId, lo dejamos null
           form.clienteId = null

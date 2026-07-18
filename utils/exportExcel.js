@@ -9,8 +9,25 @@ export async function exportRowsToExcel({ filename, sheetName, columns, rows }) 
   const worksheet = XLSX.utils.aoa_to_sheet(data)
   const workbook = XLSX.utils.book_new()
 
+  const headerStyle = {
+    fill: { patternType: 'solid', fgColor: { rgb: '0F3D7A' } },
+    font: { color: { rgb: 'FFFFFF' }, bold: true },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  }
+
+  columns.forEach((_column, index) => {
+    const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: index })]
+    if (cell) cell.s = headerStyle
+  })
+  worksheet['!autofilter'] = {
+    ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: data.length - 1, c: columns.length - 1 } })
+  }
+  worksheet['!cols'] = columns.map((column, index) => ({
+    wch: Math.max(String(column.label).length + 2, ...data.slice(1).map(row => String(row[index] || '').length + 2), 12)
+  }))
+
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName || 'Registros')
-  XLSX.writeFile(workbook, `${filename || sheetName || 'registros'}.xlsx`)
+  XLSX.writeFile(workbook, `${filename || sheetName || 'registros'}.xlsx`, { cellStyles: true })
 }
 
 export function readRowsFromExcelFile(file, expectedHeaders) {

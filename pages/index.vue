@@ -80,7 +80,6 @@
 import Chart from 'chart.js/auto'
 import { normalizeIngresoCisterna } from '~/models/ingresoCisterna'
 // IMPORTANTE: Asegúrate de tener un normalizeCarta o usa normalizeCliente si es el mismo
-import { normalizeCliente } from '~/models/cliente' // o normalizeCarta
 
 export default {
   name: 'IndexPage',
@@ -146,7 +145,7 @@ export default {
 
       return this.cartas.filter(item => {
         // Usamos fechaCreacion (timestamp) o fecha (string) - priorizamos fechaCreacion
-        const fechaItem = this.obtenerFechaString(item.fechaCreacion || item.fecha)
+        const fechaItem = this.obtenerFechaString(item.fecha || item.fechaCreacion)
         if (!fechaItem) return false
         if (this.fechaInicio && fechaItem < this.fechaInicio) return false
         if (this.fechaFin && fechaItem > this.fechaFin) return false
@@ -169,7 +168,7 @@ export default {
     },
 
     datosGraficoEstados() {
-      const estados = ['Emitido', 'Enviado', 'Entregado', 'Anulado']
+      const estados = ['Emitido', 'Enviado', 'Pendiente de Confirmación', 'Entregado', 'Anulado']
       const counts = estados.map(e => this.cartasFiltradas.filter(c => c.estadoProceso === e).length)
       return { labels: estados, counts }
     },
@@ -209,11 +208,14 @@ export default {
       let dateObj
       if (fecha instanceof Date) {
         dateObj = fecha
+      } else if (typeof fecha === 'object' && typeof fecha.toDate === 'function') {
+        dateObj = fecha.toDate()
       } else if (typeof fecha === 'object' && fecha.seconds !== undefined) {
         // Firestore timestamp
-        dateObj = new Date(fecha.seconds * 1000 + fecha.nanoseconds / 1000000)
+        dateObj = new Date(fecha.seconds * 1000 + (fecha.nanoseconds || 0) / 1000000)
       } else if (typeof fecha === 'string') {
         // Si es string en formato YYYY-MM-DD o ISO
+        if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha
         dateObj = new Date(fecha)
       } else {
         dateObj = new Date(fecha)
@@ -254,8 +256,7 @@ export default {
       try {
         const [ingresosDocs, cartasDocs] = await Promise.all([
           this.$firebaseApi.list('ingresosCisterna'),
-          this.$firebaseApi.list('cartas'),
-          console.log('Cartas docs', cartasDocs)
+          this.$firebaseApi.list('cartas')
         ])
 
         this.ingresos = ingresosDocs
@@ -265,7 +266,7 @@ export default {
         // Normaliza las cartas. Si no tienes normalizeCarta, usa el mapper directo
         this.cartas = cartasDocs.map(doc => {
           // Si normalizeCliente funciona, úsalo; sino, haz un mapeo manual
-          return normalizeCliente(doc) // o normalizeCarta(doc)
+          return this.normalizeCarta(doc)
         })
 
         // Opcional: filtrar cartas inactivas si tienen campo estado
@@ -290,6 +291,17 @@ export default {
     mostrarTodo() {
       this.fechaInicio = ''
       this.fechaFin = ''
+    },
+    normalizeCarta(carta) {
+      const source = carta || {}
+      return {
+        id: source.id || '',
+        correlativo: source.correlativo || '',
+        estadoProceso: source.estadoProceso || source.estado || 'Emitido',
+        fecha: source.fecha || null,
+        fechaServicio: source.fechaServicio || null,
+        fechaCreacion: source.fechaCreacion || null
+      }
     },
 
     // ------------------------------------------------------------

@@ -80,6 +80,10 @@
                       {{ getEstadoIcon(carta.estadoProceso) }}
                     </v-icon>
                   </v-btn>
+                  <v-btn icon small class="status-icon-button" title="Ver o editar cargo digital"
+                    aria-label="Ver o editar cargo digital" @click="openCargoDialog(carta)">
+                    <v-icon small>mdi-file-sign</v-icon>
+                  </v-btn>
                   <button class="icon-button" type="button" title="Ver" aria-label="Ver carta"
                     @click="openPreviewModal(carta)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -352,6 +356,11 @@
       </form>
     </div>
 
+    <ConfirmacionDialog v-if="confirmacionCarta" v-model="isConfirmacionOpen" :carta="confirmacionCarta"
+      @save-cargo="saveCargo" @mark-delivered="markDelivered" @message="showMessage" />
+    <CargoDigitalDialog v-if="cargoCarta" v-model="isCargoDialogOpen" :carta="cargoCarta"
+      @save="saveCargoDigital" @message="showMessage" />
+
     <div v-if="isPreviewOpen" class="modal-backdrop modal-backdrop--preview">
       <div class="modal modal--preview">
         <div class="modal-header preview-header">
@@ -382,6 +391,8 @@
 
 <script>
 import CartaPreview from '~/components/CartaPreview.vue'
+import ConfirmacionDialog from '~/components/documentos/ConfirmacionDialog.vue'
+import CargoDigitalDialog from '~/components/documentos/CargoDigitalDialog.vue'
 import { normalizeCliente } from '~/models/cliente'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
 
@@ -389,7 +400,7 @@ const DEFAULT_ASUNTO = 'Presentación de Documentos del Servicio Ambiental del'
 const DEFAULT_CONTEXTO = `De nuestra consideración:
 La presente tiene por finalidad saludarlo cordialmente en nombre de la Empresa KANAY S.A.C. – Séché Group Perú y a su vez hacerles llegar la documentación del Servicio de Disposición Final, según detalle:`
 const DEFAULT_DESPEDIDA = 'Sin otro particular me despido y le reiteramos nuestro atento saludo.'
-const CARTA_ESTADOS = ['Emitido', 'Enviado', 'Entregado', 'Anulado']
+const CARTA_ESTADOS = ['Emitido', 'Enviado', 'Pendiente de Confirmación', 'Entregado', 'Anulado']
 const CARTA_EXCEL_COLUMNS = [
   'Correlativo',
   'Cliente',
@@ -405,7 +416,9 @@ const CARTA_EXCEL_COLUMNS = [
 export default {
   name: 'CartasPage',
   components: {
-    CartaPreview
+    CartaPreview,
+    ConfirmacionDialog,
+    CargoDigitalDialog
   },
   data() {
     return {
@@ -416,6 +429,10 @@ export default {
       loading: false,
       isModalOpen: false,
       isPreviewOpen: false,
+      isConfirmacionOpen: false,
+      confirmacionCarta: null,
+      isCargoDialogOpen: false,
+      cargoCarta: null,
       editingId: null,
       selectedCarta: this.getEmptyForm(),
       form: this.getEmptyForm(),
@@ -498,6 +515,7 @@ export default {
         detalles: [],
         despedida: DEFAULT_DESPEDIDA,
         estadoProceso: 'Emitido',
+        estado: 'Emitido',
         fechaCreacion: new Date()
       }
     },
@@ -506,6 +524,7 @@ export default {
 
       try {
         const cartas = await this.$firebaseApi.list('cartas')
+        await this.migrarFechasLegacy(cartas)
         this.cartas = cartas.map(this.normalizeCarta)
       } catch (error) {
         alert('No se pudieron listar las cartas')
@@ -544,6 +563,7 @@ export default {
       this.cartas = this.cartas.filter(carta => carta.id !== id)
     },
     getNextEstadoProceso(estado) {
+      if (estado === 'Enviado') return 'Pendiente de Confirmación'
       const index = CARTA_ESTADOS.indexOf(estado)
 
       return CARTA_ESTADOS[index + 1] || estado
@@ -555,6 +575,7 @@ export default {
       const icons = {
         Emitido: 'mdi-file-document-check-outline',
         Enviado: 'mdi-send',
+        'Pendiente de Confirmación': 'mdi-clock-outline',
         Entregado: 'mdi-check-circle-outline',
         Anulado: 'mdi-cancel'
       }
@@ -572,11 +593,16 @@ export default {
       const nextEstado = this.getNextEstadoProceso(carta.estadoProceso)
 
       if (nextEstado === carta.estadoProceso) return
+      if (carta.estadoProceso === 'Enviado' || carta.estadoProceso === 'Pendiente de Confirmación') {
+        await this.openConfirmacionDialog(carta)
+        return
+      }
       if (!window.confirm(`Deseas cambiar el estado de la carta a ${nextEstado}?`)) return
 
       try {
         const updatedCarta = await this.$firebaseApi.update('cartas', carta.id, {
-          estadoProceso: nextEstado
+          estadoProceso: nextEstado,
+          estado: nextEstado
         })
 
         this.cartas = this.cartas.map(currentCarta => {
@@ -589,6 +615,87 @@ export default {
         console.error(error)
       }
     },
+    async migrarFechasLegacy(cartas) {
+      const actualizaciones = cartas.map(carta => {
+        const cambios = {}
+        if (this.isInputDateString(carta.fecha)) cambios.fecha = this.parseLocalDate(carta.fecha)
+        if (this.isInputDateString(carta.fechaServicio)) cambios.fechaServicio = this.parseLocalDate(carta.fechaServicio)
+        return Object.keys(cambios).length
+          ? this.$firebaseApi.update('cartas', carta.id, cambios)
+          : null
+      }).filter(Boolean)
+
+      if (!actualizaciones.length) return
+
+      try {
+        await Promise.all(actualizaciones)
+      } catch (error) {
+        console.error('No se pudieron migrar algunas fechas de cartas', error)
+      }
+    },
+    generateConfirmationToken() {
+      if (process.client && window.crypto && window.crypto.getRandomValues) {
+        const bytes = new Uint8Array(20)
+        window.crypto.getRandomValues(bytes)
+        return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')
+      }
+      return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    },
+    async openConfirmacionDialog(carta) {
+      try {
+        const currentDoc = await this.$db.collection('cartas').doc(carta.id).get()
+        const currentCarta = currentDoc.exists
+          ? this.normalizeCarta({ id: currentDoc.id, ...currentDoc.data() })
+          : carta
+        const changes = {}
+        if (!currentCarta.tokenConfirmacion) changes.tokenConfirmacion = this.generateConfirmationToken()
+        if (currentCarta.estadoProceso === 'Enviado') {
+          changes.estadoProceso = 'Pendiente de Confirmación'
+          changes.estado = 'Pendiente de Confirmación'
+        }
+        let updatedCarta = currentCarta
+        if (Object.keys(changes).length) updatedCarta = await this.$firebaseApi.update('cartas', currentCarta.id, changes)
+        this.confirmacionCarta = this.normalizeCarta({ ...currentCarta, ...updatedCarta, ...changes })
+        this.cartas = this.cartas.map(item => item.id === currentCarta.id ? this.confirmacionCarta : item)
+        this.isConfirmacionOpen = true
+      } catch (error) {
+        alert('No se pudo abrir la confirmación')
+        console.error(error)
+      }
+    },
+    async saveCargo(cargo) {
+      try {
+        this.confirmacionCarta = await this.updateCargo(this.confirmacionCarta, cargo)
+        this.showMessage('Cargo guardado')
+      } catch (error) { alert('No se pudo guardar el cargo') }
+    },
+    openCargoDialog(carta) {
+      this.cargoCarta = this.cloneCarta(carta)
+      this.isCargoDialogOpen = true
+    },
+    async saveCargoDigital(cargo) {
+      try {
+        this.cargoCarta = await this.updateCargo(this.cargoCarta, cargo)
+        this.showMessage('Cargo digital actualizado')
+      } catch (error) { alert('No se pudo guardar el cargo digital') }
+    },
+    async updateCargo(carta, cargo) {
+      const updatedCarta = await this.$firebaseApi.update('cartas', carta.id, { cargo })
+      const normalizedCarta = this.normalizeCarta({ ...carta, ...updatedCarta, cargo })
+      this.cartas = this.cartas.map(item => item.id === carta.id ? normalizedCarta : item)
+      if (this.confirmacionCarta && this.confirmacionCarta.id === carta.id) this.confirmacionCarta = normalizedCarta
+      return normalizedCarta
+    },
+    async markDelivered() {
+      try {
+        const updatedCarta = await this.$firebaseApi.update('cartas', this.confirmacionCarta.id, { estadoProceso: 'Entregado', estado: 'Entregado' })
+        this.confirmacionCarta = this.normalizeCarta({ ...this.confirmacionCarta, ...updatedCarta, estadoProceso: 'Entregado', estado: 'Entregado' })
+        this.cartas = this.cartas.map(item => item.id === this.confirmacionCarta.id ? this.confirmacionCarta : item)
+        this.isConfirmacionOpen = false
+        this.showMessage('Carta marcada como entregada')
+      } catch (error) { alert('No se pudo marcar la carta como entregada') }
+    },
+    showMessage(message) { alert(message) },
     openCreateModal() {
       this.editingId = null
       this.form = this.getEmptyForm()
@@ -641,7 +748,8 @@ export default {
 
       try {
         const updatedCarta = await this.$firebaseApi.update('cartas', id, {
-          estadoProceso: 'Anulado'
+          estadoProceso: 'Anulado',
+          estado: 'Anulado'
         })
 
         this.cartas = this.cartas.map(carta => {
@@ -649,7 +757,8 @@ export default {
             ? this.normalizeCarta({
               ...carta,
               ...updatedCarta,
-              estadoProceso: 'Anulado'
+              estadoProceso: 'Anulado',
+              estado: 'Anulado'
             })
             : carta
         })
@@ -1137,6 +1246,9 @@ export default {
         payload.fechaCreacion = fechaCreacion
       }
 
+      payload.fecha = this.parseLocalDate(normalizedCarta.fecha)
+      payload.fechaServicio = this.parseLocalDate(normalizedCarta.fechaServicio)
+
       return payload
     },
     normalizeCarta(carta) {
@@ -1149,8 +1261,8 @@ export default {
       return {
         id: source.id || '',
         lugar: source.lugar || '',
-        fecha: source.fecha || this.getTodayInputDate(),
-        fechaServicio: source.fechaServicio || this.getTodayInputDate(),
+        fecha: this.normalizeDateInput(source.fecha) || this.getTodayInputDate(),
+        fechaServicio: this.normalizeDateInput(source.fechaServicio) || this.getTodayInputDate(),
         correlativo: source.correlativo || '',
         cliente: {
           nombre: cliente.nombre || '',
@@ -1170,6 +1282,20 @@ export default {
         })),
         despedida: source.despedida || DEFAULT_DESPEDIDA,
         estadoProceso: CARTA_ESTADOS.includes(source.estadoProceso) ? source.estadoProceso : 'Emitido',
+        estado: source.estado || source.estadoProceso || 'Emitido',
+        tokenConfirmacion: source.tokenConfirmacion || '',
+        confirmacion: {
+          confirmado: !!(source.confirmacion || {}).confirmado,
+          nombre: (source.confirmacion || {}).nombre || '',
+          codigo: (source.confirmacion || {}).codigo || '',
+          fechaConfirmacion: (source.confirmacion || {}).fechaConfirmacion || null,
+          ip: (source.confirmacion || {}).ip || '',
+          userAgent: (source.confirmacion || {}).userAgent || ''
+        },
+        cargo: {
+          link: (source.cargo || {}).link || '',
+          fechaCarga: (source.cargo || {}).fechaCarga || null
+        },
         fechaCreacion: this.normalizeDate(source.fechaCreacion)
       }
     },
@@ -1285,6 +1411,14 @@ export default {
       return value
     },
     parseLocalDate(value) {
+      if (value && typeof value.toDate === 'function') {
+        return value.toDate()
+      }
+
+      if (value && value.seconds !== undefined) {
+        return new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1000000)
+      }
+
       if (typeof value === 'string') {
         const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
 
@@ -1296,10 +1430,13 @@ export default {
 
       return new Date(value)
     },
+    isInputDateString(value) {
+      return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    },
     normalizeDateInput(value) {
       if (!value) return ''
 
-      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      if (this.isInputDateString(value)) {
         return value
       }
 
