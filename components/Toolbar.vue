@@ -121,7 +121,7 @@ export default {
       isOpen: false,
       planificacionOpen: true,
       operacionesOpen: true,
-      configuracionOpen: true,
+      configuracionOpen: false,
       documentosOpen: true
     }
   },

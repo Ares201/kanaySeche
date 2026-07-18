@@ -27,10 +27,10 @@
               <v-col cols="12" sm="6"><strong>Código de confirmación:</strong> {{ confirmacion.codigo }}</v-col>
               <v-col cols="12" sm="6"><strong>Fecha de confirmación:</strong> {{ formatDate(confirmacion.fechaConfirmacion) }}</v-col>
               <v-col v-if="confirmacion.ip" cols="12" sm="6"><strong>IP:</strong> {{ confirmacion.ip }}</v-col>
-              <v-col v-if="confirmacion.userAgent" cols="12"><strong>Dispositivo/Navegador:</strong> {{ confirmacion.userAgent }}</v-col>
+              <!-- <v-col v-if="confirmacion.userAgent" cols="12"><strong>Dispositivo/Navegador:</strong> {{ confirmacion.userAgent }}</v-col> -->
             </v-row>
             <v-btn color="#6eb49c" dark class="mt-4" :loading="downloading" @click="downloadReceipt">
-              <v-icon left>mdi-file-pdf-box</v-icon>Descargar constancia PDF
+              <v-icon left>mdi-file-pdf-box</v-icon>PDF - Constancia
             </v-btn>
           </v-card-text>
         </v-card>
@@ -41,7 +41,7 @@
         <v-alert v-if="!link" type="warning" outlined>
           Esta carta todavía no tiene un cargo digital registrado.
         </v-alert>
-        <iframe v-else class="cargo-preview" :src="link" title="Vista previa del cargo digital" />
+        <!-- <iframe v-else class="cargo-preview" :src="link" title="Vista previa del cargo digital" /> -->
       </v-card-text>
     </v-card>
   </v-dialog>
