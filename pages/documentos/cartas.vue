@@ -136,29 +136,16 @@
           <div class="modal-header-actions">
 
             <label class="radio-toggle">
-              <input 
-                v-model="form.direccionAlterna"
-                type="checkbox"
-                @change="toggleRecojoPlanta"
-              >
+              <input v-model="form.direccionAlterna" type="checkbox" @change="toggleRecojoPlanta">
               Recojo en planta
             </label>
 
             <label class="radio-toggle">
-              <input 
-                :checked="showExtraFields" 
-                type="radio" 
-                @click.prevent="showExtraFields = !showExtraFields"
-              >
+              <input :checked="showExtraFields" type="radio" @click.prevent="showExtraFields = !showExtraFields">
               Mostrar campos
             </label>
 
-            <button 
-              type="button" 
-              class="modal-close" 
-              aria-label="Cerrar modal" 
-              @click="closeModal"
-            >
+            <button type="button" class="modal-close" aria-label="Cerrar modal" @click="closeModal">
               x
             </button>
 
@@ -193,19 +180,15 @@
 
             <v-col cols="12" md="6">
               <label>Direccion
-                <input v-model.trim="form.cliente.direccion"
-                  :disabled="form.direccionAlterna"
-                  type="text"
-                  placeholder="Av. Principal 123"
-                  style="flex:1;">
-              </label>    
-            </v-col>    
+                <input v-model.trim="form.cliente.direccion" :disabled="form.direccionAlterna" type="text"
+                  placeholder="Av. Principal 123" style="flex:1;">
+              </label>
+            </v-col>
 
             <v-col cols="12" md="6">
               <label>
                 Contacto
-                <input v-model.trim="form.cliente.contactoNombre" type="text"
-                  placeholder="Nombre del contacto">
+                <input v-model.trim="form.cliente.contactoNombre" type="text" placeholder="Nombre del contacto">
               </label>
             </v-col>
 
@@ -226,8 +209,8 @@
 
               <v-col cols="12" md="2">
                 <label>
-                  Fecha del servicio
-                  <input v-model="form.fecha" type="date" required @change="actualizarAsunto"/>
+                  Fecha servicio
+                  <input v-model="form.fechaServicio" type="date" required @change="actualizarAsunto" />
                 </label>
               </v-col>
             </v-row>
@@ -272,16 +255,11 @@
                 <h3>Detalles</h3>
                 <v-menu offset-y>
                   <template #activator="{ on, attrs }">
-                    <button
-                      class="secondary-button secondary-button--small"
-                      v-bind="attrs"
-                      v-on="on"
-                      type="button"
-                    >
+                    <button class="secondary-button secondary-button--small" v-bind="attrs" v-on="on" type="button">
                       Añadir
                     </button>
                   </template>
-                  
+
                   <v-list dense>
 
                     <v-list-item @click="addDetalle('Manifiesto Generador')">
@@ -327,58 +305,32 @@
 
               <div class="details-list">
 
-                <div 
-                  v-for="(detalle, index) in form.detalles" 
-                  :key="index" 
-                  class="detail-row"
-                >
+                <div v-for="(detalle, index) in form.detalles" :key="index" class="detail-row">
 
                   <label>
                     N°
-                    <input 
-                      v-model.number="detalle.numero"
-                      type="number"
-                      min="1"
-                      @input="actualizarNumero(detalle)"
-                    >
+                    <input v-model.number="detalle.numero" type="number" min="1" @input="actualizarNumero(detalle)">
                   </label>
 
 
                   <label>
                     Número texto
-                    <input 
-                      :value="detalle.numeroTexto"
-                      type="text"
-                      readonly
-                    >
+                    <input :value="detalle.numeroTexto" type="text" readonly>
                   </label>
 
 
                   <label>
                     Documento
-                    <input
-                      v-model="detalle.descripcion"
-                      type="text"
-                      :readonly="!detalle.editable"
-                      :placeholder="detalle.editable ? 'Escriba el documento...' : ''"
-                    />
+                    <input v-model="detalle.descripcion" type="text" :readonly="!detalle.editable"
+                      :placeholder="detalle.editable ? 'Escriba el documento...' : ''" />
                   </label>
 
-                  <button
-                    class="icon-button"
-                    type="button"
-                    title="Agregar (Retornar)"
-                    @click="toggleRetornar(detalle)"
-                  >
+                  <button class="icon-button" type="button" title="Agregar (Retornar)" @click="toggleRetornar(detalle)">
                     ↩
                   </button>
 
-                  <button
-                    class="icon-button icon-button--danger"
-                    type="button"
-                    title="Eliminar item"
-                    @click="removeDetalle(index)"
-                  >
+                  <button class="icon-button icon-button--danger" type="button" title="Eliminar item"
+                    @click="removeDetalle(index)">
                     🗑
                   </button>
 
@@ -531,6 +483,7 @@ export default {
         id: '',
         lugar: 'Lima',
         fecha: this.getTodayInputDate(),
+        fechaServicio: this.getTodayInputDate(),
         correlativo: this.getNextCorrelativo(),
         direccionAlterna: false,
         cliente: {
@@ -733,11 +686,11 @@ export default {
       }
     },
     actualizarAsunto() {
-      if (!this.form.fecha) {
+      if (!this.form.fechaServicio) {
         this.form.asunto = DEFAULT_ASUNTO
         return
       }
-      const [year, month, day] = this.form.fecha.split('-')
+      const [year, month, day] = this.form.fechaServicio.split('-')
       this.form.asunto = `Presentación de Documentos del Servicio Ambiental del ${day}/${month}/${year}`
     },
     printCarta(carta = this.selectedCarta) {
@@ -1197,6 +1150,7 @@ export default {
         id: source.id || '',
         lugar: source.lugar || '',
         fecha: source.fecha || this.getTodayInputDate(),
+        fechaServicio: source.fechaServicio || this.getTodayInputDate(),
         correlativo: source.correlativo || '',
         cliente: {
           nombre: cliente.nombre || '',
