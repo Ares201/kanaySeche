@@ -42,6 +42,12 @@ export default {
     '@nuxtjs/axios'
   ],
 
+  axios: {
+    baseURL: process.env.API_URL || 'https://renombrador-pv-api.onrender.com',
+    // Opcional: timeout
+    timeout: 60000 // 60 segundos para procesar archivos grandes
+  },
+
   serverMiddleware: [
     { path: '/api/pdf/sign', handler: '~/server/api/pdf/sign.js' }
   ],
