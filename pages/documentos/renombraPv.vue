@@ -136,9 +136,20 @@ export default {
         formData.append('files', file)
       })
 
+      // Servidor Rendel
+      // try {
+      //   const response = await this.$axios.post(
+      //     'https://renombrador-pv-api.onrender.com/renombrar',
+      //     formData,
+      //     {
+      //       responseType: 'blob'
+      //     }
+      //   )
+
+      // Servidor Ares
       try {
         const response = await this.$axios.post(
-          'https://renombrador-pv-api.onrender.com/renombrar',
+          'http://localhost:8000/renombrar',
           formData,
           {
             responseType: 'blob'
