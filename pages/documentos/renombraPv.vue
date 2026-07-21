@@ -136,25 +136,24 @@ export default {
         formData.append('files', file)
       })
 
-      // Servidor Rendel
-      // try {
-      //   const response = await this.$axios.post(
-      //     'https://renombrador-pv-api.onrender.com/renombrar',
-      //     formData,
-      //     {
-      //       responseType: 'blob'
-      //     }
-      //   )
-
-      // Servidor Ares
       try {
         const response = await this.$axios.post(
-          'http://localhost:8000/renombrar',
+          'https://renombrador-pv-api.onrender.com/renombrar',
           formData,
           {
             responseType: 'blob'
           }
         )
+
+      // Servidor Ares
+      // try {
+      //   const response = await this.$axios.post(
+      //     'http://localhost:8000/renombrar',
+      //     formData,
+      //     {
+      //       responseType: 'blob'
+      //     }
+      //   )
 
         // Leer estadísticas desde los headers
         const renombrados = response.headers['x-renombrados'] || '?'
