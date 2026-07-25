@@ -491,25 +491,149 @@ export default {
 
     // ===== IMPRESIÓN DIRECTA =====
     imprimirDirecto(ingreso) {
-      const html = this.buildIngresoPrintHtml(ingreso)
-      const iframe = this.$refs.printIframe
-      const doc = iframe.contentDocument || iframe.contentWindow.document
-      doc.open()
-      doc.write(html)
-      doc.close()
-      iframe.contentWindow.focus()
-      iframe.contentWindow.print()
+      const originalTitle = document.title;
+      document.title = `Ingreso-${ingreso.correlativo}`;
+
+      const html = this.buildIngresoPrintHtmlTriple(ingreso);
+      const iframe = this.$refs.printIframe;
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+
+      iframe.contentWindow.focus();
+
+      // Restaurar título después de imprimir
+      const onPrintDone = () => {
+        document.title = originalTitle;
+        window.removeEventListener('afterprint', onPrintDone);
+      };
+      window.addEventListener('afterprint', onPrintDone);
+
+      iframe.contentWindow.print();
     },
 
-    buildIngresoPrintHtml(ingreso) {
+    buildIngresoPrintHtmlTriple(ingreso) {
+      const body = this.buildIngresoPrintBody(ingreso);
       return `
-        <!doctype html>
-        <html lang="es">
-          <head><meta charset="utf-8"><title>${escapeHtml(ingreso.correlativo)}</title>
-          <style>${this.buildPrintStyles()}</style></head>
-          <body>${this.buildIngresoPrintBody(ingreso)}</body>
-        </html>
-      `
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>${escapeHtml(ingreso.correlativo)} - 3 copias</title>
+    <style>${this.buildPrintStyles()}</style>
+    <style>
+      /* Estilos específicos para las tres copias */
+      .triple-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .copy {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 6px;
+        page-break-inside: avoid;
+      }
+      .copy-label {
+        font-size: 7pt;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 2px;
+        color: #2f4f66;
+      }
+      @page {
+        margin: 4mm 4mm;
+      }
+      .page {
+        padding: 2mm 3mm !important;
+        min-height: auto !important;
+      }
+      .panel {
+        margin-bottom: 3px !important;
+      }
+      .panel-header {
+        padding: 2px 6px !important;
+        font-size: 7.5pt !important;
+      }
+      .panel-body {
+        padding: 2px 6px !important;
+      }
+      .main-title {
+        font-size: 9pt !important;
+        margin-bottom: 3px !important;
+      }
+      .Logo {
+        width: 80px !important;
+      }
+      .items-table td, .items-table th {
+        padding: 2px 4px !important;
+        font-size: 7pt !important;
+      }
+      .field-label {
+        font-size: 6.5pt !important;
+      }
+      .field-value {
+        font-size: 7.5pt !important;
+      }
+      .field-value.highlight {
+        font-size: 8pt !important;
+      }
+      .desc-box {
+        padding-top: 2px !important;
+      }
+      .desc-row {
+        font-size: 6.5pt !important;
+        margin-bottom: 0 !important;
+      }
+      .desc-total {
+        font-size: 7pt !important;
+        margin-top: 2px !important;
+        padding-top: 2px !important;
+      }
+      .footer {
+        margin-top: 80px !important;
+        margin-bottom: 30px !important;
+        position: static !important;
+      }
+      .signatures-table .sig-cell {
+        padding: 0 8px !important;
+      }
+      .sig-line {
+        margin-bottom: 2px !important;
+      }
+      .sig-title {
+        font-size: 7.5pt !important;
+      }
+      .sig-subtitle {
+        font-size: 6.5pt !important;
+      }
+      /* Eliminamos el padding extra del content */
+      .content {
+        padding-bottom: 0 !important;
+      }
+    </style>
+    </head>
+    <body>
+      <div class="page">
+        <div class="triple-container">
+          <div class="copy">
+            <div class="copy-label">Copia 1</div>
+            ${body}
+          </div>
+          <div class="copy">
+            <div class="copy-label">Copia 2</div>
+            ${body}
+          </div>
+          <div class="copy">
+            <div class="copy-label">Copia 3</div>
+            ${body}
+          </div>
+        </div>
+      </div>
+    </body>
+  </html>
+    `;
     },
 
     buildIngresoPrintBody(ingreso) {
@@ -518,262 +642,260 @@ export default {
       const fechaSalida = i.fechaSalida ? formatDate(i.fechaSalida) : ''
 
       return `
-        <div class="page">
-          <div class="content">
-            <div class="main-title">Recibo de Conformidad</div>
+    <div class="content">
+      <div class="main-title">Recibo de Conformidad</div>
 
-            <!-- CABECERA: logo + correlativo -->
-            <div class="panel" style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
-              <img
-                src="${window.location.origin}/kanay.jpeg"
-                class="Logo"
-                alt="Logo"
-              />
-              <div class="panel" style="width: 260px;">
-                <div class="panel-header">Detalles de la Transacción</div>
-                <div class="panel-body">
-                  <div class="field-label">N° de Ingreso - Lab:</div>
-                  <div class="field-value highlight">${escapeHtml(i.correlativo || '')}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- DATOS DEL SERVICIO -->
-            <div class="panel">
-              <div class="panel-header" style="text-align:left;">Descripción del Servicio / Datos</div>
-              <div class="panel-body">
-                <table style="width:100%;">
-                  <tr>
-                    <td>
-                      <div class="field-label">Ingreso</div>
-                      <div class="field-value">${escapeHtml(fechaIngreso)}</div>
-                    </td>
-                    <td>
-                      <div class="field-label">Salida</div>
-                      <div class="field-value">${escapeHtml(fechaSalida || '—')}</div>
-                    </td>
-                    <td>
-                      <div class="field-label">Transportista</div>
-                      <div class="field-value">${escapeHtml(i.transportista || '')}</div>
-                    </td>
-                    <td>
-                      <div class="field-label">Placa</div>
-                      <div class="field-value">${escapeHtml(i.placa || '')}</div>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-            </div>
-
-            <!-- TABLA DE BIENES -->
-            <div style="font-size:11pt; font-weight:bold; margin:10px 0; color:#2f4f66;">
-              Información de Bienes Trasladados
-            </div>
-
-            <table class="items-table">
-              <thead>
-                <tr>
-                  <th style="width:5%;" class="text-center">Nro.</th>
-                  <th style="width:25%;">Guía</th>
-                  <th>Descripción</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="text-center">1</td>
-                  <td style="text-align:center; font-weight:bold;">${escapeHtml(i.comprobante || '')}</td>
-                  <td>
-                    <div class="desc-title">${escapeHtml(i.destino || '')}</div>
-                    <div class="desc-box">
-                      <div class="desc-row">
-                        <span>Peso Bruto:</span>
-                        <span>${formatWeight(i.pesoBruto)} KG</span>
-                      </div>
-                      <div class="desc-row">
-                        <span>Peso Tara:</span>
-                        <span>${formatWeight(i.pesoTara)} KG</span>
-                      </div>
-                      <div class="desc-total">
-                        <span>Peso Neto:</span>
-                        <span style="color: var(--primary-blue-dark);">${formatWeight(i.pesoNeto)} KG</span>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- FIRMA -->
-          <div class="footer">
-            <table class="signatures-table">
-              <tr>
-                <td class="sig-cell">
-                  <div class="sig-line"></div>
-                  <div class="sig-title">KANAY S.A.C.</div>
-                  <div class="sig-subtitle">Firma Autorizada</div>
-                </td>
-                <td class="sig-cell">
-                  <div class="sig-line"></div>
-                  <div class="sig-title">Transportista</div>
-                  <div class="sig-subtitle">Firma del Chófer</div>
-                </td>
-              </tr>
-            </table>
+      <!-- CABECERA: logo + correlativo -->
+      <div class="panel" style="display:flex; justify-content:space-between; align-items:center;">
+        <img
+          src="${window.location.origin}/kanay.jpeg"
+          class="Logo"
+          alt="Logo"
+        />
+        <div class="panel" style="width: 200px;">
+          <div class="panel-header">Detalles de la Transacción</div>
+          <div class="panel-body">
+            <div class="field-label">N° de Ingreso - Lab:</div>
+            <div class="field-value highlight">${escapeHtml(i.correlativo || '')}</div>
           </div>
         </div>
-      `
+      </div>
+
+      <!-- DATOS DEL SERVICIO -->
+      <div class="panel">
+        <div class="panel-header" style="text-align:left;">Descripción del Servicio / Datos</div>
+        <div class="panel-body">
+          <table style="width:100%;">
+            <tr>
+              <td>
+                <div class="field-label">Ingreso</div>
+                <div class="field-value">${escapeHtml(fechaIngreso)}</div>
+              </td>
+              <td>
+                <div class="field-label">Salida</div>
+                <div class="field-value">${escapeHtml(fechaSalida || '—')}</div>
+              </td>
+              <td>
+                <div class="field-label">Transportista</div>
+                <div class="field-value">${escapeHtml(i.transportista || '')}</div>
+              </td>
+              <td>
+                <div class="field-label">Placa</div>
+                <div class="field-value">${escapeHtml(i.placa || '')}</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- TABLA DE BIENES -->
+      <div style="font-size:8pt; font-weight:bold; margin:4px 0 2px 0; color:#2f4f66;">
+        Información de Bienes Trasladados
+      </div>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width:5%;" class="text-center">Nro.</th>
+            <th style="width:25%;">Guía</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-center">1</td>
+            <td style="text-align:center; font-weight:bold;">${escapeHtml(i.comprobante || '')}</td>
+            <td>
+              <div class="desc-title">${escapeHtml(i.destino || '')}</div>
+              <div class="desc-box">
+                <div class="desc-row">
+                  <span>Peso Bruto:</span>
+                  <span>${formatWeight(i.pesoBruto)} KG</span>
+                </div>
+                <div class="desc-row">
+                  <span>Peso Tara:</span>
+                  <span>${formatWeight(i.pesoTara)} KG</span>
+                </div>
+                <div class="desc-total">
+                  <span>Peso Neto:</span>
+                  <span style="color: var(--primary-blue-dark);">${formatWeight(i.pesoNeto)} KG</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- FIRMA -->
+      <div class="footer">
+        <table class="signatures-table">
+          <tr>
+            <td class="sig-cell">
+              <div class="sig-line"></div>
+              <div class="sig-title">KANAY S.A.C.</div>
+              <div class="sig-subtitle">Firma Autorizada</div>
+            </td>
+            <td class="sig-cell">
+              <div class="sig-line"></div>
+              <div class="sig-title">Transportista</div>
+              <div class="sig-subtitle">Firma del Chófer</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  `
     },
 
     buildPrintStyles() {
       return `
-        @page {
-          size: A4;
-          margin: 15mm 12mm;
-        }
-        * {
-          box-sizing: border-box;
-        }
-        :root {
-          --primary-blue: #416483;
-          --primary-blue-dark: #2f4f66;
-          --text-dark: #0f172a;
-          --text-muted: #475569;
-          --border: #cbd5e1;
-        }
-        body {
-          margin: 0;
-          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-          font-size: 10pt;
-          color: var(--text-dark);
-        }
-        .page {
-          width: 210mm;
-          min-height: 297mm;
-          padding: 15mm 12mm;
-          position: relative;
-        }
-        .content {
-          padding-bottom: 45mm;
-        }
-        .main-title {
-          font-size: 14pt;
-          font-weight: bold;
-          text-align: center;
-          text-transform: uppercase;
-          margin-bottom: 15px;
-        }
-        .panel {
-          border: 1px solid var(--border);
-          border-radius: 6px;
-          margin-bottom: 12px;
-          overflow: hidden;
-        }
-        .panel-header {
-          background: var(--primary-blue);
-          padding: 7px 10px;
-          font-size: 9.5pt;
-          font-weight: bold;
-          color: #fff;
-          text-align: center;
-          text-transform: uppercase;
-        }
-        .panel-body {
-          padding: 8px 10px;
-        }
-        .field-label {
-          font-size: 9pt;
-          color: var(--text-muted);
-        }
-        .field-value {
-          font-size: 10.5pt;
-          font-weight: 500;
-        }
-        .field-value.highlight {
-          font-size: 12pt;
-          font-weight: bold;
-          color: var(--primary-blue-dark);
-        }
-        .items-table {
-          width: 100%;
-          border-collapse: collapse;
-          border: 1px solid var(--border);
-          margin-bottom: 15px;
-        }
-        .items-table th {
-          background: var(--primary-blue);
-          color: #fff;
-          padding: 6px 8px;
-          font-size: 9.5pt;
-          border: 1px solid var(--primary-blue);
-        }
-        .items-table td {
-          padding: 8px;
-          border: 1px solid var(--border);
-          vertical-align: top;
-          font-size: 9.5pt;
-        }
-        .text-center {
-          text-align: center;
-        }
-        .desc-title {
-          font-weight: bold;
-          color: var(--primary-blue-dark);
-          margin-bottom: 6px;
-        }
-        .desc-box {
-          border-top: 1px dashed var(--border);
-          padding-top: 6px;
-        }
-        .desc-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 8.7pt;
-          margin-bottom: 2px;
-          color: var(--text-muted);
-        }
-        .desc-total {
-          display: flex;
-          justify-content: space-between;
-          font-size: 9.5pt;
-          margin-top: 4px;
-          padding-top: 4px;
-          border-top: 1px solid var(--border);
-          font-weight: bold;
-        }
-        .footer {
-          position: absolute;
-          bottom: 15mm;
-          left: 12mm;
-          right: 12mm;
-        }
-        .signatures-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .sig-cell {
-          width: 50%;
-          text-align: center;
-          padding: 0 30px;
-        }
-        .sig-line {
-          border-top: 1px solid var(--text-muted);
-          margin-bottom: 6px;
-        }
-        .sig-title {
-          font-weight: bold;
-          text-transform: uppercase;
-        }
-        .sig-subtitle {
-          font-size: 8.5pt;
-          color: var(--text-muted);
-        }
-        .Logo {
-          width: 260px;
-          height: auto;
-          display: block;
-        }
-      `
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    :root {
+      --primary-blue: #416483;
+      --primary-blue-dark: #2f4f66;
+      --text-dark: #0f172a;
+      --text-muted: #475569;
+      --border: #cbd5e1;
+    }
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 8pt;
+      color: var(--text-dark);
+    }
+    .page {
+      width: 210mm;
+      min-height: auto;
+      padding: 2mm 3mm;
+      position: relative;
+    }
+    .content {
+      padding-bottom: 0;
+    }
+    .main-title {
+      font-size: 10pt;
+      font-weight: bold;
+      text-align: center;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+    .panel-header {
+      background: var(--primary-blue);
+      padding: 4px 8px;
+      font-size: 7.5pt;
+      font-weight: bold;
+      color: #fff;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .panel-body {
+      padding: 4px 8px;
+    }
+    .field-label {
+      font-size: 6.5pt;
+      color: var(--text-muted);
+    }
+    .field-value {
+      font-size: 7.5pt;
+      font-weight: 500;
+    }
+    .field-value.highlight {
+      font-size: 9pt;
+      font-weight: bold;
+      color: var(--primary-blue-dark);
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .items-table th {
+      background: var(--primary-blue);
+      color: #fff;
+      padding: 4px 6px;
+      font-size: 7pt;
+      border: 1px solid var(--primary-blue);
+    }
+    .items-table td {
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+      font-size: 7pt;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .desc-title {
+      font-weight: bold;
+      color: var(--primary-blue-dark);
+      margin-bottom: 2px;
+      font-size: 7.5pt;
+    }
+    .desc-box {
+      border-top: 1px dashed var(--border);
+      padding-top: 2px;
+    }
+    .desc-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 6.5pt;
+      margin-bottom: 0;
+      color: var(--text-muted);
+    }
+    .desc-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 7pt;
+      margin-top: 2px;
+      padding-top: 2px;
+      border-top: 1px solid var(--border);
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 2px;
+      position: static;
+    }
+    .signatures-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sig-cell {
+      width: 50%;
+      text-align: center;
+      padding: 0 12px;
+    }
+    .sig-line {
+      border-top: 1px solid var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .sig-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+    }
+    .sig-subtitle {
+      font-size: 6.5pt;
+      color: var(--text-muted);
+    }
+    .Logo {
+      max-width: 100px;
+      height: auto;
+      display: block;
+    }
+  `
     },
 
     // ===== EXCEL =====
