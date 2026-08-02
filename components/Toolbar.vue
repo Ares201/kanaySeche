@@ -74,9 +74,9 @@
           <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
             Cartas
           </NuxtLink>
-          <!-- <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
+          <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
             Tools PDF
-          </NuxtLink> -->
+          </NuxtLink>
         </div>
         <button class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
