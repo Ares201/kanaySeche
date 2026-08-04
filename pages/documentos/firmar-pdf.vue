@@ -1,41 +1,22 @@
 <template>
   <v-container fluid class="firmar-pdf-page">
-
-    <!-- ========================================================= -->
-    <!-- TOOLBAR ESTÁTICA (sticky) -->
-    <!-- ========================================================= -->
     <v-card class="toolbar-card sticky-toolbar mb-4" elevation="2">
       <v-card-title class="toolbar-title">
         <v-icon left>mdi-file-sign</v-icon>
         Firmar PDF
       </v-card-title>
-
       <v-card-text>
         <v-row align="center" dense>
-
           <!-- PDF -->
           <v-col cols="12" md="3">
-            <v-file-input
-              v-model="pdfFileInput"
-              accept="application/pdf"
-              label="Seleccionar PDF"
-              prepend-icon="mdi-file-pdf-box"
-              outlined
-              dense
-              hide-details
-              @change="handlePdfUpload"
-            />
+            <v-file-input v-model="pdfFileInput" accept="application/pdf" label="Seleccionar PDF"
+              prepend-icon="mdi-file-pdf-box" outlined dense hide-details @change="handlePdfUpload" />
           </v-col>
 
           <!-- FIRMA PREDETERMINADA -->
           <v-col cols="12" sm="6" md="2">
-            <v-btn
-              block
-              color="primary"
-              depressed
-              :disabled="!pdfLoaded || !defaultSignatureDataUrl"
-              @click="addDefaultSignature"
-            >
+            <v-btn block color="primary" depressed :disabled="!pdfLoaded || !defaultSignatureDataUrl"
+              @click="addDefaultSignature">
               <v-icon left>mdi-draw</v-icon>
               Firma (predet.)
             </v-btn>
@@ -43,34 +24,17 @@
 
           <!-- SUBIR FIRMA -->
           <v-col cols="12" sm="6" md="2">
-            <v-btn
-              block
-              color="primary"
-              depressed
-              :disabled="!pdfLoaded"
-              @click="$refs.signatureInput.click()"
-            >
+            <v-btn block color="primary" depressed :disabled="!pdfLoaded" @click="$refs.signatureInput.click()">
               <v-icon left>mdi-upload</v-icon>
               Subir firma
             </v-btn>
-            <input
-              ref="signatureInput"
-              type="file"
-              accept="image/png,image/jpeg,image/jpg"
-              style="display: none"
-              @change="handleSignatureUpload"
-            />
+            <input ref="signatureInput" type="file" accept="image/png,image/jpeg,image/jpg" style="display: none"
+              @change="handleSignatureUpload" />
           </v-col>
 
           <!-- TEXTO -->
           <v-col cols="12" sm="6" md="2">
-            <v-btn
-              block
-              color="secondary"
-              depressed
-              :disabled="!pdfLoaded"
-              @click="addText"
-            >
+            <v-btn block color="secondary" depressed :disabled="!pdfLoaded" @click="addText">
               <v-icon left>mdi-format-text</v-icon>
               Texto
             </v-btn>
@@ -78,13 +42,7 @@
 
           <!-- FECHA -->
           <v-col cols="12" sm="6" md="1">
-            <v-btn
-              block
-              color="info"
-              depressed
-              :disabled="!pdfLoaded"
-              @click="addDate"
-            >
+            <v-btn block color="info" depressed :disabled="!pdfLoaded" @click="addDate">
               <v-icon left>mdi-calendar</v-icon>
               Fecha
             </v-btn>
@@ -92,29 +50,21 @@
 
           <!-- GENERAR PDF -->
           <v-col cols="12" sm="6" md="2">
-            <v-btn
-              block
-              color="success"
-              depressed
-              :disabled="!pdfLoaded || exporting"
-              :loading="exporting"
-              @click="generatePdf"
-            >
+            <v-btn block color="success" depressed :disabled="!pdfLoaded || exporting" :loading="exporting"
+              @click="generatePdf">
               <v-icon left>mdi-file-pdf-box</v-icon>
               Generar PDF
             </v-btn>
           </v-col>
-
+          <v-col>
+            <v-btn @click="contador">
+              Contador
+            </v-btn>
+          </v-col>
         </v-row>
 
         <!-- NAVEGACIÓN -->
-        <v-row
-          v-if="pdfLoaded"
-          align="center"
-          justify="center"
-          class="mt-3"
-          dense
-        >
+        <v-row v-if="pdfLoaded" align="center" justify="center" class="mt-3" dense>
           <v-col cols="auto">
             <v-btn icon :disabled="currentPage <= 1" @click="previousPage">
               <v-icon>mdi-chevron-left</v-icon>
@@ -144,13 +94,8 @@
           <v-card-title class="subtitle-1">Páginas</v-card-title>
           <v-divider />
           <div class="thumbnails-container">
-            <div
-              v-for="page in totalPages"
-              :key="page"
-              class="thumbnail-wrapper"
-              :class="{ 'thumbnail-active': currentPage === page }"
-              @click="goToPage(page)"
-            >
+            <div v-for="page in totalPages" :key="page" class="thumbnail-wrapper"
+              :class="{ 'thumbnail-active': currentPage === page }" @click="goToPage(page)">
               <canvas :ref="'thumbnail-' + page" class="thumbnail-canvas" />
               <div class="thumbnail-number">{{ page }}</div>
             </div>
@@ -173,56 +118,32 @@
 
           <!-- PDF CARGADO -->
           <div v-else ref="pdfViewer" class="pdf-viewer">
-            <div
-              ref="pdfPageContainer"
-              class="pdf-page-container"
-              :style="{
-                width: pageWidth + 'px',
-                height: pageHeight + 'px'
-              }"
-            >
+            <div ref="pdfPageContainer" class="pdf-page-container" :style="{
+              width: pageWidth + 'px',
+              height: pageHeight + 'px'
+            }">
               <!-- CANVAS -->
               <canvas ref="pdfCanvas" class="pdf-canvas" />
 
               <!-- ELEMENTOS -->
-              <div
-                v-for="element in currentPageElements"
-                :key="element.id"
-                class="pdf-element"
-                :class="{ 'element-selected': selectedElementId === element.id }"
-                :style="getElementStyle(element)"
-                @mousedown.stop="startDrag($event, element)"
-                @click.stop="selectElement(element)"
-              >
+              <div v-for="element in currentPageElements" :key="element.id" class="pdf-element"
+                :class="{ 'element-selected': selectedElementId === element.id }" :style="getElementStyle(element)"
+                @mousedown.stop="startDrag($event, element)" @click.stop="selectElement(element)">
                 <!-- TEXTO / FECHA -->
-                <div
-                  v-if="element.type === 'text' || element.type === 'date'"
-                  class="element-text"
-                  :style="{
-                    fontSize: (element.fontSize || 18) + 'px',
-                    color: element.color || '#000000'
-                  }"
-                >
+                <div v-if="element.type === 'text' || element.type === 'date'" class="element-text" :style="{
+                  fontSize: (element.fontSize || 18) + 'px',
+                  color: element.color || '#000000'
+                }">
                   {{ element.content }}
                 </div>
 
                 <!-- FIRMA -->
-                <img
-                  v-if="element.type === 'signature'"
-                  :src="element.src"
-                  class="signature-image"
-                  draggable="false"
-                  @dragstart.prevent
-                />
+                <img v-if="element.type === 'signature'" :src="element.src" class="signature-image" draggable="false"
+                  @dragstart.prevent />
 
                 <!-- BOTÓN ELIMINAR -->
-                <button
-                  v-if="selectedElementId === element.id"
-                  class="delete-element-btn"
-                  title="Eliminar"
-                  @mousedown.stop
-                  @click.stop="deleteElement(element.id)"
-                >
+                <button v-if="selectedElementId === element.id" class="delete-element-btn" title="Eliminar"
+                  @mousedown.stop @click.stop="deleteElement(element.id)">
                   ×
                 </button>
               </div>
@@ -254,17 +175,8 @@
 
           <!-- TAMAÑO LETRA -->
           <v-col v-if="selectedElement.type === 'text' || selectedElement.type === 'date'" cols="12" sm="6" md="2">
-            <v-text-field
-              v-model.number="selectedElement.fontSize"
-              type="number"
-              min="6"
-              max="100"
-              label="Tamaño letra"
-              suffix="px"
-              outlined
-              dense
-              hide-details
-            />
+            <v-text-field v-model.number="selectedElement.fontSize" type="number" min="6" max="100" label="Tamaño letra"
+              suffix="px" outlined dense hide-details />
           </v-col>
 
           <!-- COLOR -->
@@ -280,30 +192,14 @@
 
           <!-- ANCHO -->
           <v-col cols="12" sm="6" md="1">
-            <v-text-field
-              v-model.number="selectedElement.width"
-              type="number"
-              min="20"
-              label="Ancho"
-              suffix="px"
-              outlined
-              dense
-              hide-details
-            />
+            <v-text-field v-model.number="selectedElement.width" type="number" min="20" label="Ancho" suffix="px"
+              outlined dense hide-details />
           </v-col>
 
           <!-- ALTO -->
           <v-col cols="12" sm="6" md="1">
-            <v-text-field
-              v-model.number="selectedElement.height"
-              type="number"
-              min="20"
-              label="Alto"
-              suffix="px"
-              outlined
-              dense
-              hide-details
-            />
+            <v-text-field v-model.number="selectedElement.height" type="number" min="20" label="Alto" suffix="px"
+              outlined dense hide-details />
           </v-col>
 
           <!-- ELIMINAR -->
@@ -319,10 +215,12 @@
         <!-- POSICIÓN -->
         <v-row v-if="selectedElement" dense class="mt-2">
           <v-col cols="12" sm="6" md="2">
-            <v-text-field v-model.number="selectedElement.x" type="number" label="Posición X" suffix="px" outlined dense hide-details />
+            <v-text-field v-model.number="selectedElement.x" type="number" label="Posición X" suffix="px" outlined dense
+              hide-details />
           </v-col>
           <v-col cols="12" sm="6" md="2">
-            <v-text-field v-model.number="selectedElement.y" type="number" label="Posición Y" suffix="px" outlined dense hide-details />
+            <v-text-field v-model.number="selectedElement.y" type="number" label="Posición Y" suffix="px" outlined dense
+              hide-details />
           </v-col>
         </v-row>
 
@@ -333,6 +231,8 @@
 </template>
 
 <script>
+import firebase from 'firebase/app'
+import 'firebase/firestore'
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
@@ -341,6 +241,8 @@ export default {
 
   data() {
     return {
+      // Contador
+      contadorAlmacenado: 0,
       // PDF
       pdfFileInput: null,
       pdfFile: null,
@@ -405,6 +307,38 @@ export default {
   },
 
   methods: {
+    async actualizarContador() {
+      try {
+        await this.$db.collection('firmarPdf').add({
+          contador: 1,  // o cualquier valor, pero realmente solo necesitas la fecha
+          fecha: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        console.log('📄 Evento registrado')
+      } catch (error) {
+        console.error('❌ Error al registrar evento:', error)
+      }
+    },
+    // async actualizarContador() {
+    //   try {
+    //     const docRef = this.$db.collection('firmarPdf').doc('contador')
+    //     const docSnap = await docRef.get()
+
+    //     if (!docSnap.exists) {
+    //       await docRef.set({
+    //         contador: 1,
+    //         fecha: firebase.firestore.FieldValue.serverTimestamp()
+    //       })
+    //     } else {
+    //       await docRef.update({
+    //         contador: firebase.firestore.FieldValue.increment(1),
+    //         fecha: firebase.firestore.FieldValue.serverTimestamp()
+    //       })
+    //       console.log('🔄 Contador incrementado y timestamp actualizado')
+    //     }
+    //   } catch (error) {
+    //     console.error('❌ Error al actualizar contador:', error)
+    //   }
+    // },
     // ----------------------------------------------------------------
     // UTILIDADES
     // ----------------------------------------------------------------
@@ -442,16 +376,16 @@ export default {
     // Detección de tipo de imagen por magic bytes
     detectImageType(uint8Array) {
       if (uint8Array.length >= 4 &&
-          uint8Array[0] === 0x89 &&
-          uint8Array[1] === 0x50 &&
-          uint8Array[2] === 0x4E &&
-          uint8Array[3] === 0x47) {
+        uint8Array[0] === 0x89 &&
+        uint8Array[1] === 0x50 &&
+        uint8Array[2] === 0x4E &&
+        uint8Array[3] === 0x47) {
         return 'png'
       }
       if (uint8Array.length >= 3 &&
-          uint8Array[0] === 0xFF &&
-          uint8Array[1] === 0xD8 &&
-          uint8Array[2] === 0xFF) {
+        uint8Array[0] === 0xFF &&
+        uint8Array[1] === 0xD8 &&
+        uint8Array[2] === 0xFF) {
         return 'jpg'
       }
       return null
@@ -610,7 +544,7 @@ export default {
         page: this.currentPage,
         content: 'Texto',
         x: 100,
-        y: 100,
+        y: 1080,
         width: 180,
         height: 45,
         fontSize: 18,
@@ -763,10 +697,10 @@ export default {
       if (!this.selectedElementId) return
       this.deleteElement(this.selectedElementId)
     },
+    contador() {
+      this.contadorAlmacenado++
+    },
 
-    // ----------------------------------------------------------------
-    // GENERAR PDF FINAL (CORREGIDO)
-    // ----------------------------------------------------------------
     async generatePdf() {
       if (!this.pdfData) {
         alert('Primero selecciona un PDF.')
@@ -820,7 +754,6 @@ export default {
               let imageBytes
               let mimeType = this.defaultSignatureMimeType || 'image/png'
 
-              // Si element.src es data URL, extraemos los bytes y el tipo MIME
               if (element.src && element.src.startsWith('data:')) {
                 const match = element.src.match(/^data:(image\/[a-zA-Z]+);base64,(.*)$/)
                 if (match) {
@@ -835,7 +768,6 @@ export default {
                   throw new Error('Data URL inválida')
                 }
               } else if (this.defaultSignatureUint8Array) {
-                // Si no es data URL, usar la firma predeterminada guardada
                 imageBytes = this.defaultSignatureUint8Array
                 mimeType = this.defaultSignatureMimeType || 'image/png'
               } else {
@@ -844,7 +776,6 @@ export default {
 
               console.log(`Tipo MIME: ${mimeType}, tamaño: ${imageBytes.length} bytes`)
 
-              // Incrustar la imagen con el formato adecuado
               let image
               try {
                 if (mimeType === 'image/png') {
@@ -852,7 +783,6 @@ export default {
                 } else if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
                   image = await pdfDoc.embedJpg(imageBytes)
                 } else {
-                  // Si el tipo no es reconocido, intentar PNG primero y luego JPG
                   try {
                     image = await pdfDoc.embedPng(imageBytes)
                   } catch {
@@ -860,7 +790,6 @@ export default {
                   }
                 }
               } catch (embedError) {
-                // Fallback: si falla con el tipo declarado, probar el otro
                 console.warn('Fallo al incrustar con tipo', mimeType, 'intentando el otro formato...')
                 if (mimeType === 'image/png') {
                   image = await pdfDoc.embedJpg(imageBytes)
@@ -884,7 +813,6 @@ export default {
           }
         }
 
-        // Si hubo error con alguna firma, mostramos advertencia
         if (this._signatureError) {
           alert('Hubo un problema al incrustar una o más firmas. El PDF se generó pero sin esas firmas.')
           this._signatureError = false
@@ -903,6 +831,9 @@ export default {
         URL.revokeObjectURL(url)
 
         console.log('PDF generado exitosamente')
+
+        // ✅ REGISTRAR EL CLIC EN FIREBASE
+        await this.actualizarContador()
 
       } catch (error) {
         console.error('Error generando PDF:', error)
@@ -991,7 +922,7 @@ export default {
   max-width: 100%;
   height: auto;
   margin: 0 auto;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
 .thumbnail-number {
@@ -1022,7 +953,7 @@ export default {
   position: relative;
   margin: 0 auto;
   background: white;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.25);
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.25);
 }
 
 .pdf-canvas {
@@ -1161,6 +1092,7 @@ export default {
   .pdf-viewer {
     padding: 15px;
   }
+
   .pdf-page-container {
     margin-left: 0;
     margin-right: 0;

@@ -119,6 +119,18 @@
         "update": "update",
         "delete": "remove"
       }
+    },
+    "firmarPdf": {
+      "collection": "firmarPdf",
+      "model": "firmarPdf",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
     }
   }
 }

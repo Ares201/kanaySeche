@@ -2,74 +2,138 @@
   <section class="home-page">
     <!-- Encabezado -->
     <div class="dashboard-header">
-      <div>
+      <div class="header-content">
         <p class="eyebrow">Dashboard</p>
-        <h1>Gráficos</h1>
       </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="filters">
-      <div class="filter-group">
-        <label>Desde</label>
-        <input v-model="fechaInicio" type="date" />
-      </div>
-      <div class="filter-group">
-        <label>Hasta</label>
-        <input v-model="fechaFin" type="date" />
-      </div>
-      <button class="secondary-button" @click="resetFiltros">Resetear</button>
-      <button class="secondary-button" @click="mostrarTodo">Mostrar todo</button>
-    </div>
-
-    <v-row>
-      <!-- Columna izquierda: Ingresos Cisterna -->
+    <!-- Filtros más compactos -->
+    <v-row class="filters-row" align="center">
       <v-col cols="12" md="6">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-label">Total ingresos</span>
-            <span class="stat-value">{{ totalIngresos }}</span>
+        <div class="filters-wrapper">
+          <div class="filter-group">
+            <label><v-icon small>mdi-calendar-start</v-icon> Desde</label>
+            <input v-model="fechaInicio" type="date" class="filter-input" />
           </div>
-          <div class="stat-card">
-            <span class="stat-label">Promedio diario</span>
-            <span class="stat-value">{{ promedioDiario }}</span>
+          <div class="filter-group">
+            <label><v-icon small>mdi-calendar-end</v-icon> Hasta</label>
+            <input v-model="fechaFin" type="date" class="filter-input" />
           </div>
-          <div class="stat-card">
-            <span class="stat-label">Días con datos</span>
-            <span class="stat-value">{{ diasConDatos }}</span>
+          <div class="filter-actions">
+            <button class="secondary-button" @click="resetFiltros">
+              <v-icon small>mdi-refresh</v-icon> Resetear
+            </button>
+            <button class="secondary-button" @click="mostrarTodo">
+              <v-icon small>mdi-eye</v-icon> Mostrar todo
+            </button>
           </div>
         </div>
-        <div class="chart-container">
-          <h3>Ingresos Cisterna</h3>
-          <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
-          <canvas v-else ref="chartCanvas" height="250"></canvas>
+      </v-col>
+      <v-col cols="12" md="6" class="text-md-right">
+        <span class="filter-hint">
+          <v-icon small>mdi-filter-variant</v-icon> Filtrar por rango de fechas
+        </span>
+      </v-col>
+    </v-row>
+
+    <!-- Tarjeta: Generaciones de PDF -->
+    <v-row class="mt-4">
+      <v-col cols="12">
+        <div class="card-modern">
+          <div class="card-header">
+            <h3 class="card-title">
+              <v-icon class="icon-title">mdi-file-pdf-box</v-icon>
+              Generaciones de PDF
+            </h3>
+          </div>
+          <div class="stats-grid-2">
+            <div class="stat-card-modern stat-pdf">
+              <span class="stat-label">Total de PDFs generados</span>
+              <span class="stat-value">{{ contadorPDF }}</span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-file-pdf</v-icon>
+            </div>
+            <div class="stat-card-modern stat-pdf">
+              <span class="stat-label">Última generación</span>
+              <span class="stat-value" style="font-size: 16px;">
+                {{ ultimaFechaPDF ? formatDate(ultimaFechaPDF) : 'Sin datos' }}
+              </span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-clock-outline</v-icon>
+            </div>
+          </div>
+        </div>
+      </v-col>
+    </v-row>
+
+    <!-- Gráficos principales -->
+    <v-row dense>
+      <!-- Ingresos Cisterna -->
+      <v-col cols="12" md="6">
+        <div class="card-modern">
+          <div class="card-header">
+            <h3 class="card-title">
+              <v-icon class="icon-title">mdi-truck</v-icon>
+              Ingresos Cisterna
+            </h3>
+          </div>
+          <div class="stats-grid-3">
+            <div class="stat-card-modern stat-ingreso">
+              <span class="stat-label">Total</span>
+              <span class="stat-value">{{ totalIngresos }}</span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-counter</v-icon>
+            </div>
+            <div class="stat-card-modern stat-ingreso">
+              <span class="stat-label">Promedio diario</span>
+              <span class="stat-value">{{ promedioDiario }}</span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-chart-line</v-icon>
+            </div>
+            <div class="stat-card-modern stat-ingreso">
+              <span class="stat-label">Días con datos</span>
+              <span class="stat-value">{{ diasConDatos }}</span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-calendar-range</v-icon>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
+            <canvas v-else ref="chartCanvas" class="chart-canvas"></canvas>
+          </div>
         </div>
       </v-col>
 
-      <!-- Columna derecha: Estado de Cartas -->
+      <!-- Estado de Cartas -->
       <v-col cols="12" md="6">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-label">Emitidos</span>
-            <span class="stat-value">{{ totalEmitidos }}</span>
+        <div class="card-modern">
+          <div class="card-header">
+            <h3 class="card-title">
+              <v-icon class="icon-title">mdi-email</v-icon>
+              Estado de Cartas
+            </h3>
           </div>
-          <div class="stat-card">
-            <span class="stat-label">Enviados</span>
-            <span class="stat-value">{{ totalEnviados }}</span>
+          <div class="stats-grid-4">
+            <div class="stat-card-modern stat-emitido">
+              <span class="stat-label">Emitidos</span>
+              <span class="stat-value">{{ totalEmitidos }}</span>
+              <v-icon class="stat-icon" color="#3b82f6">mdi-send</v-icon>
+            </div>
+            <div class="stat-card-modern stat-enviado">
+              <span class="stat-label">Enviados</span>
+              <span class="stat-value">{{ totalEnviados }}</span>
+              <v-icon class="stat-icon" color="#f59e0b">mdi-email-send</v-icon>
+            </div>
+            <div class="stat-card-modern stat-entregado">
+              <span class="stat-label">Entregados</span>
+              <span class="stat-value">{{ totalEntregados }}</span>
+              <v-icon class="stat-icon" color="#10b981">mdi-check-circle</v-icon>
+            </div>
+            <div class="stat-card-modern stat-anulado">
+              <span class="stat-label">Anulados</span>
+              <span class="stat-value">{{ totalAnulados }}</span>
+              <v-icon class="stat-icon" color="#ef4444">mdi-close-circle</v-icon>
+            </div>
           </div>
-          <div class="stat-card">
-            <span class="stat-label">Entregados</span>
-            <span class="stat-value">{{ totalEntregados }}</span>
+          <div class="chart-wrapper">
+            <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
+            <canvas v-else ref="chartCanvas2" class="chart-canvas"></canvas>
           </div>
-          <div class="stat-card">
-            <span class="stat-label">Anulados</span>
-            <span class="stat-value">{{ totalAnulados }}</span>
-          </div>
-        </div>
-        <div class="chart-container">
-          <h3>Estado de Cartas</h3>
-          <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
-          <canvas v-else ref="chartCanvas2" height="250"></canvas>
         </div>
       </v-col>
     </v-row>
@@ -77,14 +141,16 @@
 </template>
 
 <script>
+// (Mismo script que proporcionaste, sin cambios)
 import Chart from 'chart.js/auto'
 import { normalizeIngresoCisterna } from '~/models/ingresoCisterna'
-// IMPORTANTE: Asegúrate de tener un normalizeCarta o usa normalizeCliente si es el mismo
 
 export default {
   name: 'IndexPage',
   data() {
     return {
+      contadorPDF: 0,
+      ultimaFechaPDF: null,
       loading: false,
       ingresos: [],
       cartas: [],
@@ -136,15 +202,11 @@ export default {
       return this.datosGraficoIngresos.labels.length
     },
 
-    // ------------------------------------------------------------
-    // CARTAS FILTRADAS
-    // ------------------------------------------------------------
     cartasFiltradas() {
       if (!this.cartas.length) return []
       if (!this.fechaInicio && !this.fechaFin) return this.cartas
 
       return this.cartas.filter(item => {
-        // Usamos fechaCreacion (timestamp) o fecha (string) - priorizamos fechaCreacion
         const fechaItem = this.obtenerFechaString(item.fecha || item.fechaCreacion)
         if (!fechaItem) return false
         if (this.fechaInicio && fechaItem < this.fechaInicio) return false
@@ -153,7 +215,6 @@ export default {
       })
     },
 
-    // Totales por estadoProceso
     totalEmitidos() {
       return this.cartasFiltradas.filter(c => c.estadoProceso === 'Emitido').length
     },
@@ -185,6 +246,7 @@ export default {
 
   mounted() {
     this.cargarDatos()
+    this.cargarContadorPDF()
     console.log('Cartas', this.cartas)
   },
 
@@ -200,9 +262,50 @@ export default {
   },
 
   methods: {
-    // ------------------------------------------------------------
-    // UTILIDADES DE FECHAS
-    // ------------------------------------------------------------
+    async cargarContadorPDF() {
+      try {
+        const totalSnapshot = await this.$db.collection('firmarPdf').get()
+        this.contadorPDF = totalSnapshot.size
+
+        const lastSnapshot = await this.$db
+          .collection('firmarPdf')
+          .orderBy('fecha', 'desc')
+          .limit(1)
+          .get()
+
+        if (!lastSnapshot.empty) {
+          const data = lastSnapshot.docs[0].data()
+          this.ultimaFechaPDF = data.fecha || null
+        } else {
+          this.ultimaFechaPDF = null
+        }
+      } catch (error) {
+        console.error('Error cargando contador PDF:', error)
+        if (error.code === 'failed-precondition') {
+          console.warn('No hay índice. Obteniendo el último documento...')
+          const fallbackSnapshot = await this.$db
+            .collection('firmarPdf')
+            .limit(1)
+            .get()
+          if (!fallbackSnapshot.empty) {
+            const data = fallbackSnapshot.docs[0].data()
+            this.ultimaFechaPDF = data.fecha || null
+          }
+        }
+      }
+    },
+    formatDate(date) {
+      if (!date) return 'Sin datos'
+      const d = date.toDate ? date.toDate() : new Date(date)
+      if (isNaN(d.getTime())) return 'Fecha inválida'
+      return d.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
     obtenerFechaString(fecha) {
       if (!fecha) return null
       let dateObj
@@ -211,10 +314,8 @@ export default {
       } else if (typeof fecha === 'object' && typeof fecha.toDate === 'function') {
         dateObj = fecha.toDate()
       } else if (typeof fecha === 'object' && fecha.seconds !== undefined) {
-        // Firestore timestamp
         dateObj = new Date(fecha.seconds * 1000 + (fecha.nanoseconds || 0) / 1000000)
       } else if (typeof fecha === 'string') {
-        // Si es string en formato YYYY-MM-DD o ISO
         if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha
         dateObj = new Date(fecha)
       } else {
@@ -241,9 +342,6 @@ export default {
       return `${y}-${m}-${d}`
     },
 
-    // ------------------------------------------------------------
-    // CARGA DE DATOS
-    // ------------------------------------------------------------
     async cargarDatos() {
       this.loading = true
       const hoy = new Date()
@@ -263,14 +361,7 @@ export default {
           .map(normalizeIngresoCisterna)
           .filter(i => i.estado !== false)
 
-        // Normaliza las cartas. Si no tienes normalizeCarta, usa el mapper directo
-        this.cartas = cartasDocs.map(doc => {
-          // Si normalizeCliente funciona, úsalo; sino, haz un mapeo manual
-          return this.normalizeCarta(doc)
-        })
-
-        // Opcional: filtrar cartas inactivas si tienen campo estado
-        // this.cartas = this.cartas.filter(c => c.estado !== false)
+        this.cartas = cartasDocs.map(doc => this.normalizeCarta(doc))
 
       } catch (error) {
         console.error('Error al cargar datos:', error)
@@ -304,9 +395,6 @@ export default {
       }
     },
 
-    // ------------------------------------------------------------
-    // RENDERIZADO DE GRÁFICOS
-    // ------------------------------------------------------------
     renderizarGraficoIngresos() {
       this.$nextTick(() => {
         const canvas = this.$refs.chartCanvas
@@ -431,137 +519,336 @@ export default {
 </script>
 
 <style scoped>
+/* ========================================================= */
+/* ESTILOS SIMPLIFICADOS - SIN HOVERS Y MÁS COMPACTOS        */
+/* ========================================================= */
+
 .home-page {
-  padding: 30px;
+  padding: 24px 16px;
+  background: #f1f5f9;
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* ---------- ENCABEZADO ---------- */
 .dashboard-header {
   margin-bottom: 24px;
+  background: #0f172a;
+  border-radius: 16px;
+  padding: 24px 32px;
+  color: white;
 }
 
 .eyebrow {
-  margin: 0 0 6px;
-  color: #0f766e;
+  margin: 0 0 4px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.8;
 }
 
 h1 {
-  margin: 0;
+  margin: 0 0 6px;
   font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
-.filters {
+.subtitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* ---------- FILTROS (más compactos) ---------- */
+.filters-wrapper {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background: #f8fafc;
-  border-radius: 8px;
+  gap: 12px;
+  background: white;
+  padding: 14px 18px;
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  flex: 1 0 130px;
 }
 
 .filter-group label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #334155;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.filter-group input {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 14px;
-  background: #fff;
+.filter-group label .v-icon {
+  color: #0f766e;
+  font-size: 16px;
+}
+
+.filter-input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
   outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
 }
 
-.filter-group input:focus {
+.filter-input:focus {
   border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .secondary-button {
-  height: 40px;
+  height: 36px;
   padding: 0 16px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #fff;
-  color: #334155;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.secondary-button:hover {
+  border: none;
+  border-radius: 8px;
   background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+.secondary-button:active {
+  background: #e2e8f0;
+}
+
+.filter-hint {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---------- TARJETAS (sin hover) ---------- */
+.card-modern {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px 24px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.icon-title {
+  color: #0f766e;
+  font-size: 22px;
+}
+
+/* ---------- TARJETAS DE ESTADÍSTICAS ---------- */
+.stats-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
   margin-bottom: 16px;
 }
 
-.stat-card {
-  padding: 12px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+.stats-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.stats-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.stat-card-modern {
+  padding: 14px 12px;
+  background: #fafbfc;
+  border-radius: 12px;
+  border-left: 4px solid #0f766e;
   text-align: center;
+  position: relative;
 }
 
 .stat-label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   color: #64748b;
   letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
 .stat-value {
   display: block;
   margin-top: 4px;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: #0f172a;
+  line-height: 1.2;
 }
 
-.chart-container {
-  padding: 20px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  margin-top: 8px;
+.stat-icon {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  opacity: 0.25;
+  font-size: 18px;
 }
 
-.chart-container h3 {
-  margin: 0 0 16px;
-  font-size: 16px;
-  color: #1e293b;
+/* Colores específicos para cada estado de carta */
+.stat-emitido {
+  border-left-color: #3b82f6;
+}
+
+.stat-enviado {
+  border-left-color: #f59e0b;
+}
+
+.stat-entregado {
+  border-left-color: #10b981;
+}
+
+.stat-anulado {
+  border-left-color: #ef4444;
+}
+
+.stat-ingreso {
+  border-left-color: #0f766e;
+}
+
+.stat-pdf {
+  border-left-color: #0f766e;
+}
+
+/* ---------- GRÁFICOS ---------- */
+.chart-wrapper {
+  position: relative;
+  height: 240px;
+  width: 100%;
+  margin-top: 4px;
+  background: #fafbfc;
+  border-radius: 12px;
+  padding: 6px;
+}
+
+.chart-canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .chart-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 250px;
+  height: 100%;
   color: #94a3b8;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-canvas {
-  width: 100% !important;
-  max-height: 250px;
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 960px) {
+
+  .stats-grid-2,
+  .stats-grid-3,
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .home-page {
+    padding: 12px 10px;
+  }
+
+  .filters-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .filter-actions {
+    justify-content: stretch;
+  }
+
+  .filter-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .stats-grid-2,
+  .stats-grid-3,
+  .stats-grid-4 {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat-card-modern {
+    padding: 12px 8px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .card-modern {
+    padding: 14px 12px 16px;
+  }
+
+  .chart-wrapper {
+    height: 180px;
+  }
+
+  .dashboard-header {
+    padding: 16px 20px;
+    border-radius: 12px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
 }
 </style>

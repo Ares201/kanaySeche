@@ -358,8 +358,8 @@
 
     <ConfirmacionDialog v-if="confirmacionCarta" v-model="isConfirmacionOpen" :carta="confirmacionCarta"
       @save-cargo="saveCargo" @mark-delivered="markDelivered" @message="showMessage" />
-    <CargoDigitalDialog v-if="cargoCarta" v-model="isCargoDialogOpen" :carta="cargoCarta"
-      @save="saveCargoDigital" @message="showMessage" />
+    <CargoDigitalDialog v-if="cargoCarta" v-model="isCargoDialogOpen" :carta="cargoCarta" @save="saveCargoDigital"
+      @message="showMessage" />
 
     <div v-if="isPreviewOpen" class="modal-backdrop modal-backdrop--preview">
       <div class="modal modal--preview">

@@ -75,7 +75,7 @@
             Cartas
           </NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
-            Tools PDF
+            Firmar PDF
           </NuxtLink>
         </div>
         <button class="module-button" type="button" @click="toggleConfiguracion">
