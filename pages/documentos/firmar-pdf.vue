@@ -56,11 +56,6 @@
               Generar PDF
             </v-btn>
           </v-col>
-          <v-col>
-            <v-btn @click="contador">
-              Contador
-            </v-btn>
-          </v-col>
         </v-row>
 
         <!-- NAVEGACIÓN -->
@@ -241,8 +236,6 @@ export default {
 
   data() {
     return {
-      // Contador
-      contadorAlmacenado: 0,
       // PDF
       pdfFileInput: null,
       pdfFile: null,
@@ -535,8 +528,22 @@ export default {
     },
 
     // ----------------------------------------------------------------
-    // ELEMENTOS: TEXTO, FECHA, FIRMA
+    // ELEMENTOS: TEXTO, FECHA, FIRMA  -  Medidas y posiciones según diseño
     // ----------------------------------------------------------------
+    // IMAGEN
+    // ANCHO: 285
+    // ALTO: 105
+    // X: 110
+    // Y: 1080
+
+    // FECHA
+
+    // TAMAÑO: 9
+    // ANCHO: 150
+    // ALTO: 40
+    // X: 260
+    // Y: 1158
+    // COLOR RGB 877 - #080707
     addText() {
       const element = {
         id: ++this.elementCounter,
@@ -696,9 +703,6 @@ export default {
     deleteSelectedElement() {
       if (!this.selectedElementId) return
       this.deleteElement(this.selectedElementId)
-    },
-    contador() {
-      this.contadorAlmacenado++
     },
 
     async generatePdf() {

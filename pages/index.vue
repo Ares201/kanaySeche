@@ -1,14 +1,14 @@
 <template>
   <section class="home-page">
-    <!-- Encabezado -->
-    <div class="dashboard-header">
-      <div class="header-content">
-        <p class="eyebrow">Dashboard</p>
-      </div>
-    </div>
-
     <!-- Filtros más compactos -->
     <v-row class="filters-row" align="center">
+      <!-- <v-col cols="12" md="6">
+        <div class="dashboard-header">
+          <p class="eyebrow">Dashboard</p>
+          <h1>Panel de control</h1>
+        </div>
+      </v-col> -->
+      <v-spacer />
       <v-col cols="12" md="6">
         <div class="filters-wrapper">
           <div class="filter-group">
@@ -27,18 +27,16 @@
               <v-icon small>mdi-eye</v-icon> Mostrar todo
             </button>
           </div>
+          <span class="filter-hint">
+            <v-icon small>mdi-filter-variant</v-icon>
+          </span>
         </div>
-      </v-col>
-      <v-col cols="12" md="6" class="text-md-right">
-        <span class="filter-hint">
-          <v-icon small>mdi-filter-variant</v-icon> Filtrar por rango de fechas
-        </span>
       </v-col>
     </v-row>
 
-    <!-- Tarjeta: Generaciones de PDF -->
-    <v-row class="mt-4">
-      <v-col cols="12">
+    <v-row dense>
+      <!-- Tarjeta: Generaciones de PDF -->
+      <v-col cols="12" md="12">
         <div class="card-modern">
           <div class="card-header">
             <h3 class="card-title">
@@ -64,7 +62,7 @@
       </v-col>
     </v-row>
 
-    <!-- Gráficos principales -->
+    <!-- Gráficos principales (dos columnas) -->
     <v-row dense>
       <!-- Ingresos Cisterna -->
       <v-col cols="12" md="6">
@@ -98,9 +96,43 @@
           </div>
         </div>
       </v-col>
-
-      <!-- Estado de Cartas -->
+      <!-- Pedidos de Venta -->
       <v-col cols="12" md="6">
+        <div class="card-modern">
+          <div class="card-header">
+            <h3 class="card-title">
+              <v-icon class="icon-title">mdi-cart</v-icon>
+              Pedidos de Venta
+            </h3>
+          </div>
+          <div class="stats-grid-3">
+            <div class="stat-card-modern stat-pedido">
+              <span class="stat-label">Total pedidos</span>
+              <span class="stat-value">{{ totalPedidos }}</span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-counter</v-icon>
+            </div>
+            <div class="stat-card-modern stat-pedido">
+              <span class="stat-label">Promedio diario</span>
+              <span class="stat-value">{{ promedioDiarioPedidos }}</span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-chart-line</v-icon>
+            </div>
+            <div class="stat-card-modern stat-pedido">
+              <span class="stat-label">Días con datos</span>
+              <span class="stat-value">{{ diasConDatosPedidos }}</span>
+              <v-icon class="stat-icon" color="#0f766e">mdi-calendar-range</v-icon>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <div v-if="loading" class="chart-placeholder">Cargando datos...</div>
+            <canvas v-else ref="pedidosChartCanvas" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </v-col>
+    </v-row>
+
+    <v-row dense>
+      <!-- Estado de Cartas -->
+      <v-col cols="12" md="12">
         <div class="card-modern">
           <div class="card-header">
             <h3 class="card-title">
@@ -141,7 +173,6 @@
 </template>
 
 <script>
-// (Mismo script que proporcionaste, sin cambios)
 import Chart from 'chart.js/auto'
 import { normalizeIngresoCisterna } from '~/models/ingresoCisterna'
 
@@ -154,10 +185,12 @@ export default {
       loading: false,
       ingresos: [],
       cartas: [],
+      pedidos: [],               // <-- NUEVO
       fechaInicio: '',
       fechaFin: '',
       chartInstance: null,
       chartInstance2: null,
+      pedidosChartInstance: null // <-- NUEVO
     }
   },
 
@@ -233,6 +266,48 @@ export default {
       const counts = estados.map(e => this.cartasFiltradas.filter(c => c.estadoProceso === e).length)
       return { labels: estados, counts }
     },
+
+    // ---------- NUEVOS COMPUTED PARA PEDIDOS ----------
+    pedidosFiltrados() {
+      if (!this.pedidos.length) return []
+      if (!this.fechaInicio && !this.fechaFin) return this.pedidos
+
+      return this.pedidos.filter(item => {
+        const fechaItem = this.obtenerFechaString(item.fechaCreacion)
+        if (!fechaItem) return false
+        if (this.fechaInicio && fechaItem < this.fechaInicio) return false
+        if (this.fechaFin && fechaItem > this.fechaFin) return false
+        return true
+      })
+    },
+
+    datosGraficoPedidos() {
+      const grupos = {}
+      this.pedidosFiltrados.forEach(p => {
+        const dia = this.formatearFechaDDMMYYYY(p.fechaCreacion)
+        if (dia) grupos[dia] = (grupos[dia] || 0) + 1
+      })
+      const fechas = Object.keys(grupos).sort((a, b) => {
+        const [d1, m1, y1] = a.split('/').map(Number)
+        const [d2, m2, y2] = b.split('/').map(Number)
+        return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2)
+      })
+      return { labels: fechas, counts: fechas.map(f => grupos[f]) }
+    },
+
+    totalPedidos() {
+      return this.pedidosFiltrados.length
+    },
+
+    promedioDiarioPedidos() {
+      const dias = this.diasConDatosPedidos
+      return dias > 0 ? (this.totalPedidos / dias).toFixed(1) : '0'
+    },
+
+    diasConDatosPedidos() {
+      return this.datosGraficoPedidos.labels.length
+    }
+    // ------------------------------------------------
   },
 
   watch: {
@@ -242,12 +317,15 @@ export default {
     cartasFiltradas() {
       this.renderizarGraficoEstados()
     },
+    // NUEVO WATCH
+    pedidosFiltrados() {
+      this.renderizarGraficoPedidos()
+    }
   },
 
   mounted() {
     this.cargarDatos()
     this.cargarContadorPDF()
-    console.log('Cartas', this.cartas)
   },
 
   beforeUnmount() {
@@ -258,6 +336,11 @@ export default {
     if (this.chartInstance2) {
       this.chartInstance2.destroy()
       this.chartInstance2 = null
+    }
+    // NUEVO
+    if (this.pedidosChartInstance) {
+      this.pedidosChartInstance.destroy()
+      this.pedidosChartInstance = null
     }
   },
 
@@ -294,6 +377,7 @@ export default {
         }
       }
     },
+
     formatDate(date) {
       if (!date) return 'Sin datos'
       const d = date.toDate ? date.toDate() : new Date(date)
@@ -306,6 +390,7 @@ export default {
         minute: '2-digit'
       })
     },
+
     obtenerFechaString(fecha) {
       if (!fecha) return null
       let dateObj
@@ -352,9 +437,10 @@ export default {
       this.fechaFin = this.formatearInputDate(hoy)
 
       try {
-        const [ingresosDocs, cartasDocs] = await Promise.all([
+        const [ingresosDocs, cartasDocs, pedidosDocs] = await Promise.all([
           this.$firebaseApi.list('ingresosCisterna'),
-          this.$firebaseApi.list('cartas')
+          this.$firebaseApi.list('cartas'),
+          this.$firebaseApi.list('pedidosVenta')   // <-- NUEVO
         ])
 
         this.ingresos = ingresosDocs
@@ -363,11 +449,20 @@ export default {
 
         this.cartas = cartasDocs.map(doc => this.normalizeCarta(doc))
 
+        // NUEVO: normalizar pedidos
+        this.pedidos = pedidosDocs.map(doc => this.normalizePedido(doc))
+
       } catch (error) {
         console.error('Error al cargar datos:', error)
         alert('No se pudieron cargar los datos')
       } finally {
         this.loading = false
+        // Una vez cargados, renderizamos todos los gráficos (por si acaso)
+        this.$nextTick(() => {
+          this.renderizarGraficoIngresos()
+          this.renderizarGraficoEstados()
+          this.renderizarGraficoPedidos()
+        })
       }
     },
 
@@ -383,6 +478,7 @@ export default {
       this.fechaInicio = ''
       this.fechaFin = ''
     },
+
     normalizeCarta(carta) {
       const source = carta || {}
       return {
@@ -395,6 +491,17 @@ export default {
       }
     },
 
+    // NUEVO: normalizar pedido
+    normalizePedido(pedido) {
+      const source = pedido || {}
+      return {
+        id: source.id || '',
+        fechaCreacion: source.fechaCreacion || null,
+        // puedes agregar más campos si los necesitas
+      }
+    },
+
+    // ---------- RENDERIZADO DE GRÁFICOS (incluido el nuevo) ----------
     renderizarGraficoIngresos() {
       this.$nextTick(() => {
         const canvas = this.$refs.chartCanvas
@@ -513,6 +620,67 @@ export default {
           }
         })
       })
+    },
+
+    // NUEVO: renderizar gráfico de pedidos
+    renderizarGraficoPedidos() {
+      this.$nextTick(() => {
+        const canvas = this.$refs.pedidosChartCanvas
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+
+        if (this.pedidosChartInstance) {
+          this.pedidosChartInstance.destroy()
+          this.pedidosChartInstance = null
+        }
+
+        const { labels, counts } = this.datosGraficoPedidos
+        if (labels.length === 0) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.fillStyle = '#94a3b8'
+          ctx.font = '14px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.fillText('No hay pedidos en el período seleccionado', canvas.width / 2, canvas.height / 2)
+          return
+        }
+
+        this.pedidosChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Pedidos',
+              data: counts,
+              backgroundColor: '#F54927', // o puedes usar otro color, ej. '#8b5cf6'
+              borderRadius: 4,
+              barPercentage: 0.6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) => `${context.raw} pedido(s)`
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: Math.max(1, Math.ceil(Math.max(...counts) / 5))
+                }
+              },
+              x: {
+                grid: { display: false }
+              }
+            }
+          }
+        })
+      })
     }
   }
 }
@@ -542,7 +710,7 @@ export default {
 .eyebrow {
   margin: 0 0 4px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 2px;
   opacity: 0.8;
@@ -565,6 +733,7 @@ h1 {
 /* ---------- FILTROS (más compactos) ---------- */
 .filters-wrapper {
   display: flex;
+  justify-content: end;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 12px;
@@ -579,6 +748,7 @@ h1 {
   flex-direction: column;
   gap: 2px;
   flex: 1 0 130px;
+  max-width: 220px;
 }
 
 .filter-group label {
@@ -757,6 +927,12 @@ h1 {
 
 .stat-pdf {
   border-left-color: #0f766e;
+}
+
+/* Nuevo para pedidos */
+.stat-pedido {
+  border-left-color: #8b5cf6;
+  /* color morado para diferenciar */
 }
 
 /* ---------- GRÁFICOS ---------- */
