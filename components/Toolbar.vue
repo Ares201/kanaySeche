@@ -41,13 +41,13 @@
           <span></span>
         </NuxtLink>
         <button class="module-button" type="button" @click="togglePlanificacion">
-          <span>Panificacion</span>
+          <span>Planificacion</span>
           <span class="chevron" :class="{ 'chevron--open': planificacionOpen }">›</span>
         </button>
 
         <div v-show="planificacionOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/planificacion/ordenRecepcion" @click.native="closeMenu">
-            Orden de recepcion
+          <NuxtLink class="nav-link" to="/planificacion/agendamientos" @click.native="closeMenu">
+            Agendamientos
           </NuxtLink>
         </div>
 
