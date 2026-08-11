@@ -71,6 +71,9 @@
         </button>
 
         <div v-show="documentosOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">
+            Expedientes
+          </NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
             Cartas
           </NuxtLink>
