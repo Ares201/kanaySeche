@@ -145,6 +145,16 @@ export default {
           }
         )
 
+      // Servidor Ares
+      // try {
+      //   const response = await this.$axios.post(
+      //     'http://localhost:8000/renombrar',
+      //     formData,
+      //     {
+      //       responseType: 'blob'
+      //     }
+      //   )
+
         // Leer estadísticas desde los headers
         const renombrados = response.headers['x-renombrados'] || '?'
         const omitidos = response.headers['x-omitidos'] || '?'

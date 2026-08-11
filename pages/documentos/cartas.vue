@@ -105,6 +105,13 @@
                       <path d="M8 16l8-8" />
                     </svg>
                   </button>
+                  <!-- Botón para retroceder estado -->
+                  <v-btn icon small class="status-icon-button status-icon-button--back"
+                    :title="canRegress(carta.estadoProceso) ? 'Retroceder a ' + getPreviousEstado(carta.estadoProceso) : 'No se puede retroceder'"
+                    :aria-label="'Retroceder estado de la carta'" :disabled="!canRegress(carta.estadoProceso)"
+                    @click="regressCartaEstado(carta)">
+                    <v-icon small>mdi-arrow-left</v-icon>
+                  </v-btn>
                   <!-- <button class="icon-button icon-button--danger" type="button" title="Eliminar"
                     aria-label="Eliminar carta" @click="deleteCarta(carta.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -358,8 +365,8 @@
 
     <ConfirmacionDialog v-if="confirmacionCarta" v-model="isConfirmacionOpen" :carta="confirmacionCarta"
       @save-cargo="saveCargo" @mark-delivered="markDelivered" @message="showMessage" />
-    <CargoDigitalDialog v-if="cargoCarta" v-model="isCargoDialogOpen" :carta="cargoCarta"
-      @save="saveCargoDigital" @message="showMessage" />
+    <CargoDigitalDialog v-if="cargoCarta" v-model="isCargoDialogOpen" :carta="cargoCarta" @save="saveCargoDigital"
+      @message="showMessage" />
 
     <div v-if="isPreviewOpen" class="modal-backdrop modal-backdrop--preview">
       <div class="modal modal--preview">
@@ -492,6 +499,50 @@ export default {
     this.loadClientes()
   },
   methods: {
+    // Funciones para retroceder estados
+    getPreviousEstado(estadoActual) {
+      const index = CARTA_ESTADOS.indexOf(estadoActual);
+      if (index > 0) {
+        return CARTA_ESTADOS[index - 1];
+      }
+      return null;
+    },
+    canRegress(estadoActual) {
+      if (estadoActual === 'Emitido' || estadoActual === 'Anulado') {
+        return false;
+      }
+      // Opcional: impedir retroceder desde 'Entregado'
+      // if (estadoActual === 'Entregado') return false;
+      return this.getPreviousEstado(estadoActual) !== null;
+    },
+    async regressCartaEstado(carta) {
+      const estadoAnterior = this.getPreviousEstado(carta.estadoProceso);
+      if (!estadoAnterior) {
+        this.showMessage('No se puede retroceder desde este estado');
+        return;
+      }
+
+      if (!window.confirm(`¿Deseas retroceder la carta de "${carta.estadoProceso}" a "${estadoAnterior}"?`)) {
+        return;
+      }
+
+      try {
+        const updatedCarta = await this.$firebaseApi.update('cartas', carta.id, {
+          estadoProceso: estadoAnterior,
+          estado: estadoAnterior
+        });
+
+        this.cartas = this.cartas.map(c =>
+          c.id === carta.id
+            ? this.normalizeCarta({ ...carta, ...updatedCarta, estadoProceso: estadoAnterior, estado: estadoAnterior })
+            : c
+        );
+        this.showMessage(`Estado cambiado a "${estadoAnterior}"`);
+      } catch (error) {
+        alert('No se pudo retroceder el estado de la carta');
+        console.error(error);
+      }
+    },
     openQuickCliente() {
       alert('Agregar cliente')
     },
@@ -1466,6 +1517,12 @@ export default {
 </script>
 
 <style scoped>
+.status-icon-button--back {
+  color: #475569 !important;
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
 .status-icon-button--anulado {
   color: #dc2626 !important;
   border-color: #fecaca;

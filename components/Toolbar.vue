@@ -71,12 +71,15 @@
         </button>
 
         <div v-show="documentosOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">
+            Expedientes
+          </NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
             Cartas
           </NuxtLink>
-          <!-- <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
-            Tools PDF
-          </NuxtLink> -->
+          <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
+            Firmar PDF
+          </NuxtLink>
         </div>
         <button class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
