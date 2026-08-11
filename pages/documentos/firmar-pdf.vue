@@ -575,7 +575,7 @@ export default {
         y: 1158,
         width: 150,
         height: 40,
-        fontSize: 9,
+        fontSize: 8,
         color: '#080707',
       }
       this.elements.push(element)
