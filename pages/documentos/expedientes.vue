@@ -2,8 +2,8 @@
   <section class="expedientes-page">
     <div class="page-header">
       <div>
-        <p class="eyebrow">Documentos</p>
-        <h1>Expedientes</h1>
+        <p class="eyebrow">Gestión</p>
+        <h1>Expedientes PV</h1>
       </div>
       <button class="primary-button" type="button" @click="openCreateModal">
         Nuevo expediente
@@ -45,6 +45,9 @@
               <v-list-item @click="openImportExpedientes">
                 <v-list-item-title>Importar</v-list-item-title>
               </v-list-item>
+              <v-list-item @click="downloadPlantilla">
+                <v-list-item-title>Plantilla</v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
         </v-col>
@@ -56,12 +59,8 @@
           <thead>
             <tr>
               <th># PV</th>
-              <th>Sede</th>
               <th>Fecha</th>
               <th>Cliente</th>
-              <th>Transportista</th>
-              <th>Generador PV</th>
-              <th>Observaciones</th>
               <th>Acción Inmediata</th>
               <th>Planner</th>
               <th>Acciones</th>
@@ -70,24 +69,21 @@
           <tbody>
             <tr v-for="exp in filteredExpedientes" :key="exp.id">
               <td>{{ exp.correlativo || '—' }}</td>
-              <td>{{ exp.sede || '—' }}</td>
-              <td>{{ formatShortDate(exp.fecha) }}</td>
+              <td>{{ formatDateOnly(exp.fecha) }}</td>
               <td>{{ exp.cliente.nombre || '—' }}</td>
-              <td>{{ exp.transportista || '—' }}</td>
-              <td>{{ exp.generadorPv || '—' }}</td>
-              <td>{{ truncate(exp.observaciones, 30) }}</td>
               <td>{{ truncate(exp.accionInmediata, 20) }}</td>
               <td>{{ exp.planner || '—' }}</td>
               <td>
                 <div class="actions">
-                  <!-- Botón de retroceder -->
-                  <v-btn icon small class="status-icon-button status-icon-button--back"
-                    :title="canRegress(exp.estado) ? `Retroceder a ${getPreviousEstado(exp.estado)}` : 'No se puede retroceder'"
-                    :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
+                  <!-- Retroceder -->
+                  <v-btn icon small class="status-icon-button status-icon-button--back" :title="canRegress(exp.estado)
+                    ? `Retroceder a ${getPreviousEstado(exp.estado)}`
+                    : 'No se puede retroceder'
+                    " :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
                     <v-icon small>mdi-arrow-left</v-icon>
                   </v-btn>
 
-                  <!-- Botón de avanzar o Emitir Carta -->
+                  <!-- Avanzar / Emitir Carta -->
                   <v-btn v-if="exp.estado === 'Regularizado'" icon small color="primary"
                     class="status-icon-button status-icon-button--emitir" title="Emitir carta y cerrar expediente"
                     @click="emitirCarta(exp)">
@@ -98,6 +94,15 @@
                     :disabled="exp.estado === 'Cerrado'" @click="advanceExpedienteEstado(exp)">
                     <v-icon small>{{ getAvanceIcon(exp.estado) }}</v-icon>
                   </v-btn>
+
+                  <!-- Editar -->
+                  <button class="icon-button" type="button" title="Editar expediente" aria-label="Editar expediente"
+                    @click="openEditModal(exp)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
+                      <path d="M13.5 6.5l4 4" />
+                    </svg>
+                  </button>
 
                   <!-- Eliminar -->
                   <button class="icon-button icon-button--danger" type="button" title="Eliminar expediente"
@@ -124,7 +129,7 @@
       </div>
     </div>
 
-    <!-- Modal de creación -->
+    <!-- Modal de creación / edición -->
     <div v-if="isModalOpen" class="modal-backdrop">
       <form class="modal modal--form" @submit.prevent="saveExpediente">
         <div class="modal-header">
@@ -134,6 +139,13 @@
 
         <div class="form-grid">
           <v-row dense>
+            <v-col cols="12" md="6">
+              <label>
+                N° PV (Correlativo)
+                <input v-model.trim="form.correlativo" type="text" placeholder="Ej. PV-001" />
+              </label>
+            </v-col>
+
             <v-col cols="12" md="6">
               <label class="autocomplete-field">
                 Cliente
@@ -157,28 +169,11 @@
             <v-col cols="12" md="6">
               <label>
                 Sede
-                <input v-model.trim="form.sede" type="text" placeholder="Ej. Lima" required />
-              </label>
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <label>
-                Transportista
-                <input v-model.trim="form.transportista" type="text" placeholder="Nombre del transportista" />
-              </label>
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <label>
-                Generador PV
-                <input v-model.trim="form.generadorPv" type="text" placeholder="Generador del PV" />
-              </label>
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <label>
-                Planner
-                <input v-model.trim="form.planner" type="text" placeholder="Nombre del planner" />
+                <select v-model="form.sede" required>
+                  <option value="" disabled>Selecciona una sede</option>
+                  <option value="Chilca">Chilca</option>
+                  <option value="Villa el Salvador">Villa el Salvador</option>
+                </select>
               </label>
             </v-col>
 
@@ -186,6 +181,68 @@
               <label>
                 Fecha
                 <input v-model="form.fecha" type="date" required />
+              </label>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label class="autocomplete-field">
+                Transportista
+                <input v-model.trim="transportistaSearch" type="text" autocomplete="off"
+                  placeholder="Buscar transportista (cliente)" @focus="openTransportistaDropdown"
+                  @input="handleTransportistaSearch" @blur="closeTransportistaDropdown"
+                  @keydown.esc="closeTransportistaDropdown" />
+                <div v-if="isTransportistaDropdownOpen" class="autocomplete-menu">
+                  <button v-for="cliente in filteredTransportistaOptions" :key="cliente.id" class="autocomplete-option"
+                    type="button" @mousedown.prevent="selectTransportista(cliente)">
+                    <strong>{{ cliente.nombre }}</strong>
+                    <span>{{ cliente.ruc }} - {{ cliente.contacto }}</span>
+                  </button>
+                  <div v-if="clientesLoading" class="autocomplete-empty">Cargando clientes...</div>
+                  <div v-else-if="filteredTransportistaOptions.length === 0" class="autocomplete-empty">
+                    No se encontraron clientes
+                  </div>
+                </div>
+              </label>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label class="autocomplete-field">
+                Generador PV
+                <input v-model.trim="generadorSearch" type="text" autocomplete="off"
+                  placeholder="Buscar generador (cliente)" @focus="openGeneradorDropdown" @input="handleGeneradorSearch"
+                  @blur="closeGeneradorDropdown" @keydown.esc="closeGeneradorDropdown" />
+                <div v-if="isGeneradorDropdownOpen" class="autocomplete-menu">
+                  <button v-for="cliente in filteredGeneradorOptions" :key="cliente.id" class="autocomplete-option"
+                    type="button" @mousedown.prevent="selectGenerador(cliente)">
+                    <strong>{{ cliente.nombre }}</strong>
+                    <span>{{ cliente.ruc }} - {{ cliente.contacto }}</span>
+                  </button>
+                  <div v-if="clientesLoading" class="autocomplete-empty">Cargando clientes...</div>
+                  <div v-else-if="filteredGeneradorOptions.length === 0" class="autocomplete-empty">
+                    No se encontraron clientes
+                  </div>
+                </div>
+              </label>
+            </v-col>
+
+            <!-- CAMPO PLANNER AHORA ES AUTOCOMPLETE -->
+            <v-col cols="12" md="6">
+              <label class="autocomplete-field">
+                Planner
+                <input v-model.trim="plannerSearch" type="text" autocomplete="off"
+                  placeholder="Escribe para buscar planner" @focus="openPlannerDropdown" @input="handlePlannerSearch"
+                  @blur="closePlannerDropdown" @keydown.esc="closePlannerDropdown" />
+                <div v-if="isPlannerDropdownOpen" class="autocomplete-menu">
+                  <button v-for="persona in filteredPlannerOptions" :key="persona.id" class="autocomplete-option"
+                    type="button" @mousedown.prevent="selectPlanner(persona)">
+                    <strong>{{ persona.nombres }}</strong>
+                    <span v-if="persona.apellidos">{{ persona.apellidos }}</span>
+                  </button>
+                  <div v-if="personalLoading" class="autocomplete-empty">Cargando planners...</div>
+                  <div v-else-if="filteredPlannerOptions.length === 0" class="autocomplete-empty">
+                    <v-btn small color="green" outlined @mousedown.prevent="openQuickPlanner">+ Agregar planner</v-btn>
+                  </div>
+                </div>
               </label>
             </v-col>
 
@@ -211,17 +268,63 @@
         </div>
       </form>
     </div>
+
+    <!-- Modal rápido para agregar cliente o planner -->
+    <div v-if="quickModalOpen" class="modal-backdrop">
+      <div class="modal modal--form" style="max-width: 500px;">
+        <div class="modal-header">
+          <h2>{{ quickModalType === 'cliente' ? 'Nuevo cliente' : 'Nuevo planner' }}</h2>
+          <button type="button" class="modal-close" @click="closeQuickModal">x</button>
+        </div>
+        <div class="form-grid">
+          <v-row dense>
+            <v-col cols="12">
+              <label>
+                {{ quickModalType === 'cliente' ? 'Nombre del cliente' : 'Nombres completos' }}
+                <input v-model.trim="quickForm.nombre" type="text" required />
+              </label>
+            </v-col>
+            <v-col v-if="quickModalType === 'cliente'" cols="12">
+              <label>
+                RUC
+                <input v-model.trim="quickForm.ruc" type="text" />
+              </label>
+            </v-col>
+            <v-col v-if="quickModalType === 'cliente'" cols="12">
+              <label>
+                Contacto
+                <input v-model.trim="quickForm.contacto" type="text" />
+              </label>
+            </v-col>
+            <v-col v-if="quickModalType === 'cliente'" cols="12">
+              <label>
+                Teléfono de contacto
+                <input v-model.trim="quickForm.telefonoContacto" type="text" />
+              </label>
+            </v-col>
+          </v-row>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" @click="closeQuickModal">Cancelar</button>
+          <button class="primary-button" type="button" @click="saveQuickItem">Guardar</button>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
 <script>
-// import { normalizeCliente } from '~/models/cliente'
+import { normalizeCliente } from '~/models/cliente'
+import { normalizePersonal } from '~/models/personal'
+import {
+  createEmptyExpedienteForm,
+  normalizeExpediente,
+  toExpedientePayload,
+  ESTADOS_EXPEDIENTE
+} from '~/models/expediente'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
+import { formatWeight, getNowDateTimeInput, getTodayDateInput } from '~/utils/formatters'
 
-// Estados posibles
-const ESTADOS = ['Pendiente', 'Notificado', 'Regularizado', 'Cerrado']
-
-// Columnas para Excel
 const EXCEL_COLUMNS = [
   'Correlativo',
   'Sede',
@@ -240,18 +343,39 @@ export default {
   name: 'ExpedientesPage',
   data() {
     return {
-      estados: ESTADOS,
+      estados: ESTADOS_EXPEDIENTE,
       search: '',
-      fechaFiltro: this.getTodayInputDate(),
+      fechaFiltro: null,
       estadoFiltro: null,
       loading: false,
       isModalOpen: false,
       editingId: null,
-      form: this.getEmptyForm(),
+      form: createEmptyExpedienteForm(),
       clientes: [],
+      personal: [],
       clientesLoading: false,
+      personalLoading: false,
+      // Cliente autocomplete
       clienteSearch: '',
       isClienteDropdownOpen: false,
+      // Transportista autocomplete
+      transportistaSearch: '',
+      isTransportistaDropdownOpen: false,
+      // Generador autocomplete
+      generadorSearch: '',
+      isGeneradorDropdownOpen: false,
+      // Planner autocomplete
+      plannerSearch: '',
+      isPlannerDropdownOpen: false,
+      // Quick add
+      quickModalOpen: false,
+      quickModalType: null, // 'cliente' o 'planner'
+      quickForm: {
+        nombre: '',
+        ruc: '',
+        contacto: '',
+        telefonoContacto: ''
+      },
       expedientes: []
     }
   },
@@ -267,15 +391,12 @@ export default {
           (exp.cliente?.nombre || '').toLowerCase().includes(term) ||
           (exp.correlativo || '').toLowerCase().includes(term) ||
           (exp.sede || '').toLowerCase().includes(term) ||
-          (exp.transportista || '').toLowerCase().includes(term)
+          (exp.transportista || '').toLowerCase().includes(term) ||
+          (exp.generadorPv || '').toLowerCase().includes(term)
 
-        const matchesDate =
-          !fechaFiltro ||
-          this.normalizeDateInput(exp.fecha) === fechaFiltro
-
-        const matchesEstado =
-          !estadoFiltro ||
-          exp.estado === estadoFiltro
+        const fechaStr = this.formatDateInput(exp.fecha)
+        const matchesDate = !fechaFiltro || fechaStr === fechaFiltro
+        const matchesEstado = !estadoFiltro || exp.estado === estadoFiltro
 
         return matchesSearch && matchesDate && matchesEstado
       })
@@ -284,10 +405,45 @@ export default {
       const term = this.clienteSearch.toLowerCase()
       if (!term) return this.clientes.slice(0, 8)
       return this.clientes
-        .filter(c =>
-          c.nombre.toLowerCase().includes(term) ||
-          c.ruc.toLowerCase().includes(term) ||
-          c.contacto.toLowerCase().includes(term)
+        .filter(
+          c =>
+            c.nombre.toLowerCase().includes(term) ||
+            c.ruc.toLowerCase().includes(term) ||
+            c.contacto.toLowerCase().includes(term)
+        )
+        .slice(0, 8)
+    },
+    filteredTransportistaOptions() {
+      const term = this.transportistaSearch.toLowerCase()
+      if (!term) return this.clientes.slice(0, 8)
+      return this.clientes
+        .filter(
+          c =>
+            c.nombre.toLowerCase().includes(term) ||
+            c.ruc.toLowerCase().includes(term) ||
+            c.contacto.toLowerCase().includes(term)
+        )
+        .slice(0, 8)
+    },
+    filteredGeneradorOptions() {
+      const term = this.generadorSearch.toLowerCase()
+      if (!term) return this.clientes.slice(0, 8)
+      return this.clientes
+        .filter(
+          c =>
+            c.nombre.toLowerCase().includes(term) ||
+            c.ruc.toLowerCase().includes(term) ||
+            c.contacto.toLowerCase().includes(term)
+        )
+        .slice(0, 8)
+    },
+    filteredPlannerOptions() {
+      const term = this.plannerSearch.toLowerCase()
+      if (!term) return this.personal.slice(0, 8)
+      return this.personal
+        .filter(p =>
+          (p.nombres + ' ' + (p.apellidos || '')).toLowerCase().includes(term) ||
+          (p.nombres || '').toLowerCase().includes(term)
         )
         .slice(0, 8)
     }
@@ -295,24 +451,38 @@ export default {
   mounted() {
     this.getAll()
     this.loadClientes()
+    this.loadPersonal()
   },
   methods: {
-    // ========== FORMULARIOS Y ESTADO INICIAL ==========
-    getEmptyForm() {
-      return {
-        id: '',
-        correlativo: '',
-        sede: '',
-        fecha: this.getTodayInputDate(),
-        cliente: { nombre: '', ruc: '', direccion: '', contactoNombre: '', contactoTelefono: '' },
-        transportista: '',
-        generadorPv: '',
-        observaciones: '',
-        accionInmediata: '',
-        planner: '',
-        estado: 'Pendiente',
-        fechaCreacion: new Date()
+    formatWeight,
+    getNowDateTimeInput,
+
+    formatDateOnly(value) {
+      if (!value) return ''
+      let d = value
+      if (typeof value.toDate === 'function') d = value.toDate()
+      else if (typeof value === 'object' && value.seconds !== undefined) {
+        d = new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6)
       }
+      if (!(d instanceof Date) || isNaN(d.getTime())) return ''
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      return `${day}/${month}/${year}`
+    },
+
+    formatDateInput(value) {
+      if (!value) return ''
+      let d = value
+      if (typeof value.toDate === 'function') d = value.toDate()
+      else if (typeof value === 'object' && value.seconds !== undefined) {
+        d = new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6)
+      }
+      if (!(d instanceof Date) || isNaN(d.getTime())) return ''
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
     },
 
     // ========== CRUD ==========
@@ -320,7 +490,7 @@ export default {
       this.loading = true
       try {
         const data = await this.$firebaseApi.list('expedientes')
-        this.expedientes = data.map(this.normalizeExpediente)
+        this.expedientes = data.map(normalizeExpediente)
       } catch (error) {
         alert('No se pudieron cargar los expedientes')
         console.error(error)
@@ -342,78 +512,53 @@ export default {
       }
     },
 
+    async loadPersonal() {
+      this.personalLoading = true
+      try {
+        const data = await this.$firebaseApi.list('personal')
+        this.personal = data.map(normalizePersonal).filter(p => p.estado)
+      } catch (error) {
+        this.personal = []
+        console.error(error)
+      } finally {
+        this.personalLoading = false
+      }
+    },
+
     async create(payload) {
-      const doc = await this.$firebaseApi.create('expedientes', payload)
-      this.expedientes.unshift(this.normalizeExpediente(doc))
+      await this.$firebaseApi.create('expedientes', payload)
+      await this.getAll()
     },
 
     async update(id, payload) {
-      const updated = await this.$firebaseApi.update('expedientes', id, payload)
-      this.expedientes = this.expedientes.map(e =>
-        e.id === id ? this.normalizeExpediente(updated) : e
-      )
+      await this.$firebaseApi.update('expedientes', id, payload)
+      await this.getAll()
     },
 
-    async delete(id) {
+    async deleteExpediente(id) {
       if (!confirm('¿Eliminar este expediente permanentemente?')) return
       try {
         await this.$firebaseApi.remove('expedientes', id)
-        this.expedientes = this.expedientes.filter(e => e.id !== id)
+        await this.getAll()
       } catch (error) {
         alert('No se pudo eliminar')
         console.error(error)
       }
     },
 
-    // ========== NORMALIZACIÓN ==========
-    normalizeExpediente(src) {
-      const s = src || {}
-      const cliente = s.cliente || {}
-      return {
-        id: s.id || '',
-        correlativo: s.correlativo || '',
-        sede: s.sede || '',
-        fecha: this.normalizeDateInput(s.fecha) || this.getTodayInputDate(),
-        cliente: {
-          nombre: cliente.nombre || '',
-          ruc: cliente.ruc || '',
-          direccion: cliente.direccion || '',
-          contactoNombre: cliente.contactoNombre || '',
-          contactoTelefono: cliente.contactoTelefono || ''
-        },
-        transportista: s.transportista || '',
-        generadorPv: s.generadorPv || '',
-        observaciones: s.observaciones || '',
-        accionInmediata: s.accionInmediata || '',
-        planner: s.planner || '',
-        estado: ESTADOS.includes(s.estado) ? s.estado : 'Pendiente',
-        fechaCreacion: this.normalizeDate(s.fechaCreacion)
-      }
-    },
-
-    toPayload(exp) {
-      const { id, fechaCreacion, ...payload } = this.normalizeExpediente(exp)
-      payload.fecha = this.parseLocalDate(payload.fecha)
-      return payload
-    },
-
     // ========== ESTADOS Y TRANSICIONES ==========
     getPreviousEstado(estado) {
-      const idx = ESTADOS.indexOf(estado)
-      return idx > 0 ? ESTADOS[idx - 1] : null
+      const idx = ESTADOS_EXPEDIENTE.indexOf(estado)
+      return idx > 0 ? ESTADOS_EXPEDIENTE[idx - 1] : null
     },
 
     getNextEstado(estado) {
-      const idx = ESTADOS.indexOf(estado)
-      return idx < ESTADOS.length - 1 ? ESTADOS[idx + 1] : null
+      const idx = ESTADOS_EXPEDIENTE.indexOf(estado)
+      return idx < ESTADOS_EXPEDIENTE.length - 1 ? ESTADOS_EXPEDIENTE[idx + 1] : null
     },
 
     canRegress(estado) {
       return estado !== 'Pendiente' && estado !== 'Cerrado'
-    },
-
-    canAdvance(estado) {
-      return estado !== 'Cerrado' && estado !== 'Regularizado' // Regularizado usa "Emitir Carta"
     },
 
     getAvanceTitle(estado) {
@@ -425,7 +570,6 @@ export default {
       const icons = {
         Pendiente: 'mdi-arrow-right-bold',
         Notificado: 'mdi-arrow-right-bold',
-        Regularizado: 'mdi-file-document-edit', // pero este no se usa porque se muestra el otro botón
         Cerrado: 'mdi-check-circle'
       }
       return icons[estado] || 'mdi-arrow-right-bold'
@@ -435,17 +579,14 @@ export default {
       return String(estado || 'Pendiente').toLowerCase()
     },
 
-    // ========== ACCIONES DE ESTADO ==========
     async advanceExpedienteEstado(exp) {
       const next = this.getNextEstado(exp.estado)
       if (!next) return
       if (!confirm(`¿Cambiar estado de "${exp.estado}" a "${next}"?`)) return
 
       try {
-        const updated = await this.$firebaseApi.update('expedientes', exp.id, { estado: next })
-        this.expedientes = this.expedientes.map(e =>
-          e.id === exp.id ? this.normalizeExpediente({ ...e, ...updated, estado: next }) : e
-        )
+        await this.$firebaseApi.update('expedientes', exp.id, { estado: next })
+        await this.getAll()
       } catch (error) {
         alert('No se pudo actualizar el estado')
         console.error(error)
@@ -458,10 +599,8 @@ export default {
       if (!confirm(`¿Retroceder estado de "${exp.estado}" a "${prev}"?`)) return
 
       try {
-        const updated = await this.$firebaseApi.update('expedientes', exp.id, { estado: prev })
-        this.expedientes = this.expedientes.map(e =>
-          e.id === exp.id ? this.normalizeExpediente({ ...e, ...updated, estado: prev }) : e
-        )
+        await this.$firebaseApi.update('expedientes', exp.id, { estado: prev })
+        await this.getAll()
       } catch (error) {
         alert('No se pudo retroceder el estado')
         console.error(error)
@@ -477,25 +616,13 @@ export default {
       if (!confirm(`¿Emitir carta para el expediente "${exp.correlativo}" y cerrarlo?`)) return
 
       try {
-        // 1. Construir payload de carta
         const cartaPayload = this.buildCartaFromExpediente(exp)
-
-        // 2. Crear la carta en Firebase
         const cartaCreada = await this.$firebaseApi.create('cartas', cartaPayload)
-
-        // 3. Actualizar expediente a "Cerrado" y guardar referencia a la carta
         await this.$firebaseApi.update('expedientes', exp.id, {
           estado: 'Cerrado',
           cartaId: cartaCreada.id
         })
-
-        // 4. Actualizar lista local
-        this.expedientes = this.expedientes.map(e =>
-          e.id === exp.id
-            ? this.normalizeExpediente({ ...e, estado: 'Cerrado', cartaId: cartaCreada.id })
-            : e
-        )
-
+        await this.getAll()
         alert(`Carta ${cartaCreada.correlativo || 'generada'} creada exitosamente.`)
       } catch (error) {
         alert('Error al emitir la carta')
@@ -504,17 +631,23 @@ export default {
     },
 
     buildCartaFromExpediente(exp) {
-      // Reutiliza la lógica de generación de correlativo de cartas
       const today = new Date()
       const year = today.getFullYear()
       const month = String(today.getMonth() + 1).padStart(2, '0')
-      const nextCorrelativo = `SGP-CH-${month}.${year}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}` // simplificado
+      const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0')
+      const nextCorrelativo = `SGP-CH-${month}.${year}-${random}`
+
+      let fechaExpediente = new Date()
+      if (exp.fecha) {
+        const d = this.parseDate(exp.fecha)
+        if (d && !isNaN(d.getTime())) fechaExpediente = d
+      }
 
       return {
         correlativo: nextCorrelativo,
         lugar: 'Lima',
-        fecha: exp.fecha || this.getTodayInputDate(),
-        fechaServicio: exp.fecha || this.getTodayInputDate(),
+        fecha: fechaExpediente,
+        fechaServicio: fechaExpediente,
         cliente: {
           nombre: exp.cliente.nombre || '',
           ruc: exp.cliente.ruc || '',
@@ -522,7 +655,7 @@ export default {
           contactoNombre: exp.cliente.contactoNombre || '',
           contactoTelefono: exp.cliente.contactoTelefono || ''
         },
-        asunto: `Expediente PV ${exp.correlativo} - ${exp.observaciones || 'Observación'}`,
+        // asunto removido para que no se copie la observación
         contexto: `De nuestra consideración:\nLa presente tiene por finalidad hacerle llegar la documentación correspondiente al expediente ${exp.correlativo}.\nObservación: ${exp.observaciones || 'Sin detalle'}`,
         detalles: [{ numero: 1, numeroTexto: '(Uno)', descripcion: 'Documento adjunto' }],
         despedida: 'Sin otro particular, quedamos atentos a su respuesta.',
@@ -535,19 +668,47 @@ export default {
     // ========== MODAL ==========
     openCreateModal() {
       this.editingId = null
-      this.form = this.getEmptyForm()
+      this.form = createEmptyExpedienteForm()
+      this.form.fecha = getTodayDateInput()
       this.clienteSearch = ''
+      this.transportistaSearch = ''
+      this.generadorSearch = ''
+      this.plannerSearch = ''
       this.isClienteDropdownOpen = false
+      this.isTransportistaDropdownOpen = false
+      this.isGeneradorDropdownOpen = false
+      this.isPlannerDropdownOpen = false
+      this.isModalOpen = true
+    },
+
+    openEditModal(exp) {
+      this.editingId = exp.id
+      this.form = {
+        ...exp,
+        cliente: { ...exp.cliente }
+      }
+      this.form.fecha = this.formatDateInput(exp.fecha) || getTodayDateInput()
+      this.clienteSearch = exp.cliente?.nombre || ''
+      this.transportistaSearch = exp.transportista || ''
+      this.generadorSearch = exp.generadorPv || ''
+      this.plannerSearch = exp.planner || ''
+      this.isClienteDropdownOpen = false
+      this.isTransportistaDropdownOpen = false
+      this.isGeneradorDropdownOpen = false
+      this.isPlannerDropdownOpen = false
       this.isModalOpen = true
     },
 
     closeModal() {
       this.isModalOpen = false
       this.isClienteDropdownOpen = false
+      this.isTransportistaDropdownOpen = false
+      this.isGeneradorDropdownOpen = false
+      this.isPlannerDropdownOpen = false
     },
 
     async saveExpediente() {
-      const payload = this.toPayload(this.form)
+      const payload = toExpedientePayload(this.form)
       try {
         if (this.editingId) {
           await this.update(this.editingId, payload)
@@ -561,7 +722,7 @@ export default {
       }
     },
 
-    // ========== AUTCOMPLETE CLIENTE ==========
+    // ========== AUTOCOMPLETE CLIENTE ==========
     openClienteDropdown() { this.isClienteDropdownOpen = true },
     closeClienteDropdown() { this.isClienteDropdownOpen = false },
     handleClienteSearch() {
@@ -579,29 +740,142 @@ export default {
       this.clienteSearch = cliente.nombre
       this.isClienteDropdownOpen = false
     },
+
+    // ========== AUTOCOMPLETE TRANSPORTISTA ==========
+    openTransportistaDropdown() { this.isTransportistaDropdownOpen = true },
+    closeTransportistaDropdown() { this.isTransportistaDropdownOpen = false },
+    handleTransportistaSearch() {
+      this.form.transportista = this.transportistaSearch
+      this.isTransportistaDropdownOpen = true
+    },
+    selectTransportista(cliente) {
+      this.form.transportista = cliente.nombre
+      this.transportistaSearch = cliente.nombre
+      this.isTransportistaDropdownOpen = false
+    },
+
+    // ========== AUTOCOMPLETE GENERADOR ==========
+    openGeneradorDropdown() { this.isGeneradorDropdownOpen = true },
+    closeGeneradorDropdown() { this.isGeneradorDropdownOpen = false },
+    handleGeneradorSearch() {
+      this.form.generadorPv = this.generadorSearch
+      this.isGeneradorDropdownOpen = true
+    },
+    selectGenerador(cliente) {
+      this.form.generadorPv = cliente.nombre
+      this.generadorSearch = cliente.nombre
+      this.isGeneradorDropdownOpen = false
+    },
+
+    // ========== AUTOCOMPLETE PLANNER ==========
+    openPlannerDropdown() { this.isPlannerDropdownOpen = true },
+    closePlannerDropdown() { this.isPlannerDropdownOpen = false },
+    handlePlannerSearch() {
+      this.form.planner = this.plannerSearch
+      this.isPlannerDropdownOpen = true
+    },
+    selectPlanner(persona) {
+      this.form.planner = persona.nombres
+      this.plannerSearch = persona.nombres
+      this.isPlannerDropdownOpen = false
+    },
+
+    // ========== AGREGAR RÁPIDO ==========
     openQuickCliente() {
-      alert('Función para agregar cliente rápido (pendiente de implementar)')
+      this.quickModalType = 'cliente'
+      this.quickForm = { nombre: '', ruc: '', contacto: '', telefonoContacto: '' }
+      this.quickModalOpen = true
+    },
+
+    openQuickPlanner() {
+      this.quickModalType = 'planner'
+      this.quickForm = { nombre: '' }
+      this.quickModalOpen = true
+    },
+
+    closeQuickModal() {
+      this.quickModalOpen = false
+    },
+
+    async saveQuickItem() {
+      const { quickModalType, quickForm } = this
+      if (!quickForm.nombre.trim()) {
+        alert('El nombre es obligatorio')
+        return
+      }
+
+      try {
+        if (quickModalType === 'cliente') {
+          const newCliente = {
+            nombre: quickForm.nombre.trim(),
+            ruc: quickForm.ruc?.trim() || '',
+            contacto: quickForm.contacto?.trim() || '',
+            telefonoContacto: quickForm.telefonoContacto?.trim() || '',
+            direccion: '',
+            estado: true
+          }
+          await this.$firebaseApi.create('clientes', newCliente)
+          await this.loadClientes()
+          // Seleccionar el cliente creado
+          const clienteCreado = this.clientes.find(c => c.nombre === quickForm.nombre.trim())
+          if (clienteCreado) {
+            this.selectCliente(clienteCreado)
+          } else {
+            this.clienteSearch = quickForm.nombre.trim()
+            this.form.cliente.nombre = quickForm.nombre.trim()
+          }
+        } else if (quickModalType === 'planner') {
+          const newPlanner = {
+            nombres: quickForm.nombre.trim(),
+            apellidos: '',
+            estado: true
+          }
+          await this.$firebaseApi.create('personal', newPlanner)
+          await this.loadPersonal()
+          // Seleccionar el planner creado
+          const plannerCreado = this.personal.find(p => p.nombres === quickForm.nombre.trim())
+          this.form.planner = plannerCreado ? plannerCreado.nombres : quickForm.nombre.trim()
+          this.plannerSearch = this.form.planner
+        }
+        this.closeQuickModal()
+      } catch (error) {
+        alert('Error al crear el registro. Revisa la consola.')
+        console.error(error)
+      }
     },
 
     // ========== EXPORT / IMPORT EXCEL ==========
+    getExcelColumns() {
+      return [
+        { label: 'Correlativo', value: e => e.correlativo },
+        { label: 'Sede', value: e => e.sede },
+        { label: 'Fecha', value: e => this.formatDateOnly(e.fecha) },
+        { label: 'Cliente', value: e => e.cliente.nombre },
+        { label: 'RUC', value: e => e.cliente.ruc },
+        { label: 'Transportista', value: e => e.transportista },
+        { label: 'Generador PV', value: e => e.generadorPv },
+        { label: 'Observaciones', value: e => e.observaciones },
+        { label: 'Acción Inmediata', value: e => e.accionInmediata },
+        { label: 'Planner', value: e => e.planner },
+        { label: 'Estado', value: e => e.estado }
+      ]
+    },
+
     async exportExpedientes() {
       await exportRowsToExcel({
         filename: 'expedientes',
         sheetName: 'Expedientes',
         rows: this.filteredExpedientes,
-        columns: [
-          { label: 'Correlativo', value: e => e.correlativo },
-          { label: 'Sede', value: e => e.sede },
-          { label: 'Fecha', value: e => this.formatShortDate(e.fecha) },
-          { label: 'Cliente', value: e => e.cliente.nombre },
-          { label: 'RUC', value: e => e.cliente.ruc },
-          { label: 'Transportista', value: e => e.transportista },
-          { label: 'Generador PV', value: e => e.generadorPv },
-          { label: 'Observaciones', value: e => e.observaciones },
-          { label: 'Acción Inmediata', value: e => e.accionInmediata },
-          { label: 'Planner', value: e => e.planner },
-          { label: 'Estado', value: e => e.estado }
-        ]
+        columns: this.getExcelColumns()
+      })
+    },
+
+    downloadPlantilla() {
+      exportRowsToExcel({
+        filename: 'plantilla_expedientes',
+        sheetName: 'Plantilla',
+        rows: [], // solo encabezados
+        columns: this.getExcelColumns()
       })
     },
 
@@ -627,29 +901,28 @@ export default {
 
         for (const row of result.rows) {
           const newExp = {
-            ...this.getEmptyForm(),
-            correlativo: '',
-            sede: row.Sede,
+            ...createEmptyExpedienteForm(),
+            correlativo: row.Correlativo || '',
+            sede: row.Sede || '',
             fecha: this.parseImportedDate(row.Fecha),
             cliente: {
-              nombre: row.Cliente,
-              ruc: row.RUC,
+              nombre: row.Cliente || '',
+              ruc: row.RUC || '',
               direccion: '',
               contactoNombre: '',
               contactoTelefono: ''
             },
-            transportista: row.Transportista,
-            generadorPv: row['Generador PV'],
-            observaciones: row.Observaciones,
-            accionInmediata: row['Acción Inmediata'],
-            planner: row.Planner,
-            estado: ESTADOS.includes(row.Estado) ? row.Estado : 'Pendiente'
+            transportista: row.Transportista || '',
+            generadorPv: row['Generador PV'] || '',
+            observaciones: row.Observaciones || '',
+            accionInmediata: row['Acción Inmediata'] || '',
+            planner: row.Planner || '',
+            estado: ESTADOS_EXPEDIENTE.includes(row.Estado) ? row.Estado : 'Pendiente'
           }
-          const payload = this.toPayload(newExp)
+          const payload = toExpedientePayload(newExp)
           await this.$firebaseApi.create('expedientes', payload)
         }
 
-        // Recargar lista
         await this.getAll()
         alert(`Se importaron ${result.rows.length} expedientes.`)
       } catch (error) {
@@ -660,53 +933,42 @@ export default {
 
     // ========== UTILIDADES DE FECHAS ==========
     getTodayInputDate() {
-      const d = new Date()
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      return getTodayDateInput()
     },
 
-    normalizeDateInput(value) {
-      if (!value) return ''
-      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value
-      const parsed = this.parseLocalDate(value)
-      if (isNaN(parsed.getTime())) return ''
-      const y = parsed.getFullYear()
-      const m = String(parsed.getMonth() + 1).padStart(2, '0')
-      const d = String(parsed.getDate()).padStart(2, '0')
-      return `${y}-${m}-${d}`
-    },
-
-    parseLocalDate(value) {
-      if (value && typeof value.toDate === 'function') return value.toDate()
-      if (value && value.seconds !== undefined) return new Date(value.seconds * 1000)
-      if (typeof value === 'string') {
-        const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-        if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    parseDate(dateInput) {
+      if (!dateInput) return null
+      if (dateInput instanceof Date) return dateInput
+      if (typeof dateInput === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}/.test(dateInput)) {
+          const parts = dateInput.split('T')[0].split('-').map(Number)
+          if (parts.length === 3) {
+            return new Date(parts[0], parts[1] - 1, parts[2])
+          }
+        }
+        const partes = dateInput.split('/')
+        if (partes.length === 3) {
+          const dia = parseInt(partes[0], 10)
+          const mes = parseInt(partes[1], 10) - 1
+          const anio = parseInt(partes[2], 10)
+          return new Date(anio, mes, dia)
+        }
+        return new Date(dateInput)
       }
-      return new Date(value)
+      if (typeof dateInput === 'object' && dateInput.seconds !== undefined) {
+        return new Date(dateInput.seconds * 1000 + (dateInput.nanoseconds || 0) / 1e6)
+      }
+      return new Date(dateInput)
     },
 
     parseImportedDate(value) {
-      if (!value) return this.getTodayInputDate()
+      if (!value) return getTodayDateInput()
       const parts = String(value).split('/')
       if (parts.length === 3) {
         const [day, month, year] = parts
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
       }
       return value
-    },
-
-    formatShortDate(date) {
-      if (!date) return ''
-      const d = this.parseLocalDate(date)
-      if (isNaN(d.getTime())) return ''
-      return new Intl.DateTimeFormat('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
-    },
-
-    normalizeDate(value) {
-      if (!value) return new Date()
-      if (typeof value.toDate === 'function') return value.toDate()
-      if (value.seconds) return new Date(value.seconds * 1000)
-      return new Date(value)
     },
 
     truncate(text, len) {
@@ -718,7 +980,7 @@ export default {
 </script>
 
 <style scoped>
-/* ===== Estilos generales (igual que CartasPage) ===== */
+/* ===== Estilos generales (no cambian) ===== */
 .expedientes-page {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
@@ -992,7 +1254,8 @@ td {
 }
 
 .form-grid input,
-.form-grid textarea {
+.form-grid textarea,
+.form-grid select {
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -1003,9 +1266,15 @@ td {
 }
 
 .form-grid input:focus,
-.form-grid textarea:focus {
+.form-grid textarea:focus,
+.form-grid select:focus {
   border-color: #0f766e;
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.form-grid select {
+  background: #fff;
+  appearance: auto;
 }
 
 .autocomplete-field {
@@ -1066,7 +1335,6 @@ td {
   cursor: pointer;
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 640px) {
 
   .page-header,

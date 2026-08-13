@@ -131,6 +131,18 @@
         "update": "update",
         "delete": "remove"
       }
+    },
+    "expedientes": {
+      "collection": "expedientes",
+      "model": "expediente",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc",
+      "crud": {
+        "list": "list",
+        "create": "create",
+        "update": "update",
+        "delete": "remove"
+      }
     }
   }
 }

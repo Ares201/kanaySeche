@@ -103,9 +103,9 @@
             Clientes
           </NuxtLink>
 
-          <!-- <NuxtLink class="nav-link" to="/configuracion/personal" @click.native="closeMenu">
+          <NuxtLink class="nav-link" to="/configuracion/personal" @click.native="closeMenu">
             Personal
-          </NuxtLink> -->
+          </NuxtLink>
 
           <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">
             Vehiculos

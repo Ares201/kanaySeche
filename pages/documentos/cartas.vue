@@ -112,7 +112,7 @@
                     @click="regressCartaEstado(carta)">
                     <v-icon small>mdi-arrow-left</v-icon>
                   </v-btn>
-                  <!-- <button class="icon-button icon-button--danger" type="button" title="Eliminar"
+                  <button class="icon-button icon-button--danger" type="button" title="Eliminar"
                     aria-label="Eliminar carta" @click="deleteCarta(carta.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 7h14" />
@@ -121,7 +121,7 @@
                       <path d="M8 7l1 13h6l1-13" />
                       <path d="M9 7V4h6v3" />
                     </svg>
-                  </button> -->
+                  </button>
                 </div>
               </td>
             </tr>
@@ -140,6 +140,7 @@
       </div>
     </div>
 
+    <!-- Modal principal de carta -->
     <div v-if="isModalOpen" class="modal-backdrop">
       <form class="modal modal--form" @submit.prevent="saveCarta">
         <div class="modal-header">
@@ -363,6 +364,48 @@
       </form>
     </div>
 
+    <!-- Modal rápido para agregar cliente -->
+    <div v-if="quickModalOpen" class="modal-backdrop">
+      <div class="modal modal--form" style="max-width: 500px;">
+        <div class="modal-header">
+          <h2>Nuevo cliente</h2>
+          <button type="button" class="modal-close" @click="closeQuickModal">x</button>
+        </div>
+        <div class="form-grid">
+          <v-row dense>
+            <v-col cols="12">
+              <label>
+                Nombre del cliente *
+                <input v-model.trim="quickForm.nombre" type="text" required />
+              </label>
+            </v-col>
+            <v-col cols="12">
+              <label>
+                RUC
+                <input v-model.trim="quickForm.ruc" type="text" />
+              </label>
+            </v-col>
+            <v-col cols="12">
+              <label>
+                Contacto
+                <input v-model.trim="quickForm.contacto" type="text" />
+              </label>
+            </v-col>
+            <v-col cols="12">
+              <label>
+                Teléfono de contacto
+                <input v-model.trim="quickForm.telefonoContacto" type="text" />
+              </label>
+            </v-col>
+          </v-row>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" @click="closeQuickModal">Cancelar</button>
+          <button class="primary-button" type="button" @click="saveQuickItem">Guardar</button>
+        </div>
+      </div>
+    </div>
+
     <ConfirmacionDialog v-if="confirmacionCarta" v-model="isConfirmacionOpen" :carta="confirmacionCarta"
       @save-cargo="saveCargo" @mark-delivered="markDelivered" @message="showMessage" />
     <CargoDigitalDialog v-if="cargoCarta" v-model="isCargoDialogOpen" :carta="cargoCarta" @save="saveCargoDigital"
@@ -449,6 +492,14 @@ export default {
       isClienteDropdownOpen: false,
       showExtraFields: false,
       cartas: [],
+      // Variables para cliente rápido
+      quickModalOpen: false,
+      quickForm: {
+        nombre: '',
+        ruc: '',
+        contacto: '',
+        telefonoContacto: ''
+      }
     }
   },
   computed: {
@@ -499,7 +550,7 @@ export default {
     this.loadClientes()
   },
   methods: {
-    // Funciones para retroceder estados
+    // ========== GESTIÓN DE ESTADOS ==========
     getPreviousEstado(estadoActual) {
       const index = CARTA_ESTADOS.indexOf(estadoActual);
       if (index > 0) {
@@ -511,8 +562,6 @@ export default {
       if (estadoActual === 'Emitido' || estadoActual === 'Anulado') {
         return false;
       }
-      // Opcional: impedir retroceder desde 'Entregado'
-      // if (estadoActual === 'Entregado') return false;
       return this.getPreviousEstado(estadoActual) !== null;
     },
     async regressCartaEstado(carta) {
@@ -543,9 +592,51 @@ export default {
         console.error(error);
       }
     },
+
+    // ========== CLIENTE RÁPIDO ==========
     openQuickCliente() {
-      alert('Agregar cliente')
+      this.quickForm = { nombre: '', ruc: '', contacto: '', telefonoContacto: '' };
+      this.quickModalOpen = true;
     },
+    closeQuickModal() {
+      this.quickModalOpen = false;
+    },
+    async saveQuickItem() {
+      const nombre = this.quickForm.nombre.trim();
+      if (!nombre) {
+        alert('El nombre del cliente es obligatorio');
+        return;
+      }
+
+      try {
+        const newCliente = {
+          nombre,
+          ruc: this.quickForm.ruc?.trim() || '',
+          contacto: this.quickForm.contacto?.trim() || '',
+          telefonoContacto: this.quickForm.telefonoContacto?.trim() || '',
+          direccion: '',
+          estado: true
+        };
+
+        await this.$firebaseApi.create('clientes', newCliente);
+        await this.loadClientes();
+
+        const clienteCreado = this.clientes.find(c => c.nombre === nombre);
+        if (clienteCreado) {
+          this.selectCliente(clienteCreado);
+        } else {
+          this.form.cliente.nombre = nombre;
+          this.clienteSearch = nombre;
+        }
+
+        this.closeQuickModal();
+      } catch (error) {
+        alert('Error al crear el cliente. Revisa la consola.');
+        console.error(error);
+      }
+    },
+
+    // ========== FUNCIONES BASE ==========
     getEmptyForm() {
       return {
         id: '',
