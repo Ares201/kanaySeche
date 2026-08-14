@@ -20,8 +20,7 @@
 
       <v-row class="table-actions" dense align="end" justify="end">
         <v-col class="table-action-col" cols="3">
-          <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
-            clearable />
+          <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined clearable />
         </v-col>
         <v-col class="table-action-col" cols="4">
           <v-text-field v-model.trim="search" dense hide-details outlined type="search" label="Buscar cliente o N° PV"
@@ -76,10 +75,9 @@
               <td>
                 <div class="actions">
                   <!-- Retroceder -->
-                  <v-btn icon small class="status-icon-button status-icon-button--back" :title="canRegress(exp.estado)
-                    ? `Retroceder a ${getPreviousEstado(exp.estado)}`
-                    : 'No se puede retroceder'
-                    " :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
+                  <v-btn icon small class="status-icon-button status-icon-button--back"
+                    :title="canRegress(exp.estado) ? `Retroceder a ${getPreviousEstado(exp.estado)}` : 'No se puede retroceder'"
+                    :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
                     <v-icon small>mdi-arrow-left</v-icon>
                   </v-btn>
 
@@ -225,7 +223,7 @@
               </label>
             </v-col>
 
-            <!-- CAMPO PLANNER AHORA ES AUTOCOMPLETE -->
+            <!-- CAMPO PLANNER AUTOCOMPLETE -->
             <v-col cols="12" md="6">
               <label class="autocomplete-field">
                 Planner
@@ -655,7 +653,7 @@ export default {
           contactoNombre: exp.cliente.contactoNombre || '',
           contactoTelefono: exp.cliente.contactoTelefono || ''
         },
-        // asunto removido para que no se copie la observación
+        // asunto removido
         contexto: `De nuestra consideración:\nLa presente tiene por finalidad hacerle llegar la documentación correspondiente al expediente ${exp.correlativo}.\nObservación: ${exp.observaciones || 'Sin detalle'}`,
         detalles: [{ numero: 1, numeroTexto: '(Uno)', descripcion: 'Documento adjunto' }],
         despedida: 'Sin otro particular, quedamos atentos a su respuesta.',
@@ -816,7 +814,6 @@ export default {
           }
           await this.$firebaseApi.create('clientes', newCliente)
           await this.loadClientes()
-          // Seleccionar el cliente creado
           const clienteCreado = this.clientes.find(c => c.nombre === quickForm.nombre.trim())
           if (clienteCreado) {
             this.selectCliente(clienteCreado)
@@ -832,7 +829,6 @@ export default {
           }
           await this.$firebaseApi.create('personal', newPlanner)
           await this.loadPersonal()
-          // Seleccionar el planner creado
           const plannerCreado = this.personal.find(p => p.nombres === quickForm.nombre.trim())
           this.form.planner = plannerCreado ? plannerCreado.nombres : quickForm.nombre.trim()
           this.plannerSearch = this.form.planner
@@ -874,7 +870,7 @@ export default {
       exportRowsToExcel({
         filename: 'plantilla_expedientes',
         sheetName: 'Plantilla',
-        rows: [], // solo encabezados
+        rows: [],
         columns: this.getExcelColumns()
       })
     },
@@ -980,7 +976,7 @@ export default {
 </script>
 
 <style scoped>
-/* ===== Estilos generales (no cambian) ===== */
+/* ===== Estilos generales ===== */
 .expedientes-page {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
