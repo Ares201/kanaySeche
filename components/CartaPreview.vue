@@ -43,6 +43,23 @@
       <strong>ASUNTO:</strong> {{ safeCarta.asunto }}
     </p>
 
+    <div class="datos-documento">
+      <div>
+        <strong>Correlativo:</strong>
+        <span>{{ safeCarta.correlativo }}</span>
+      </div>
+
+      <div>
+        <strong>RUC:</strong>
+        <span>{{ safeCliente.ruc }}</span>
+      </div>
+
+      <div>
+        <strong>Fecha de emisión:</strong>
+        <span>{{ formattedFecha }}</span>
+      </div>
+    </div>
+
     <p class="paragraph">
       {{ safeCarta.contexto }}
     </p>
@@ -280,6 +297,28 @@ p {
 
   .fila-contacto {
     margin-bottom: 18px;
+  }
+  .datos-documento {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4fr;
+    gap: 14px;
+    width: 100%;
+    margin-top: -2px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    line-height: 1.35;
+    align-items: center;
+  }
+
+  .datos-documento > div {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .datos-documento strong {
+    font-weight: 700;
   }
 }
 </style>

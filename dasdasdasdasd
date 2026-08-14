@@ -1,0 +1,197 @@
+[1mdiff --git a/components/CartaPreview.vue b/components/CartaPreview.vue[m
+[1mindex c2a77e8..f9ab122 100644[m
+[1m--- a/components/CartaPreview.vue[m
+[1m+++ b/components/CartaPreview.vue[m
+[36m@@ -43,6 +43,23 @@[m
+       <strong>ASUNTO:</strong> {{ safeCarta.asunto }}[m
+     </p>[m
+ [m
+[32m+[m[32m    <div class="datos-documento">[m
+[32m+[m[32m      <div>[m
+[32m+[m[32m        <strong>Correlativo:</strong>[m
+[32m+[m[32m        <span>{{ safeCarta.correlativo }}</span>[m
+[32m+[m[32m      </div>[m
+[32m+[m
+[32m+[m[32m      <div>[m
+[32m+[m[32m        <strong>RUC:</strong>[m
+[32m+[m[32m        <span>{{ safeCliente.ruc }}</span>[m
+[32m+[m[32m      </div>[m
+[32m+[m
+[32m+[m[32m      <div>[m
+[32m+[m[32m        <strong>Fecha de emisión:</strong>[m
+[32m+[m[32m        <span>{{ formattedFecha }}</span>[m
+[32m+[m[32m      </div>[m
+[32m+[m[32m    </div>[m
+[32m+[m
+     <p class="paragraph">[m
+       {{ safeCarta.contexto }}[m
+     </p>[m
+[36m@@ -281,5 +298,27 @@[m [mp {[m
+   .fila-contacto {[m
+     margin-bottom: 18px;[m
+   }[m
+[32m+[m[32m  .datos-documento {[m
+[32m+[m[32m    display: grid;[m
+[32m+[m[32m    grid-template-columns: 1fr 1fr 1.4fr;[m
+[32m+[m[32m    gap: 14px;[m
+[32m+[m[32m    width: 100%;[m
+[32m+[m[32m    margin-top: -2px;[m
+[32m+[m[32m    margin-bottom: 18px;[m
+[32m+[m[32m    font-size: 13px;[m
+[32m+[m[32m    line-height: 1.35;[m
+[32m+[m[32m    align-items: center;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  .datos-documento > div {[m
+[32m+[m[32m    display: flex;[m
+[32m+[m[32m    align-items: center;[m
+[32m+[m[32m    gap: 4px;[m
+[32m+[m[32m    white-space: nowrap;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  .datos-documento strong {[m
+[32m+[m[32m    font-weight: 700;[m
+[32m+[m[32m  }[m
+ }[m
+ </style>[m
+[1mdiff --git a/pages/documentos/cartas.vue b/pages/documentos/cartas.vue[m
+[1mindex 5c023e8..aa6a61a 100644[m
+[1m--- a/pages/documentos/cartas.vue[m
+[1m+++ b/pages/documentos/cartas.vue[m
+[36m@@ -153,7 +153,7 @@[m
+             </label>[m
+ [m
+             <label class="radio-toggle">[m
+[31m-              <input :checked="showExtraFields" type="radio" @click.prevent="showExtraFields = !showExtraFields">[m
+[32m+[m[32m              <input v-model="showExtraFields" type="checkbox">[m
+               Mostrar campos[m
+             </label>[m
+ [m
+[36m@@ -165,192 +165,367 @@[m
+         </div>[m
+ [m
+         <div class="form-grid">[m
+[32m+[m
+[32m+[m[32m          <!-- FILA 1 -->[m
+           <v-row dense>[m
+[32m+[m
+             <v-col cols="12" md="6">[m
+               <label class="autocomplete-field">[m
+                 Cliente[m
+[31m-                <input v-model.trim="clienteSearch" type="text" required autocomplete="off"[m
+[31m-                  placeholder="Escribe para buscar cliente" @focus="openClienteDropdown" @input="handleClienteSearch"[m
+[31m-                  @blur="closeClienteDropdown" @keydown.esc="closeClienteDropdown">[m
+[32m+[m
+[32m+[m[32m                <input[m
+[32m+[m[32m                  v-model.trim="clienteSearch"[m
+[32m+[m[32m                  type="text"[m
+[32m+[m[32m                  required[m
+[32m+[m[32m                  autocomplete="off"[m
+[32m+[m[32m                  placeholder="Escribe para buscar cliente"[m
+[32m+[m[32m                  @focus="openClienteDropdown"[m
+[32m+[m[32m                  @input="handleClienteSearch"[m
+[32m+[m[32m                  @blur="closeClienteDropdown"[m
+[32m+[m[32m                  @keydown.esc="closeClienteDropdown"[m
+[32m+[m[32m                >[m
+[32m+[m
+                 <div v-if="isClienteDropdownOpen" class="autocomplete-menu">[m
+[31m-                  <button v-for="cliente in filteredClientesOptions" :key="cliente.id" class="autocomplete-option"[m
+[31m-                    type="button" @mousedown.prevent="selectCliente(cliente)">[m
+[32m+[m
+[32m+[m[32m                  <button[m
+[32m+[m[32m                    v-for="cliente in filteredClientesOptions"[m
+[32m+[m[32m                    :key="cliente.id"[m
+[32m+[m[32m                    class="autocomplete-option"[m
+[32m+[m[32m                    type="button"[m
+[32m+[m[32m                    @mousedown.prevent="selectCliente(cliente)"[m
+[32m+[m[32m                  >[m
+                     <strong>{{ cliente.nombre }}</strong>[m
+                     <span>{{ cliente.ruc }} - {{ cliente.contacto }}</span>[m
+                   </button>[m
+[32m+[m
+                   <div v-if="clientesLoading" class="autocomplete-empty">[m
+                     Cargando clientes...[m
+                   </div>[m
+[31m-                  <div v-else-if="filteredClientesOptions.length === 0" class="autocomplete-empty">[m
+[31m-                    <v-btn small color="green" size="x-large" outlined @mousedown.prevent="openQuickCliente">[m
+[32m+[m
+[32m+[m[32m                  <div[m
+[32m+[m[32m                    v-else-if="filteredClientesOptions.length === 0"[m
+[32m+[m[32m                    class="autocomplete-empty"[m
+[32m+[m[32m                  >[m
+[32m+[m[32m                    <v-btn[m
+[32m+[m[32m                      small[m
+[32m+[m[32m                      color="green"[m
+[32m+[m[32m                      size="x-large"[m
+[32m+[m[32m                      outlined[m
+[32m+[m[32m                      @mousedown.prevent="openQuickCliente"[m
+[32m+[m[32m                    >[m
+                       + Agregar cliente[m
+                     </v-btn>[m
+                   </div>[m
+[32m+[m
+                 </div>[m
+               </label>[m
+             </v-col>[m
+ [m
+[32m+[m
+             <v-col cols="12" md="6">[m
+[31m-              <label>Direccion[m
+[31m-                <input v-model.trim="form.cliente.direccion" :disabled="form.direccionAlterna" type="text"[m
+[31m-                  placeholder="Av. Principal 123" style="flex:1;">[m
+[32m+[m[32m              <label>[m
+[32m+[m[32m                Dirección[m
+[32m+[m
+[32m+[m[32m                <input[m
+[32m+[m[32m                  v-model.trim="form.cliente.direccion"[m
+[32m+[m[32m                  :disabled="form.direccionAlterna"[m
+[32m+[m[32m                  type="text"[m
+[32m+[m[32m                  placeholder="Av. Principal 123"[m
+[32m+[m[32m                >[m
+               </label>[m
+             </v-col>[m
+ [m
+[32m+[m[32m          </v-row>[m
+[32m+[m
+[32m+[m
+[32m+[m[32m          <!-- FILA 2 -->[m
+[32m+[m[32m          <v-row dense>[m
+[32m+[m
+             <v-col cols="12" md="6">[m
+               <label>[m
+                 Contacto[m
+[31m-                <input v-model.trim="form.cliente.contactoNombre" type="text" placeholder="Nombre del contacto">[m
+[32m+[m
+[32m+[m[32m                <input[m
+[32m+[m[32m                  v-model.trim="form.cliente.contactoNombre"[m
+[32m+[m[32m                  type="text"[m
+[32m+[m[32m                  placeholder="Nombre del contacto"[m
+[32m+[m[32m                >[m
+               </label>[m
+             </v-col>[m
+ [m
+[32m+[m
+             <v-col cols="12" md="6">[m
+               <label>[m
+[31m-                Telefono[m
+[31m-                <input v-model.trim="form.cliente.contactoTelefono" type="text" placeholder="999 999 999">[m
+[32m+[m[32m                Teléfono[m
+[32m+[m
+[32m+[m[32m                <input[m
+[32m+[m[32m                  v-model.trim="form.cliente.contactoTelefono"[m
+[32m+[m[32m                  type="text"[m
+[32m+[m[32m                  placeholder="999 999 999"[m
+[32m+[m[32m                >[m
+               </label>[m
+             </v-col>[m
+ [m
+[32m+[m[32m          </v-row>[m
+[32m+[m
+[32m+[m
+[32m+[m[32m          <!-- FILA 3: ASUNTO + FECHA SERVICIO -->[m
+             <v-row dense>[m
+[32m+[m
+               <v-col cols="12" md="10">[m
+                 <label>[m
+                   Asunto[m
+[31m-                  <input :value="form.asunto" ty

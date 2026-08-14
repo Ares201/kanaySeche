@@ -153,7 +153,7 @@
             </label>
 
             <label class="radio-toggle">
-              <input :checked="showExtraFields" type="radio" @click.prevent="showExtraFields = !showExtraFields">
+              <input v-model="showExtraFields" type="checkbox">
               Mostrar campos
             </label>
 
@@ -165,192 +165,367 @@
         </div>
 
         <div class="form-grid">
+
+          <!-- FILA 1 -->
           <v-row dense>
+
             <v-col cols="12" md="6">
               <label class="autocomplete-field">
                 Cliente
-                <input v-model.trim="clienteSearch" type="text" required autocomplete="off"
-                  placeholder="Escribe para buscar cliente" @focus="openClienteDropdown" @input="handleClienteSearch"
-                  @blur="closeClienteDropdown" @keydown.esc="closeClienteDropdown">
+
+                <input
+                  v-model.trim="clienteSearch"
+                  type="text"
+                  required
+                  autocomplete="off"
+                  placeholder="Escribe para buscar cliente"
+                  @focus="openClienteDropdown"
+                  @input="handleClienteSearch"
+                  @blur="closeClienteDropdown"
+                  @keydown.esc="closeClienteDropdown"
+                >
+
                 <div v-if="isClienteDropdownOpen" class="autocomplete-menu">
-                  <button v-for="cliente in filteredClientesOptions" :key="cliente.id" class="autocomplete-option"
-                    type="button" @mousedown.prevent="selectCliente(cliente)">
+
+                  <button
+                    v-for="cliente in filteredClientesOptions"
+                    :key="cliente.id"
+                    class="autocomplete-option"
+                    type="button"
+                    @mousedown.prevent="selectCliente(cliente)"
+                  >
                     <strong>{{ cliente.nombre }}</strong>
                     <span>{{ cliente.ruc }} - {{ cliente.contacto }}</span>
                   </button>
+
                   <div v-if="clientesLoading" class="autocomplete-empty">
                     Cargando clientes...
                   </div>
-                  <div v-else-if="filteredClientesOptions.length === 0" class="autocomplete-empty">
-                    <v-btn small color="green" size="x-large" outlined @mousedown.prevent="openQuickCliente">
+
+                  <div
+                    v-else-if="filteredClientesOptions.length === 0"
+                    class="autocomplete-empty"
+                  >
+                    <v-btn
+                      small
+                      color="green"
+                      size="x-large"
+                      outlined
+                      @mousedown.prevent="openQuickCliente"
+                    >
                       + Agregar cliente
                     </v-btn>
                   </div>
+
                 </div>
               </label>
             </v-col>
 
+
             <v-col cols="12" md="6">
-              <label>Direccion
-                <input v-model.trim="form.cliente.direccion" :disabled="form.direccionAlterna" type="text"
-                  placeholder="Av. Principal 123" style="flex:1;">
+              <label>
+                Dirección
+
+                <input
+                  v-model.trim="form.cliente.direccion"
+                  :disabled="form.direccionAlterna"
+                  type="text"
+                  placeholder="Av. Principal 123"
+                >
               </label>
             </v-col>
+
+          </v-row>
+
+
+          <!-- FILA 2 -->
+          <v-row dense>
 
             <v-col cols="12" md="6">
               <label>
                 Contacto
-                <input v-model.trim="form.cliente.contactoNombre" type="text" placeholder="Nombre del contacto">
+
+                <input
+                  v-model.trim="form.cliente.contactoNombre"
+                  type="text"
+                  placeholder="Nombre del contacto"
+                >
               </label>
             </v-col>
+
 
             <v-col cols="12" md="6">
               <label>
-                Telefono
-                <input v-model.trim="form.cliente.contactoTelefono" type="text" placeholder="999 999 999">
+                Teléfono
+
+                <input
+                  v-model.trim="form.cliente.contactoTelefono"
+                  type="text"
+                  placeholder="999 999 999"
+                >
               </label>
             </v-col>
 
+          </v-row>
+
+
+          <!-- FILA 3: ASUNTO + FECHA SERVICIO -->
             <v-row dense>
+
               <v-col cols="12" md="10">
                 <label>
                   Asunto
-                  <input :value="form.asunto" type="text" readonly>
+
+                  <input
+                    :value="form.asunto"
+                    type="text"
+                    readonly
+                  >
                 </label>
               </v-col>
 
               <v-col cols="12" md="2">
                 <label>
                   Fecha servicio
-                  <input v-model="form.fechaServicio" type="date" required @change="actualizarAsunto" />
+
+                  <input
+                    v-model="form.fechaServicio"
+                    type="date"
+                    required
+                    @change="actualizarAsunto"
+                  >
                 </label>
               </v-col>
+
             </v-row>
 
-            <v-col v-if="showExtraFields" cols="12" md="4">
-              <label>
-                Fecha de emisión
-                <input v-model="form.fecha" type="date" required>
-              </label>
-            </v-col>
 
-            <v-col v-if="showExtraFields" cols="12" md="4">
-              <label>
-                Correlativo
-                <input v-model.trim="form.correlativo" type="text" required placeholder="CARTA">
-              </label>
-            </v-col>
+          <!-- SEGUNDA FILA: FECHA EMISIÓN + CORRELATIVO + FECHA CULMINO -->
+            <v-row v-if="showExtraFields" dense>
 
-            <v-col v-if="showExtraFields" cols="12" md="4">
-              <label>
-                RUC
-                <input v-model.trim="form.cliente.ruc" type="text" required placeholder="20600000000">
-              </label>
-            </v-col>
+              <v-col cols="12" md="5">
+                <label>
+                  Fecha de emisión
 
-            <v-col v-if="showExtraFields" cols="12" md="12">
-              <label>
-                Despedida
-                <textarea v-model.trim="form.despedida" rows="2" required placeholder="Texto de despedida" />
-              </label>
-            </v-col>
+                  <input
+                    v-model="form.fecha"
+                    type="date"
+                    required
+                  >
+                </label>
+              </v-col>
 
-            <v-col v-if="showExtraFields" cols="12">
-              <label>
-                Contexto
-                <textarea v-model.trim="form.contexto" rows="5" required />
-              </label>
-            </v-col>
+              <v-col cols="12" md="5">
+                <label>
+                  Correlativo
+
+                  <input
+                    v-model.trim="form.correlativo"
+                    type="text"
+                    required
+                    placeholder="CARTA"
+                  >
+                </label>
+              </v-col>
+
+              <v-col cols="12" md="2">
+                <label>
+                  Fecha culmino
+
+                  <input
+                    v-model="form.fechaCulmino"
+                    type="date"
+                    @change="actualizarAsunto"
+                  >
+                </label>
+              </v-col>
+
+              <v-col cols="12">
+                <label>
+                  Despedida
+
+                  <textarea
+                    v-model.trim="form.despedida"
+                    rows="2"
+                    required
+                    placeholder="Texto de despedida"
+                  />
+                </label>
+              </v-col>
+
+              <v-col cols="12">
+                <label>
+                  Contexto
+
+                  <textarea
+                    v-model.trim="form.contexto"
+                    rows="5"
+                    required
+                  />
+                </label>
+              </v-col>
+
+            </v-row>
+
+
+          <!-- DETALLES -->
+          <v-row dense>
 
             <v-col cols="12">
+
               <div class="details-header">
+
                 <h3>Detalles</h3>
+
                 <v-menu offset-y>
+
                   <template #activator="{ on, attrs }">
-                    <button class="secondary-button secondary-button--small" v-bind="attrs" v-on="on" type="button">
+
+                    <button
+                      class="secondary-button secondary-button--small"
+                      v-bind="attrs"
+                      v-on="on"
+                      type="button"
+                    >
                       Añadir
                     </button>
+
                   </template>
+
 
                   <v-list dense>
 
                     <v-list-item @click="addDetalle('Manifiesto Generador')">
-                      <v-list-item-title>Manifiesto Generador</v-list-item-title>
+                      <v-list-item-title>
+                        Manifiesto Generador
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Manifiesto Transportista')">
-                      <v-list-item-title>Manifiesto Transportista</v-list-item-title>
+                      <v-list-item-title>
+                        Manifiesto Transportista
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Manifiesto Disposición Final')">
-                      <v-list-item-title>Manifiesto Disposición Final</v-list-item-title>
+                      <v-list-item-title>
+                        Manifiesto Disposición Final
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Manifiesto Control Administrativo')">
-                      <v-list-item-title>Manifiesto Control Administrativo</v-list-item-title>
+                      <v-list-item-title>
+                        Manifiesto Control Administrativo
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Guía Transportista')">
-                      <v-list-item-title>Guía Transportista</v-list-item-title>
+                      <v-list-item-title>
+                        Guía Transportista
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Guía Remitente')">
-                      <v-list-item-title>Guía Remitente</v-list-item-title>
+                      <v-list-item-title>
+                        Guía Remitente
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Ticket de Pesaje')">
-                      <v-list-item-title>Ticket de Pesaje</v-list-item-title>
+                      <v-list-item-title>
+                        Ticket de Pesaje
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Acta Notarial')">
-                      <v-list-item-title>Acta Notarial</v-list-item-title>
+                      <v-list-item-title>
+                        Acta Notarial
+                      </v-list-item-title>
                     </v-list-item>
 
                     <v-list-item @click="addDetalle('Otros')">
-                      <v-list-item-title>Otros...</v-list-item-title>
+                      <v-list-item-title>
+                        Otros...
+                      </v-list-item-title>
                     </v-list-item>
 
                   </v-list>
 
                 </v-menu>
+
               </div>
+
 
               <div class="details-list">
 
-                <div v-for="(detalle, index) in form.detalles" :key="index" class="detail-row">
+                <div
+                  v-for="(detalle, index) in form.detalles"
+                  :key="index"
+                  class="detail-row"
+                >
 
                   <label>
                     N°
-                    <input v-model.number="detalle.numero" type="number" min="1" @input="actualizarNumero(detalle)">
+
+                    <input
+                      v-model.number="detalle.numero"
+                      type="number"
+                      min="1"
+                      @input="actualizarNumero(detalle)"
+                    >
                   </label>
 
 
                   <label>
                     Número texto
-                    <input :value="detalle.numeroTexto" type="text" readonly>
+
+                    <input
+                      :value="detalle.numeroTexto"
+                      type="text"
+                      readonly
+                    >
                   </label>
 
 
                   <label>
                     Documento
-                    <input v-model="detalle.descripcion" type="text" :readonly="!detalle.editable"
-                      :placeholder="detalle.editable ? 'Escriba el documento...' : ''" />
+
+                    <input
+                      v-model="detalle.descripcion"
+                      type="text"
+                      :readonly="!detalle.editable"
+                      :placeholder="detalle.editable ? 'Escriba el documento...' : ''"
+                    >
                   </label>
 
-                  <button class="icon-button" type="button" title="Agregar (Retornar)" @click="toggleRetornar(detalle)">
+
+                  <button
+                    class="icon-button"
+                    type="button"
+                    title="Agregar (Retornar)"
+                    @click="toggleRetornar(detalle)"
+                  >
                     ↩
                   </button>
 
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar item"
-                    @click="removeDetalle(index)">
+
+                  <button
+                    class="icon-button icon-button--danger"
+                    type="button"
+                    title="Eliminar item"
+                    @click="removeDetalle(index)"
+                  >
                     🗑
                   </button>
 
                 </div>
 
               </div>
+
             </v-col>
+
           </v-row>
+
         </div>
 
         <div class="modal-actions">
@@ -642,7 +817,7 @@ export default {
         id: '',
         lugar: 'Lima',
         fecha: this.getTodayInputDate(),
-        fechaServicio: this.getTodayInputDate(),
+        fechaServicio: '',
         correlativo: this.getNextCorrelativo(),
         direccionAlterna: false,
         cliente: {
@@ -941,8 +1116,19 @@ export default {
         this.form.asunto = DEFAULT_ASUNTO
         return
       }
+
       const [year, month, day] = this.form.fechaServicio.split('-')
-      this.form.asunto = `Presentación de Documentos del Servicio Ambiental del ${day}/${month}/${year}`
+
+      let asunto =
+        `Presentación de Documentos del Servicio Ambiental del ${day}/${month}/${year}`
+
+      if (this.form.fechaCulmino) {
+        const [yearFin, monthFin, dayFin] = this.form.fechaCulmino.split('-')
+
+        asunto += ` al ${dayFin}/${monthFin}/${yearFin}`
+      }
+
+      this.form.asunto = asunto
     },
     printCarta(carta = this.selectedCarta) {
       const escapeHtml = value => String(value || '')
@@ -1179,6 +1365,23 @@ export default {
                   ${escapeHtml(carta.asunto)}
                 </div>
 
+                <div class="datos-documento">
+                  <div class="dato-documento">
+                    <strong>Correlativo:</strong>
+                    <span>${escapeHtml(carta.correlativo)}</span>
+                  </div>
+
+                  <div class="dato-documento">
+                    <strong>RUC:</strong>
+                    <span>${escapeHtml(cliente.ruc)}</span>
+                  </div>
+
+                  <div class="dato-documento">
+                    <strong>Fecha de emisión:</strong>
+                    <span>${escapeHtml(formatPeruDate(carta.fecha))}</span>
+                  </div>
+                </div>
+
                 <div class="contenido">
                   <p>
                     ${textToHtml(carta.contexto)}
@@ -1390,6 +1593,9 @@ export default {
 
       payload.fecha = this.parseLocalDate(normalizedCarta.fecha)
       payload.fechaServicio = this.parseLocalDate(normalizedCarta.fechaServicio)
+      payload.fechaCulmino = normalizedCarta.fechaCulmino
+        ? this.parseLocalDate(normalizedCarta.fechaCulmino)
+        : null
 
       return payload
     },
@@ -1404,7 +1610,8 @@ export default {
         id: source.id || '',
         lugar: source.lugar || '',
         fecha: this.normalizeDateInput(source.fecha) || this.getTodayInputDate(),
-        fechaServicio: this.normalizeDateInput(source.fechaServicio) || this.getTodayInputDate(),
+        fechaServicio: this.normalizeDateInput(source.fechaServicio) || '',
+        fechaCulmino: this.normalizeDateInput(source.fechaCulmino) || '',
         correlativo: source.correlativo || '',
         cliente: {
           nombre: cliente.nombre || '',
@@ -2147,6 +2354,32 @@ td {
   .modal-header,
   .preview-toolbar {
     display: none;
+  }
+  .datos-documento {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4fr;
+    gap: 16px;
+    width: 100%;
+    margin-top: -10px;
+    margin-bottom: 22px;
+    font-size: 12px;
+    line-height: 1.4;
+    align-items: center;
+  }
+
+  .dato-documento {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .dato-documento strong {
+    font-weight: 700;
+  }
+
+  .dato-documento span {
+    font-weight: 400;
   }
 }
 </style>
