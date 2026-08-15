@@ -5,12 +5,23 @@
         <p class="eyebrow">Gestión</p>
         <h1>Expedientes PV</h1>
       </div>
-      <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo expediente
-      </button>
+      <div class="header-actions">
+        <v-btn-toggle v-model="viewMode" mandatory dense class="view-toggle">
+          <v-btn small value="table" :color="viewMode === 'table' ? 'success' : ''" :outlined="viewMode !== 'table'">
+            <v-icon small>mdi-table</v-icon>
+          </v-btn>
+          <v-btn small value="kanban" :color="viewMode === 'kanban' ? 'success' : ''" :outlined="viewMode !== 'kanban'">
+            <v-icon small>mdi-view-dashboard</v-icon>
+          </v-btn>
+        </v-btn-toggle>
+        <button class="primary-button" type="button" @click="openCreateModal">
+          Nuevo expediente
+        </button>
+      </div>
     </div>
 
     <div class="content">
+      <!-- Barra de filtros -->
       <div class="table-header">
         <div>
           <h2>Listado de expedientes</h2>
@@ -53,7 +64,8 @@
         <input ref="excelInput" class="excel-input" type="file" accept=".xlsx" @change="importExpedientes" />
       </v-row>
 
-      <div class="table-wrapper">
+      <!-- VISTA TABLA -->
+      <div v-if="viewMode === 'table'" class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -74,14 +86,12 @@
               <td>{{ exp.planner || '—' }}</td>
               <td>
                 <div class="actions">
-                  <!-- Retroceder -->
                   <v-btn icon small class="status-icon-button status-icon-button--back"
                     :title="canRegress(exp.estado) ? `Retroceder a ${getPreviousEstado(exp.estado)}` : 'No se puede retroceder'"
                     :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
                     <v-icon small>mdi-arrow-left</v-icon>
                   </v-btn>
 
-                  <!-- Avanzar / Emitir Carta -->
                   <v-btn v-if="exp.estado === 'Regularizado'" icon small color="primary"
                     class="status-icon-button status-icon-button--emitir" title="Emitir carta y cerrar expediente"
                     @click="emitirCarta(exp)">
@@ -93,7 +103,6 @@
                     <v-icon small>{{ getAvanceIcon(exp.estado) }}</v-icon>
                   </v-btn>
 
-                  <!-- Editar -->
                   <button class="icon-button" type="button" title="Editar expediente" aria-label="Editar expediente"
                     @click="openEditModal(exp)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -102,7 +111,6 @@
                     </svg>
                   </button>
 
-                  <!-- Eliminar -->
                   <button class="icon-button icon-button--danger" type="button" title="Eliminar expediente"
                     @click="deleteExpediente(exp.id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -124,6 +132,70 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- VISTA KANBAN (CORREGIDA) -->
+      <div v-else class="kanban-board">
+        <div
+          v-for="(items, estado) in kanbanLists"
+          :key="estado"
+          class="kanban-column"
+          :class="`kanban-column--${estado.toLowerCase()}`"
+        >
+          <div class="kanban-column-header">
+            <span>{{ estado }}</span>
+            <span class="badge">{{ items.length }}</span>
+          </div>
+
+          <div v-if="items.length === 0" class="kanban-empty-column">
+            Sin registros
+          </div>
+
+          <draggable
+            v-else
+            :list="items"
+            item-key="id"
+            group="expedientes"
+            @change="onDragChange($event, estado)"
+            class="kanban-list"
+            :move="onDragMove"
+          >
+            <template #item="{ element }">
+              <div class="kanban-card" :class="{ 'card-cerrado': element.estado === 'Cerrado' }">
+                <div class="card-header">
+                  <strong>{{ element.correlativo || '—' }}</strong>
+                  <span class="card-date">{{ formatDateOnly(element.fecha) }}</span>
+                </div>
+                <div class="card-body">
+                  <div><strong>Cliente:</strong> {{ element.cliente.nombre || '—' }}</div>
+                  <div><strong>Acción:</strong> {{ truncate(element.accionInmediata, 20) }}</div>
+                  <div><strong>Planner:</strong> {{ element.planner || '—' }}</div>
+                </div>
+                <div class="card-actions">
+                  <v-btn icon small @click="openEditModal(element)">
+                    <v-icon small>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn icon small color="red" @click="deleteExpediente(element.id)">
+                    <v-icon small>mdi-delete</v-icon>
+                  </v-btn>
+                  <v-btn
+                    v-if="element.estado === 'Regularizado'"
+                    icon small color="primary"
+                    @click="emitirCarta(element)"
+                    title="Emitir carta"
+                  >
+                    <v-icon small>mdi-file-document-edit</v-icon>
+                  </v-btn>
+                </div>
+              </div>
+            </template>
+          </draggable>
+        </div>
+
+        <div v-if="loading" class="kanban-loading">Cargando expedientes...</div>
+        <div v-else-if="filteredExpedientes.length === 0" class="kanban-empty">
+          No se encontraron expedientes.
+        </div>
       </div>
     </div>
 
@@ -223,7 +295,6 @@
               </label>
             </v-col>
 
-            <!-- CAMPO PLANNER AUTOCOMPLETE -->
             <v-col cols="12" md="6">
               <label class="autocomplete-field">
                 Planner
@@ -267,7 +338,7 @@
       </form>
     </div>
 
-    <!-- Modal rápido para agregar cliente o planner -->
+    <!-- Modal rápido -->
     <div v-if="quickModalOpen" class="modal-backdrop">
       <div class="modal modal--form" style="max-width: 500px;">
         <div class="modal-header">
@@ -312,6 +383,7 @@
 </template>
 
 <script>
+import draggable from 'vuedraggable'
 import { normalizeCliente } from '~/models/cliente'
 import { normalizePersonal } from '~/models/personal'
 import {
@@ -339,8 +411,10 @@ const EXCEL_COLUMNS = [
 
 export default {
   name: 'ExpedientesPage',
+  components: { draggable },
   data() {
     return {
+      viewMode: 'table',
       estados: ESTADOS_EXPEDIENTE,
       search: '',
       fechaFiltro: null,
@@ -353,28 +427,25 @@ export default {
       personal: [],
       clientesLoading: false,
       personalLoading: false,
-      // Cliente autocomplete
       clienteSearch: '',
       isClienteDropdownOpen: false,
-      // Transportista autocomplete
       transportistaSearch: '',
       isTransportistaDropdownOpen: false,
-      // Generador autocomplete
       generadorSearch: '',
       isGeneradorDropdownOpen: false,
-      // Planner autocomplete
       plannerSearch: '',
       isPlannerDropdownOpen: false,
-      // Quick add
       quickModalOpen: false,
-      quickModalType: null, // 'cliente' o 'planner'
+      quickModalType: null,
       quickForm: {
         nombre: '',
         ruc: '',
         contacto: '',
         telefonoContacto: ''
       },
-      expedientes: []
+      expedientes: [],
+      // Objeto reactivo para el Kanban
+      kanbanLists: {}
     }
   },
   computed: {
@@ -399,6 +470,7 @@ export default {
         return matchesSearch && matchesDate && matchesEstado
       })
     },
+
     filteredClientesOptions() {
       const term = this.clienteSearch.toLowerCase()
       if (!term) return this.clientes.slice(0, 8)
@@ -446,6 +518,22 @@ export default {
         .slice(0, 8)
     }
   },
+  watch: {
+    // Actualizar kanbanLists cada vez que filteredExpedientes cambie
+    filteredExpedientes: {
+      handler(newVal) {
+        const grupos = {}
+        this.estados.forEach(est => { grupos[est] = [] })
+        newVal.forEach(exp => {
+          const estado = exp.estado || 'Pendiente'
+          if (grupos[estado]) grupos[estado].push(exp)
+          else grupos[estado] = [exp]
+        })
+        this.kanbanLists = grupos
+      },
+      immediate: true
+    }
+  },
   mounted() {
     this.getAll()
     this.loadClientes()
@@ -483,7 +571,6 @@ export default {
       return `${year}-${month}-${day}`
     },
 
-    // ========== CRUD ==========
     async getAll() {
       this.loading = true
       try {
@@ -544,7 +631,6 @@ export default {
       }
     },
 
-    // ========== ESTADOS Y TRANSICIONES ==========
     getPreviousEstado(estado) {
       const idx = ESTADOS_EXPEDIENTE.indexOf(estado)
       return idx > 0 ? ESTADOS_EXPEDIENTE[idx - 1] : null
@@ -605,7 +691,6 @@ export default {
       }
     },
 
-    // ========== EMITIR CARTA ==========
     async emitirCarta(exp) {
       if (exp.estado !== 'Regularizado') {
         alert('Solo se puede emitir carta desde el estado "Regularizado"')
@@ -653,7 +738,6 @@ export default {
           contactoNombre: exp.cliente.contactoNombre || '',
           contactoTelefono: exp.cliente.contactoTelefono || ''
         },
-        // asunto removido
         contexto: `De nuestra consideración:\nLa presente tiene por finalidad hacerle llegar la documentación correspondiente al expediente ${exp.correlativo}.\nObservación: ${exp.observaciones || 'Sin detalle'}`,
         detalles: [{ numero: 1, numeroTexto: '(Uno)', descripcion: 'Documento adjunto' }],
         despedida: 'Sin otro particular, quedamos atentos a su respuesta.',
@@ -663,7 +747,6 @@ export default {
       }
     },
 
-    // ========== MODAL ==========
     openCreateModal() {
       this.editingId = null
       this.form = createEmptyExpedienteForm()
@@ -720,7 +803,6 @@ export default {
       }
     },
 
-    // ========== AUTOCOMPLETE CLIENTE ==========
     openClienteDropdown() { this.isClienteDropdownOpen = true },
     closeClienteDropdown() { this.isClienteDropdownOpen = false },
     handleClienteSearch() {
@@ -739,7 +821,6 @@ export default {
       this.isClienteDropdownOpen = false
     },
 
-    // ========== AUTOCOMPLETE TRANSPORTISTA ==========
     openTransportistaDropdown() { this.isTransportistaDropdownOpen = true },
     closeTransportistaDropdown() { this.isTransportistaDropdownOpen = false },
     handleTransportistaSearch() {
@@ -752,7 +833,6 @@ export default {
       this.isTransportistaDropdownOpen = false
     },
 
-    // ========== AUTOCOMPLETE GENERADOR ==========
     openGeneradorDropdown() { this.isGeneradorDropdownOpen = true },
     closeGeneradorDropdown() { this.isGeneradorDropdownOpen = false },
     handleGeneradorSearch() {
@@ -765,7 +845,6 @@ export default {
       this.isGeneradorDropdownOpen = false
     },
 
-    // ========== AUTOCOMPLETE PLANNER ==========
     openPlannerDropdown() { this.isPlannerDropdownOpen = true },
     closePlannerDropdown() { this.isPlannerDropdownOpen = false },
     handlePlannerSearch() {
@@ -778,7 +857,6 @@ export default {
       this.isPlannerDropdownOpen = false
     },
 
-    // ========== AGREGAR RÁPIDO ==========
     openQuickCliente() {
       this.quickModalType = 'cliente'
       this.quickForm = { nombre: '', ruc: '', contacto: '', telefonoContacto: '' }
@@ -840,7 +918,6 @@ export default {
       }
     },
 
-    // ========== EXPORT / IMPORT EXCEL ==========
     getExcelColumns() {
       return [
         { label: 'Correlativo', value: e => e.correlativo },
@@ -927,7 +1004,37 @@ export default {
       }
     },
 
-    // ========== UTILIDADES DE FECHAS ==========
+    // ========== KANBAN DRAG & DROP ==========
+    onDragMove(evt) {
+      const exp = evt.draggedContext.element
+      const destinoEstado = evt.relatedContext.listName
+      if (exp.estado === 'Cerrado' && destinoEstado !== 'Cerrado') {
+        alert('No se puede mover un expediente Cerrado.')
+        return false
+      }
+      if (destinoEstado === 'Cerrado' && exp.estado !== 'Regularizado') {
+        alert('Solo se puede cerrar un expediente que está Regularizado.')
+        return false
+      }
+      return true
+    },
+
+    async onDragChange(event, estadoDestino) {
+      if (event.added) {
+        const exp = event.added.element
+        if (!exp || !exp.id) return
+
+        try {
+          await this.$firebaseApi.update('expedientes', exp.id, { estado: estadoDestino })
+          await this.getAll()
+        } catch (error) {
+          alert('Error al actualizar estado')
+          console.error(error)
+          await this.getAll()
+        }
+      }
+    },
+
     getTodayInputDate() {
       return getTodayDateInput()
     },
@@ -976,7 +1083,7 @@ export default {
 </script>
 
 <style scoped>
-/* ===== Estilos generales ===== */
+/* Estilos iguales a los que ya tenías, no hay cambios */
 .expedientes-page {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
@@ -991,6 +1098,17 @@ export default {
   margin-bottom: 24px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-toggle .v-btn {
+  min-width: 36px;
+  padding: 0 8px;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: #0f766e;
@@ -999,9 +1117,7 @@ export default {
   text-transform: uppercase;
 }
 
-h1,
-h2,
-h3 {
+h1, h2, h3 {
   margin: 0;
 }
 
@@ -1085,8 +1201,7 @@ table {
   border-collapse: collapse;
 }
 
-th,
-td {
+th, td {
   padding: 14px 20px;
   text-align: left;
   white-space: nowrap;
@@ -1183,7 +1298,6 @@ td {
   text-align: center;
 }
 
-/* ===== MODAL ===== */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1207,8 +1321,7 @@ td {
   overflow-y: auto;
 }
 
-.modal-header,
-.modal-actions {
+.modal-header, .modal-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1331,12 +1444,125 @@ td {
   cursor: pointer;
 }
 
-@media (max-width: 640px) {
+/* KANBAN */
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  overflow-x: auto;
+  min-height: 300px;
+}
 
-  .page-header,
-  .table-header {
+.kanban-column {
+  flex: 1;
+  min-width: 220px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  max-height: 600px;
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.badge {
+  background: #e2e8f0;
+  padding: 0 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.kanban-list {
+  flex: 1;
+  min-height: 80px;
+  overflow-y: auto;
+}
+
+.kanban-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  border: 1px solid #edf2f7;
+  cursor: grab;
+  transition: box-shadow 0.2s;
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.card-cerrado {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.card-date {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.card-body {
+  font-size: 13px;
+  color: #334155;
+}
+
+.card-body div {
+  margin: 2px 0;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.kanban-empty-column {
+  text-align: center;
+  color: #94a3b8;
+  padding: 16px 0;
+  font-style: italic;
+}
+
+.kanban-loading,
+.kanban-empty {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .page-header, .table-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
   }
 
   .table-actions {
@@ -1355,6 +1581,16 @@ td {
 
   .secondary-button {
     width: 100%;
+  }
+
+  .kanban-board {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kanban-column {
+    min-width: unset;
+    max-height: none;
   }
 }
 </style>

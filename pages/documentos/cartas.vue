@@ -1365,23 +1365,6 @@ export default {
                   ${escapeHtml(carta.asunto)}
                 </div>
 
-                <div class="datos-documento">
-                  <div class="dato-documento">
-                    <strong>Correlativo:</strong>
-                    <span>${escapeHtml(carta.correlativo)}</span>
-                  </div>
-
-                  <div class="dato-documento">
-                    <strong>RUC:</strong>
-                    <span>${escapeHtml(cliente.ruc)}</span>
-                  </div>
-
-                  <div class="dato-documento">
-                    <strong>Fecha de emisión:</strong>
-                    <span>${escapeHtml(formatPeruDate(carta.fecha))}</span>
-                  </div>
-                </div>
-
                 <div class="contenido">
                   <p>
                     ${textToHtml(carta.contexto)}
