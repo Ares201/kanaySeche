@@ -1,16 +1,18 @@
 <template>
   <section class="expedientes-page">
+    <!-- Encabezado principal -->
     <div class="page-header">
       <div>
         <p class="eyebrow">Gestión</p>
         <h1>Expedientes PV</h1>
+        <span class="registros-count">{{ filteredExpedientes.length }} registros</span>
       </div>
       <div class="header-actions">
         <v-btn-toggle v-model="viewMode" mandatory dense class="view-toggle">
-          <v-btn small value="table" :color="viewMode === 'table' ? 'success' : ''" :outlined="viewMode !== 'table'">
+          <v-btn small value="table" :color="viewMode === 'table' ? 'primary' : ''" :outlined="viewMode !== 'table'">
             <v-icon small>mdi-table</v-icon>
           </v-btn>
-          <v-btn small value="kanban" :color="viewMode === 'kanban' ? 'success' : ''" :outlined="viewMode !== 'kanban'">
+          <v-btn small value="kanban" :color="viewMode === 'kanban' ? 'primary' : ''" :outlined="viewMode !== 'kanban'">
             <v-icon small>mdi-view-dashboard</v-icon>
           </v-btn>
         </v-btn-toggle>
@@ -20,49 +22,54 @@
       </div>
     </div>
 
+    <!-- Barra de filtros (ahora justo debajo del header) -->
     <div class="content">
-      <!-- Barra de filtros -->
-      <div class="table-header">
-        <div>
-          <h2>Listado de expedientes</h2>
-          <span>{{ filteredExpedientes.length }} registros</span>
-        </div>
-      </div>
-
-      <v-row class="table-actions" dense align="end" justify="end">
-        <v-col class="table-action-col" cols="3">
-          <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined clearable />
+      <v-row dense>
+        <!-- Estado -->
+        <v-spacer />
+        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
+          <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
+            clearable />
         </v-col>
-        <v-col class="table-action-col" cols="4">
+        <!-- Buscar -->
+        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
           <v-text-field v-model.trim="search" dense hide-details outlined type="search" label="Buscar cliente o N° PV"
             placeholder="Ej. PV-001" />
         </v-col>
-        <v-col class="table-action-col" cols="3">
+        <!-- Fecha -->
+        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
           <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Filtrar por fecha" />
         </v-col>
-        <v-col class="table-action-col table-action-col--excel" cols="2">
+        <!-- Excel -->
+        <v-col cols="12" sm="6" md="1" class="mb-2 mt-2" mr-2>
           <v-menu offset-y>
             <template #activator="{ on, attrs }">
-              <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
+              <v-btn color="#107c41" dark type="button" v-bind="attrs" v-on="on" block>
                 <v-icon left>mdi-microsoft-excel</v-icon>
                 Excel
               </v-btn>
             </template>
+
             <v-list dense>
               <v-list-item @click="exportExpedientes">
                 <v-list-item-title>Exportar</v-list-item-title>
               </v-list-item>
+
               <v-list-item @click="openImportExpedientes">
                 <v-list-item-title>Importar</v-list-item-title>
               </v-list-item>
+
               <v-list-item @click="downloadPlantilla">
                 <v-list-item-title>Plantilla</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-menu>
         </v-col>
-        <input ref="excelInput" class="excel-input" type="file" accept=".xlsx" @change="importExpedientes" />
       </v-row>
+
+      <!-- Input oculto para importar -->
+      <input ref="excelInput" class="excel-input" type="file" accept=".xlsx" style="display: none;"
+        @change="importExpedientes" />
 
       <!-- VISTA TABLA -->
       <div v-if="viewMode === 'table'" class="table-wrapper">
@@ -70,28 +77,34 @@
           <thead>
             <tr>
               <th># PV</th>
+              <th>Estado PV</th>
               <th>Fecha</th>
               <th>Cliente</th>
               <th>Acción Inmediata</th>
-              <th>Planner</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="exp in filteredExpedientes" :key="exp.id">
               <td>{{ exp.correlativo || '—' }}</td>
+              <td>{{ exp.estadoPV || '—' }}</td>
               <td>{{ formatDateOnly(exp.fecha) }}</td>
-              <td>{{ exp.cliente.nombre || '—' }}</td>
+              <td>
+                {{ exp.cliente?.nombre?.length > 20
+                  ? exp.cliente.nombre.slice(0, 20) + '...'
+                  : exp.cliente?.nombre || '—' }}
+              </td>
               <td>{{ truncate(exp.accionInmediata, 20) }}</td>
-              <td>{{ exp.planner || '—' }}</td>
               <td>
                 <div class="actions">
+                  <!-- Retroceder -->
                   <v-btn icon small class="status-icon-button status-icon-button--back"
                     :title="canRegress(exp.estado) ? `Retroceder a ${getPreviousEstado(exp.estado)}` : 'No se puede retroceder'"
                     :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
                     <v-icon small>mdi-arrow-left</v-icon>
                   </v-btn>
 
+                  <!-- Avanzar / Emitir Carta -->
                   <v-btn v-if="exp.estado === 'Regularizado'" icon small color="primary"
                     class="status-icon-button status-icon-button--emitir" title="Emitir carta y cerrar expediente"
                     @click="emitirCarta(exp)">
@@ -103,93 +116,59 @@
                     <v-icon small>{{ getAvanceIcon(exp.estado) }}</v-icon>
                   </v-btn>
 
+                  <!-- Editar -->
                   <button class="icon-button" type="button" title="Editar expediente" aria-label="Editar expediente"
                     @click="openEditModal(exp)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
-                      <path d="M13.5 6.5l4 4" />
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+                      <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" fill="currentColor" />
+                      <path d="M13.5 6.5l4 4" fill="currentColor" />
                     </svg>
                   </button>
 
+                  <!-- Eliminar -->
                   <button class="icon-button icon-button--danger" type="button" title="Eliminar expediente"
                     @click="deleteExpediente(exp.id)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M5 7h14" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                      <path d="M8 7l1 13h6l1-13" />
-                      <path d="M9 7V4h6v3" />
+                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+                      <path d="M5 7h14M10 11v6M14 11v6M8 7l1 13h6l1-13M9 7V4h6v3" stroke="currentColor" fill="none"
+                        stroke-width="2" />
                     </svg>
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="loading">
-              <td class="empty-state" colspan="10">Cargando expedientes...</td>
+              <td class="empty-state" colspan="7">Cargando expedientes...</td>
             </tr>
             <tr v-else-if="filteredExpedientes.length === 0">
-              <td class="empty-state" colspan="10">No se encontraron expedientes.</td>
+              <td class="empty-state" colspan="7">No se encontraron expedientes.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- VISTA KANBAN (CORREGIDA) -->
+      <!-- VISTA KANBAN -->
       <div v-else class="kanban-board">
-        <div
-          v-for="(items, estado) in kanbanLists"
-          :key="estado"
-          class="kanban-column"
-          :class="`kanban-column--${estado.toLowerCase()}`"
-        >
-          <div class="kanban-column-header">
-            <span>{{ estado }}</span>
-            <span class="badge">{{ items.length }}</span>
+        <div v-for="estado in estados" :key="estado" class="kanban-column">
+          <div class="column-header">
+            <h3>{{ estado }}</h3>
+            <span class="badge">{{ kanbanData[estado].length }}</span>
           </div>
 
-          <div v-if="items.length === 0" class="kanban-empty-column">
+          <draggable v-model="kanbanData[estado]" :group="{ name: 'expedientes' }" :list-name="estado"
+            :move="onDragMove" @change="evt => onDragChange(evt, estado)" tag="div" class="kanban-list">
+            <div v-for="exp in kanbanData[estado]" :key="exp.id" class="kanban-card">
+              <p class="font-bold">{{ exp.correlativo }}</p>
+              <p class="text-xs text-muted">
+                {{ exp.cliente?.nombre?.length > 16
+                  ? exp.cliente.nombre.slice(0, 16) + '...'
+                  : exp.cliente?.nombre || '—' }}
+              </p>
+            </div>
+          </draggable>
+
+          <div v-if="!kanbanData[estado].length" class="empty-state">
             Sin registros
           </div>
-
-          <draggable
-            v-else
-            :list="items"
-            item-key="id"
-            group="expedientes"
-            @change="onDragChange($event, estado)"
-            class="kanban-list"
-            :move="onDragMove"
-          >
-            <template #item="{ element }">
-              <div class="kanban-card" :class="{ 'card-cerrado': element.estado === 'Cerrado' }">
-                <div class="card-header">
-                  <strong>{{ element.correlativo || '—' }}</strong>
-                  <span class="card-date">{{ formatDateOnly(element.fecha) }}</span>
-                </div>
-                <div class="card-body">
-                  <div><strong>Cliente:</strong> {{ element.cliente.nombre || '—' }}</div>
-                  <div><strong>Acción:</strong> {{ truncate(element.accionInmediata, 20) }}</div>
-                  <div><strong>Planner:</strong> {{ element.planner || '—' }}</div>
-                </div>
-                <div class="card-actions">
-                  <v-btn icon small @click="openEditModal(element)">
-                    <v-icon small>mdi-pencil</v-icon>
-                  </v-btn>
-                  <v-btn icon small color="red" @click="deleteExpediente(element.id)">
-                    <v-icon small>mdi-delete</v-icon>
-                  </v-btn>
-                  <v-btn
-                    v-if="element.estado === 'Regularizado'"
-                    icon small color="primary"
-                    @click="emitirCarta(element)"
-                    title="Emitir carta"
-                  >
-                    <v-icon small>mdi-file-document-edit</v-icon>
-                  </v-btn>
-                </div>
-              </div>
-            </template>
-          </draggable>
         </div>
 
         <div v-if="loading" class="kanban-loading">Cargando expedientes...</div>
@@ -230,7 +209,8 @@
                   </button>
                   <div v-if="clientesLoading" class="autocomplete-empty">Cargando clientes...</div>
                   <div v-else-if="filteredClientesOptions.length === 0" class="autocomplete-empty">
-                    <v-btn small color="green" outlined @mousedown.prevent="openQuickCliente">+ Agregar cliente</v-btn>
+                    <v-btn small color="primary" outlined @mousedown.prevent="openQuickCliente">+ Agregar
+                      cliente</v-btn>
                   </div>
                 </div>
               </label>
@@ -309,9 +289,20 @@
                   </button>
                   <div v-if="personalLoading" class="autocomplete-empty">Cargando planners...</div>
                   <div v-else-if="filteredPlannerOptions.length === 0" class="autocomplete-empty">
-                    <v-btn small color="green" outlined @mousedown.prevent="openQuickPlanner">+ Agregar planner</v-btn>
+                    <v-btn small color="primary" outlined @mousedown.prevent="openQuickPlanner">+ Agregar
+                      planner</v-btn>
                   </div>
                 </div>
+              </label>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label>
+                Estado PV
+                <select v-model="form.estadoPV" required>
+                  <option value="" disabled>Selecciona</option>
+                  <option v-for="est in estadosPV" :key="est" :value="est">{{ est }}</option>
+                </select>
               </label>
             </v-col>
 
@@ -390,7 +381,8 @@ import {
   createEmptyExpedienteForm,
   normalizeExpediente,
   toExpedientePayload,
-  ESTADOS_EXPEDIENTE
+  ESTADOS_EXPEDIENTE,
+  ESTADOS_PV
 } from '~/models/expediente'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
 import { formatWeight, getNowDateTimeInput, getTodayDateInput } from '~/utils/formatters'
@@ -406,7 +398,8 @@ const EXCEL_COLUMNS = [
   'Observaciones',
   'Acción Inmediata',
   'Planner',
-  'Estado'
+  'Estado',
+  'Estado PV'
 ]
 
 export default {
@@ -414,8 +407,9 @@ export default {
   components: { draggable },
   data() {
     return {
-      viewMode: 'table',
+      viewMode: 'kanban',
       estados: ESTADOS_EXPEDIENTE,
+      estadosPV: ESTADOS_PV,
       search: '',
       fechaFiltro: null,
       estadoFiltro: null,
@@ -443,14 +437,12 @@ export default {
         contacto: '',
         telefonoContacto: ''
       },
-      expedientes: [],
-      // Objeto reactivo para el Kanban
-      kanbanLists: {}
+      expedientes: []
     }
   },
   computed: {
     filteredExpedientes() {
-      const term = this.search.toLowerCase()
+      const term = this.search.toLowerCase().trim()
       const fechaFiltro = this.fechaFiltro
       const estadoFiltro = this.estadoFiltro
 
@@ -471,67 +463,62 @@ export default {
       })
     },
 
+    kanbanData() {
+      const groups = {}
+      this.estados.forEach(est => {
+        groups[est] = this.filteredExpedientes.filter(exp => exp.estado === est)
+      })
+      return groups
+    },
+
     filteredClientesOptions() {
-      const term = this.clienteSearch.toLowerCase()
+      const term = this.clienteSearch.toLowerCase().trim()
       if (!term) return this.clientes.slice(0, 8)
       return this.clientes
-        .filter(
-          c =>
-            c.nombre.toLowerCase().includes(term) ||
-            c.ruc.toLowerCase().includes(term) ||
-            c.contacto.toLowerCase().includes(term)
-        )
+        .filter(c => {
+          const nombre = (c.nombre || '').toLowerCase()
+          const ruc = (c.ruc || '').toLowerCase()
+          const contacto = (c.contacto || c.contactoNombre || '').toLowerCase()
+          return nombre.includes(term) || ruc.includes(term) || contacto.includes(term)
+        })
         .slice(0, 8)
     },
+
     filteredTransportistaOptions() {
-      const term = this.transportistaSearch.toLowerCase()
+      const term = this.transportistaSearch.toLowerCase().trim()
       if (!term) return this.clientes.slice(0, 8)
       return this.clientes
-        .filter(
-          c =>
-            c.nombre.toLowerCase().includes(term) ||
-            c.ruc.toLowerCase().includes(term) ||
-            c.contacto.toLowerCase().includes(term)
-        )
+        .filter(c => {
+          const nombre = (c.nombre || '').toLowerCase()
+          const ruc = (c.ruc || '').toLowerCase()
+          const contacto = (c.contacto || c.contactoNombre || '').toLowerCase()
+          return nombre.includes(term) || ruc.includes(term) || contacto.includes(term)
+        })
         .slice(0, 8)
     },
+
     filteredGeneradorOptions() {
-      const term = this.generadorSearch.toLowerCase()
+      const term = this.generadorSearch.toLowerCase().trim()
       if (!term) return this.clientes.slice(0, 8)
       return this.clientes
-        .filter(
-          c =>
-            c.nombre.toLowerCase().includes(term) ||
-            c.ruc.toLowerCase().includes(term) ||
-            c.contacto.toLowerCase().includes(term)
-        )
+        .filter(c => {
+          const nombre = (c.nombre || '').toLowerCase()
+          const ruc = (c.ruc || '').toLowerCase()
+          const contacto = (c.contacto || c.contactoNombre || '').toLowerCase()
+          return nombre.includes(term) || ruc.includes(term) || contacto.includes(term)
+        })
         .slice(0, 8)
     },
+
     filteredPlannerOptions() {
-      const term = this.plannerSearch.toLowerCase()
+      const term = this.plannerSearch.toLowerCase().trim()
       if (!term) return this.personal.slice(0, 8)
       return this.personal
-        .filter(p =>
-          (p.nombres + ' ' + (p.apellidos || '')).toLowerCase().includes(term) ||
-          (p.nombres || '').toLowerCase().includes(term)
-        )
-        .slice(0, 8)
-    }
-  },
-  watch: {
-    // Actualizar kanbanLists cada vez que filteredExpedientes cambie
-    filteredExpedientes: {
-      handler(newVal) {
-        const grupos = {}
-        this.estados.forEach(est => { grupos[est] = [] })
-        newVal.forEach(exp => {
-          const estado = exp.estado || 'Pendiente'
-          if (grupos[estado]) grupos[estado].push(exp)
-          else grupos[estado] = [exp]
+        .filter(p => {
+          const fullName = `${p.nombres || ''} ${p.apellidos || ''}`.toLowerCase()
+          return fullName.includes(term)
         })
-        this.kanbanLists = grupos
-      },
-      immediate: true
+        .slice(0, 8)
     }
   },
   mounted() {
@@ -544,13 +531,8 @@ export default {
     getNowDateTimeInput,
 
     formatDateOnly(value) {
-      if (!value) return ''
-      let d = value
-      if (typeof value.toDate === 'function') d = value.toDate()
-      else if (typeof value === 'object' && value.seconds !== undefined) {
-        d = new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6)
-      }
-      if (!(d instanceof Date) || isNaN(d.getTime())) return ''
+      const d = this.parseDate(value)
+      if (!d || isNaN(d.getTime())) return ''
       const day = String(d.getDate()).padStart(2, '0')
       const month = String(d.getMonth() + 1).padStart(2, '0')
       const year = d.getFullYear()
@@ -558,13 +540,8 @@ export default {
     },
 
     formatDateInput(value) {
-      if (!value) return ''
-      let d = value
-      if (typeof value.toDate === 'function') d = value.toDate()
-      else if (typeof value === 'object' && value.seconds !== undefined) {
-        d = new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6)
-      }
-      if (!(d instanceof Date) || isNaN(d.getTime())) return ''
+      const d = this.parseDate(value)
+      if (!d || isNaN(d.getTime())) return ''
       const year = d.getFullYear()
       const month = String(d.getMonth() + 1).padStart(2, '0')
       const day = String(d.getDate()).padStart(2, '0')
@@ -732,11 +709,11 @@ export default {
         fecha: fechaExpediente,
         fechaServicio: fechaExpediente,
         cliente: {
-          nombre: exp.cliente.nombre || '',
-          ruc: exp.cliente.ruc || '',
-          direccion: exp.cliente.direccion || '',
-          contactoNombre: exp.cliente.contactoNombre || '',
-          contactoTelefono: exp.cliente.contactoTelefono || ''
+          nombre: exp.cliente?.nombre || '',
+          ruc: exp.cliente?.ruc || '',
+          direccion: exp.cliente?.direccion || '',
+          contactoNombre: exp.cliente?.contactoNombre || exp.cliente?.contacto || '',
+          contactoTelefono: exp.cliente?.contactoTelefono || exp.cliente?.telefonoContacto || ''
         },
         contexto: `De nuestra consideración:\nLa presente tiene por finalidad hacerle llegar la documentación correspondiente al expediente ${exp.correlativo}.\nObservación: ${exp.observaciones || 'Sin detalle'}`,
         detalles: [{ numero: 1, numeroTexto: '(Uno)', descripcion: 'Documento adjunto' }],
@@ -766,7 +743,7 @@ export default {
       this.editingId = exp.id
       this.form = {
         ...exp,
-        cliente: { ...exp.cliente }
+        cliente: { ...(exp.cliente || {}) }
       }
       this.form.fecha = this.formatDateInput(exp.fecha) || getTodayDateInput()
       this.clienteSearch = exp.cliente?.nombre || ''
@@ -811,13 +788,13 @@ export default {
     },
     selectCliente(cliente) {
       this.form.cliente = {
-        nombre: cliente.nombre,
-        ruc: cliente.ruc,
-        direccion: cliente.direccion,
-        contactoNombre: cliente.contacto,
-        contactoTelefono: cliente.telefonoContacto
+        nombre: cliente.nombre || '',
+        ruc: cliente.ruc || '',
+        direccion: cliente.direccion || '',
+        contactoNombre: cliente.contacto || cliente.contactoNombre || '',
+        contactoTelefono: cliente.telefonoContacto || cliente.contactoTelefono || ''
       }
-      this.clienteSearch = cliente.nombre
+      this.clienteSearch = cliente.nombre || ''
       this.isClienteDropdownOpen = false
     },
 
@@ -920,17 +897,18 @@ export default {
 
     getExcelColumns() {
       return [
-        { label: 'Correlativo', value: e => e.correlativo },
-        { label: 'Sede', value: e => e.sede },
+        { label: 'Correlativo', value: e => e.correlativo || '' },
+        { label: 'Sede', value: e => e.sede || '' },
         { label: 'Fecha', value: e => this.formatDateOnly(e.fecha) },
-        { label: 'Cliente', value: e => e.cliente.nombre },
-        { label: 'RUC', value: e => e.cliente.ruc },
-        { label: 'Transportista', value: e => e.transportista },
-        { label: 'Generador PV', value: e => e.generadorPv },
-        { label: 'Observaciones', value: e => e.observaciones },
-        { label: 'Acción Inmediata', value: e => e.accionInmediata },
-        { label: 'Planner', value: e => e.planner },
-        { label: 'Estado', value: e => e.estado }
+        { label: 'Cliente', value: e => e.cliente?.nombre || '' },
+        { label: 'RUC', value: e => e.cliente?.ruc || '' },
+        { label: 'Transportista', value: e => e.transportista || '' },
+        { label: 'Generador PV', value: e => e.generadorPv || '' },
+        { label: 'Observaciones', value: e => e.observaciones || '' },
+        { label: 'Acción Inmediata', value: e => e.accionInmediata || '' },
+        { label: 'Planner', value: e => e.planner || '' },
+        { label: 'Estado', value: e => e.estado || '' },
+        { label: 'Estado PV', value: e => e.estadoPV || '' }
       ]
     },
 
@@ -990,7 +968,8 @@ export default {
             observaciones: row.Observaciones || '',
             accionInmediata: row['Acción Inmediata'] || '',
             planner: row.Planner || '',
-            estado: ESTADOS_EXPEDIENTE.includes(row.Estado) ? row.Estado : 'Pendiente'
+            estado: ESTADOS_EXPEDIENTE.includes(row.Estado) ? row.Estado : 'Pendiente',
+            estadoPV: ESTADOS_PV.includes(row['Estado PV']) ? row['Estado PV'] : 'Abierto'
           }
           const payload = toExpedientePayload(newExp)
           await this.$firebaseApi.create('expedientes', payload)
@@ -1083,9 +1062,9 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos iguales a los que ya tenías, no hay cambios */
+/* ===== Estilos generales ===== */
 .expedientes-page {
-  width: min(1120px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }
@@ -1095,7 +1074,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .header-actions {
@@ -1111,22 +1090,20 @@ export default {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #0f766e;
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   margin: 0;
 }
 
 h1 {
   font-size: 32px;
-}
-
-h2 {
-  font-size: 18px;
 }
 
 .primary-button {
@@ -1136,53 +1113,63 @@ h2 {
   padding: 0 16px;
   color: #fff;
   font-weight: 700;
-  background: #0f766e;
+  background: var(--color-primary);
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.primary-button:hover {
+  background: var(--color-primary-dark);
 }
 
 .content {
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
 }
 
-.table-header {
+/* ===== Barra de filtros ===== */
+.filter-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.table-header>div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.table-header span {
-  color: #64748b;
-  font-size: 14px;
-}
-
-.table-actions {
-  width: min(760px, 100%);
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: flex-end;
   gap: 12px;
-  margin: 16px 20px 18px auto;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: #fafcfc;
 }
 
-.table-action-col {
-  padding: 0;
+.filter-bar__left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+}
+
+.filter-item {
+  min-width: 140px;
+  flex: 1 0 auto;
+}
+
+.filter-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.registros-count {
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .excel-button {
-  width: 100%;
   min-height: 40px;
   font-weight: 700;
   text-transform: none;
@@ -1192,6 +1179,7 @@ h2 {
   display: none;
 }
 
+/* ===== Tabla ===== */
 .table-wrapper {
   overflow-x: auto;
 }
@@ -1201,11 +1189,12 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
   padding: 14px 20px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--color-border);
 }
 
 th {
@@ -1216,7 +1205,7 @@ th {
 }
 
 td {
-  color: #1e293b;
+  color: var(--color-text);
 }
 
 .actions {
@@ -1232,18 +1221,18 @@ td {
 
 .status-icon-button--back {
   color: #475569 !important;
-  border-color: #cbd5e1;
+  border-color: var(--color-border);
   background: #f1f5f9;
 }
 
 .status-icon-button--pendiente {
-  color: #b45309 !important;
+  color: var(--color-secondary) !important;
   border-color: #fde68a;
   background: #fef3c7;
 }
 
 .status-icon-button--notificado {
-  color: #1d4ed8 !important;
+  color: var(--color-primary) !important;
   border-color: #bfdbfe;
   background: #dbeafe;
 }
@@ -1256,14 +1245,14 @@ td {
 
 .status-icon-button--cerrado {
   color: #475569 !important;
-  border-color: #cbd5e1;
+  border-color: var(--color-border);
   background: #f1f5f9;
   cursor: not-allowed;
 }
 
 .status-icon-button--emitir {
   color: #fff !important;
-  background: #0f766e;
+  background: var(--color-primary);
 }
 
 .icon-button {
@@ -1272,11 +1261,17 @@ td {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #0f766e;
+  color: var(--color-primary);
   background: #fff;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-button:hover {
+  background: #f0f6fa;
+  border-color: var(--color-primary);
 }
 
 .icon-button svg {
@@ -1293,11 +1288,88 @@ td {
   color: #dc2626;
 }
 
+.icon-button--danger:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
 .empty-state {
-  color: #64748b;
+  color: var(--color-muted);
   text-align: center;
 }
 
+/* ===== KANBAN ===== */
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  overflow-x: auto;
+  min-height: 300px;
+}
+
+.kanban-column {
+  flex: 1;
+  min-width: 220px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  max-height: 600px;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.badge {
+  background: var(--color-border);
+  padding: 0 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.kanban-list {
+  flex: 1;
+  min-height: 80px;
+  overflow-y: auto;
+}
+
+.kanban-card {
+  background: rgba(0, 85, 138, 0.06);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  cursor: grab;
+  transition: box-shadow 0.2s;
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-loading,
+.kanban-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-muted);
+  width: 100%;
+}
+
+/* ===== MODAL ===== */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1321,7 +1393,8 @@ td {
   overflow-y: auto;
 }
 
-.modal-header, .modal-actions {
+.modal-header,
+.modal-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1330,12 +1403,12 @@ td {
 }
 
 .modal-header {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-actions {
   justify-content: flex-end;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
 }
 
 .modal-close {
@@ -1347,6 +1420,10 @@ td {
   font-size: 18px;
   background: #f1f5f9;
   cursor: pointer;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
 }
 
 .form-grid {
@@ -1366,7 +1443,7 @@ td {
 .form-grid textarea,
 .form-grid select {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
   color: #0f172a;
@@ -1377,8 +1454,8 @@ td {
 .form-grid input:focus,
 .form-grid textarea:focus,
 .form-grid select:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
 }
 
 .form-grid select {
@@ -1397,7 +1474,7 @@ td {
   right: 0;
   z-index: 70;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
@@ -1409,9 +1486,9 @@ td {
   gap: 2px;
   width: 100%;
   border: 0;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--color-border);
   padding: 10px 12px;
-  color: #1e293b;
+  color: var(--color-text);
   font: inherit;
   text-align: left;
   background: #fff;
@@ -1424,7 +1501,7 @@ td {
 
 .autocomplete-option span,
 .autocomplete-empty {
-  color: #64748b;
+  color: var(--color-muted);
   font-size: 13px;
   font-weight: 400;
 }
@@ -1435,127 +1512,23 @@ td {
 
 .secondary-button {
   min-height: 42px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
   padding: 0 16px;
-  color: #334155;
+  color: var(--color-primary);
   font-weight: 700;
-  background: #fff;
+  background: transparent;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* KANBAN */
-.kanban-board {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  overflow-x: auto;
-  min-height: 300px;
+.secondary-button:hover {
+  background: rgba(0, 85, 138, 0.06);
 }
 
-.kanban-column {
-  flex: 1;
-  min-width: 220px;
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 12px;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  max-height: 600px;
-}
-
-.kanban-column-header {
-  display: flex;
-  justify-content: space-between;
-  font-weight: 700;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #cbd5e1;
-}
-
-.badge {
-  background: #e2e8f0;
-  padding: 0 8px;
-  border-radius: 12px;
-  font-size: 12px;
-}
-
-.kanban-list {
-  flex: 1;
-  min-height: 80px;
-  overflow-y: auto;
-}
-
-.kanban-card {
-  background: white;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-  border: 1px solid #edf2f7;
-  cursor: grab;
-  transition: box-shadow 0.2s;
-}
-
-.kanban-card:active {
-  cursor: grabbing;
-}
-
-.kanban-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.card-cerrado {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  margin-bottom: 6px;
-}
-
-.card-date {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.card-body {
-  font-size: 13px;
-  color: #334155;
-}
-
-.card-body div {
-  margin: 2px 0;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  justify-content: flex-end;
-}
-
-.kanban-empty-column {
-  text-align: center;
-  color: #94a3b8;
-  padding: 16px 0;
-  font-style: italic;
-}
-
-.kanban-loading,
-.kanban-empty {
-  padding: 20px;
-  text-align: center;
-  color: #64748b;
-  width: 100%;
-}
-
+/* ===== RESPONSIVE ===== */
 @media (max-width: 640px) {
-  .page-header, .table-header {
+  .page-header {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1565,9 +1538,23 @@ td {
     flex-wrap: wrap;
   }
 
-  .table-actions {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar__left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-item {
+    min-width: unset;
+  }
+
+  .filter-bar__right {
+    justify-content: space-between;
     width: 100%;
-    flex-wrap: wrap;
   }
 
   .primary-button,

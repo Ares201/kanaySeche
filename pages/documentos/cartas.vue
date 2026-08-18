@@ -59,7 +59,6 @@
             <tr>
               <th>Correlativo</th>
               <th>Cliente</th>
-              <!-- <th>Asunto</th> -->
               <th>Fecha</th>
               <th>Acciones</th>
             </tr>
@@ -68,7 +67,6 @@
             <tr v-for="carta in filteredCartas" :key="carta.id">
               <td>{{ carta.correlativo }}</td>
               <td>{{ carta.cliente.nombre }}</td>
-              <!-- <td>{{ carta.asunto }}</td> -->
               <td>{{ formatShortDate(carta.fecha) }}</td>
               <td>
                 <div class="actions">
@@ -112,16 +110,6 @@
                     @click="regressCartaEstado(carta)">
                     <v-icon small>mdi-arrow-left</v-icon>
                   </v-btn>
-                  <!-- <button class="icon-button icon-button--danger" type="button" title="Eliminar"
-                    aria-label="Eliminar carta" @click="deleteCarta(carta.id)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M5 7h14" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                      <path d="M8 7l1 13h6l1-13" />
-                      <path d="M9 7V4h6v3" />
-                    </svg>
-                  </button> -->
                 </div>
               </td>
             </tr>
@@ -173,27 +161,14 @@
               <label class="autocomplete-field">
                 Cliente
 
-                <input
-                  v-model.trim="clienteSearch"
-                  type="text"
-                  required
-                  autocomplete="off"
-                  placeholder="Escribe para buscar cliente"
-                  @focus="openClienteDropdown"
-                  @input="handleClienteSearch"
-                  @blur="closeClienteDropdown"
-                  @keydown.esc="closeClienteDropdown"
-                >
+                <input v-model.trim="clienteSearch" type="text" required autocomplete="off"
+                  placeholder="Escribe para buscar cliente" @focus="openClienteDropdown" @input="handleClienteSearch"
+                  @blur="closeClienteDropdown" @keydown.esc="closeClienteDropdown">
 
                 <div v-if="isClienteDropdownOpen" class="autocomplete-menu">
 
-                  <button
-                    v-for="cliente in filteredClientesOptions"
-                    :key="cliente.id"
-                    class="autocomplete-option"
-                    type="button"
-                    @mousedown.prevent="selectCliente(cliente)"
-                  >
+                  <button v-for="cliente in filteredClientesOptions" :key="cliente.id" class="autocomplete-option"
+                    type="button" @mousedown.prevent="selectCliente(cliente)">
                     <strong>{{ cliente.nombre }}</strong>
                     <span>{{ cliente.ruc }} - {{ cliente.contacto }}</span>
                   </button>
@@ -202,17 +177,8 @@
                     Cargando clientes...
                   </div>
 
-                  <div
-                    v-else-if="filteredClientesOptions.length === 0"
-                    class="autocomplete-empty"
-                  >
-                    <v-btn
-                      small
-                      color="green"
-                      size="x-large"
-                      outlined
-                      @mousedown.prevent="openQuickCliente"
-                    >
+                  <div v-else-if="filteredClientesOptions.length === 0" class="autocomplete-empty">
+                    <v-btn small color="primary" outlined @mousedown.prevent="openQuickCliente">
                       + Agregar cliente
                     </v-btn>
                   </div>
@@ -226,12 +192,8 @@
               <label>
                 Dirección
 
-                <input
-                  v-model.trim="form.cliente.direccion"
-                  :disabled="form.direccionAlterna"
-                  type="text"
-                  placeholder="Av. Principal 123"
-                >
+                <input v-model.trim="form.cliente.direccion" :disabled="form.direccionAlterna" type="text"
+                  placeholder="Av. Principal 123">
               </label>
             </v-col>
 
@@ -245,11 +207,7 @@
               <label>
                 Contacto
 
-                <input
-                  v-model.trim="form.cliente.contactoNombre"
-                  type="text"
-                  placeholder="Nombre del contacto"
-                >
+                <input v-model.trim="form.cliente.contactoNombre" type="text" placeholder="Nombre del contacto">
               </label>
             </v-col>
 
@@ -258,11 +216,7 @@
               <label>
                 Teléfono
 
-                <input
-                  v-model.trim="form.cliente.contactoTelefono"
-                  type="text"
-                  placeholder="999 999 999"
-                >
+                <input v-model.trim="form.cliente.contactoTelefono" type="text" placeholder="999 999 999">
               </label>
             </v-col>
 
@@ -270,102 +224,71 @@
 
 
           <!-- FILA 3: ASUNTO + FECHA SERVICIO -->
-            <v-row dense>
+          <v-row dense>
 
-              <v-col cols="12" md="10">
-                <label>
-                  Asunto
+            <v-col cols="12" md="10">
+              <label>
+                Asunto
 
-                  <input
-                    :value="form.asunto"
-                    type="text"
-                    readonly
-                  >
-                </label>
-              </v-col>
+                <input :value="form.asunto" type="text" readonly>
+              </label>
+            </v-col>
 
-              <v-col cols="12" md="2">
-                <label>
-                  Fecha servicio
+            <v-col cols="12" md="2">
+              <label>
+                Fecha servicio
 
-                  <input
-                    v-model="form.fechaServicio"
-                    type="date"
-                    required
-                    @change="actualizarAsunto"
-                  >
-                </label>
-              </v-col>
+                <input v-model="form.fechaServicio" type="date" required @change="actualizarAsunto">
+              </label>
+            </v-col>
 
-            </v-row>
+          </v-row>
 
 
           <!-- SEGUNDA FILA: FECHA EMISIÓN + CORRELATIVO + FECHA CULMINO -->
-            <v-row v-if="showExtraFields" dense>
+          <v-row v-if="showExtraFields" dense>
 
-              <v-col cols="12" md="5">
-                <label>
-                  Fecha de emisión
+            <v-col cols="12" md="5">
+              <label>
+                Fecha de emisión
 
-                  <input
-                    v-model="form.fecha"
-                    type="date"
-                    required
-                  >
-                </label>
-              </v-col>
+                <input v-model="form.fecha" type="date" required>
+              </label>
+            </v-col>
 
-              <v-col cols="12" md="5">
-                <label>
-                  Correlativo
+            <v-col cols="12" md="5">
+              <label>
+                Correlativo
 
-                  <input
-                    v-model.trim="form.correlativo"
-                    type="text"
-                    required
-                    placeholder="CARTA"
-                  >
-                </label>
-              </v-col>
+                <input v-model.trim="form.correlativo" type="text" required placeholder="CARTA">
+              </label>
+            </v-col>
 
-              <v-col cols="12" md="2">
-                <label>
-                  Fecha culmino
+            <v-col cols="12" md="2">
+              <label>
+                Fecha culmino
 
-                  <input
-                    v-model="form.fechaCulmino"
-                    type="date"
-                    @change="actualizarAsunto"
-                  >
-                </label>
-              </v-col>
+                <input v-model="form.fechaCulmino" type="date" @change="actualizarAsunto">
+              </label>
+            </v-col>
 
-              <v-col cols="12">
-                <label>
-                  Despedida
+            <v-col cols="12">
+              <label>
+                Despedida
 
-                  <textarea
-                    v-model.trim="form.despedida"
-                    rows="2"
-                    required
-                    placeholder="Texto de despedida"
-                  />
-                </label>
-              </v-col>
+                <textarea v-model.trim="form.despedida" rows="2" required placeholder="Texto de despedida" />
+              </label>
+            </v-col>
 
-              <v-col cols="12">
-                <label>
-                  Contexto
+            <v-col cols="12">
+              <label>
+                Contexto
 
-                  <textarea
-                    v-model.trim="form.contexto"
-                    rows="5"
-                    required
-                  />
-                </label>
-              </v-col>
+                <textarea v-model.trim="form.contexto" rows="5" required />
+              </label>
+            </v-col>
 
-            </v-row>
+          </v-row>
 
 
           <!-- DETALLES -->
@@ -381,12 +304,7 @@
 
                   <template #activator="{ on, attrs }">
 
-                    <button
-                      class="secondary-button secondary-button--small"
-                      v-bind="attrs"
-                      v-on="on"
-                      type="button"
-                    >
+                    <button class="secondary-button secondary-button--small" v-bind="attrs" v-on="on" type="button">
                       Añadir
                     </button>
 
@@ -458,63 +376,37 @@
 
               <div class="details-list">
 
-                <div
-                  v-for="(detalle, index) in form.detalles"
-                  :key="index"
-                  class="detail-row"
-                >
+                <div v-for="(detalle, index) in form.detalles" :key="index" class="detail-row">
 
                   <label>
                     N°
 
-                    <input
-                      v-model.number="detalle.numero"
-                      type="number"
-                      min="1"
-                      @input="actualizarNumero(detalle)"
-                    >
+                    <input v-model.number="detalle.numero" type="number" min="1" @input="actualizarNumero(detalle)">
                   </label>
 
 
                   <label>
                     Número texto
 
-                    <input
-                      :value="detalle.numeroTexto"
-                      type="text"
-                      readonly
-                    >
+                    <input :value="detalle.numeroTexto" type="text" readonly>
                   </label>
 
 
                   <label>
                     Documento
 
-                    <input
-                      v-model="detalle.descripcion"
-                      type="text"
-                      :readonly="!detalle.editable"
-                      :placeholder="detalle.editable ? 'Escriba el documento...' : ''"
-                    >
+                    <input v-model="detalle.descripcion" type="text" :readonly="!detalle.editable"
+                      :placeholder="detalle.editable ? 'Escriba el documento...' : ''">
                   </label>
 
 
-                  <button
-                    class="icon-button"
-                    type="button"
-                    title="Agregar (Retornar)"
-                    @click="toggleRetornar(detalle)"
-                  >
+                  <button class="icon-button" type="button" title="Agregar (Retornar)" @click="toggleRetornar(detalle)">
                     ↩
                   </button>
 
 
-                  <button
-                    class="icon-button icon-button--danger"
-                    type="button"
-                    title="Eliminar item"
-                    @click="removeDetalle(index)"
-                  >
+                  <button class="icon-button icon-button--danger" type="button" title="Eliminar item"
+                    @click="removeDetalle(index)">
                     🗑
                   </button>
 
@@ -1798,20 +1690,9 @@ export default {
 </script>
 
 <style scoped>
-.status-icon-button--back {
-  color: #475569 !important;
-  border-color: #cbd5e1;
-  background: #f1f5f9;
-}
-
-.status-icon-button--anulado {
-  color: #dc2626 !important;
-  border-color: #fecaca;
-  background: #fee2e2;
-}
-
+/* ===== VARIABLES DE MARCA (usando global.css) ===== */
 .cartas-page {
-  width: min(1120px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }
@@ -1826,7 +1707,7 @@ export default {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #0f766e;
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1858,13 +1739,18 @@ h3 {
   padding: 0 16px;
   color: #ffffff;
   font-weight: 700;
-  background: #0f766e;
+  background: var(--color-primary);
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.primary-button:hover {
+  background: var(--color-primary-dark);
 }
 
 .content {
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
@@ -1880,7 +1766,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .table-header>div {
@@ -1899,7 +1785,7 @@ h3 {
 }
 
 .table-header span {
-  color: #64748b;
+  color: var(--color-muted);
   font-size: 14px;
 }
 
@@ -1921,7 +1807,7 @@ h3 {
 .form-grid input,
 .form-grid textarea {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
   color: #0f172a;
@@ -1931,8 +1817,8 @@ h3 {
 
 .form-grid input:focus,
 .form-grid textarea:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
 }
 
 .table-wrapper {
@@ -1949,7 +1835,7 @@ td {
   padding: 14px 20px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--color-border);
 }
 
 th {
@@ -1960,7 +1846,7 @@ th {
 }
 
 td {
-  color: #1e293b;
+  color: var(--color-text);
 }
 
 .actions {
@@ -1975,7 +1861,7 @@ td {
 }
 
 .status-icon-button--emitido {
-  color: #075985 !important;
+  color: var(--color-primary) !important;
   border-color: #bae6fd;
   background: #e0f2fe;
 }
@@ -1993,17 +1879,35 @@ td {
   cursor: not-allowed;
 }
 
+.status-icon-button--anulado {
+  color: #dc2626 !important;
+  border-color: #fecaca;
+  background: #fee2e2;
+}
+
+.status-icon-button--back {
+  color: #475569 !important;
+  border-color: var(--color-border);
+  background: #f1f5f9;
+}
+
 .icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #0f766e;
+  color: var(--color-primary);
   background: #ffffff;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-button:hover {
+  background: #f0f6fa;
+  border-color: var(--color-primary);
 }
 
 .icon-button:disabled {
@@ -2026,8 +1930,13 @@ td {
   color: #dc2626;
 }
 
+.icon-button--danger:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
 .empty-state {
-  color: #64748b;
+  color: var(--color-muted);
   text-align: center;
 }
 
@@ -2075,7 +1984,7 @@ td {
 }
 
 .modal-header {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-close {
@@ -2087,6 +1996,10 @@ td {
   font-size: 18px;
   background: #f1f5f9;
   cursor: pointer;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
 }
 
 .modal-header-actions {
@@ -2109,7 +2022,7 @@ td {
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: #0f766e;
+  accent-color: var(--color-primary);
   cursor: pointer;
 }
 
@@ -2137,7 +2050,7 @@ td {
   left: 0;
   z-index: 70;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
@@ -2149,9 +2062,9 @@ td {
   gap: 2px;
   width: 100%;
   border: 0;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--color-border);
   padding: 10px 12px;
-  color: #1e293b;
+  color: var(--color-text);
   font: inherit;
   text-align: left;
   background: #ffffff;
@@ -2164,7 +2077,7 @@ td {
 
 .autocomplete-option span,
 .autocomplete-empty {
-  color: #64748b;
+  color: var(--color-muted);
   font-size: 13px;
   font-weight: 400;
 }
@@ -2196,18 +2109,23 @@ td {
 
 .modal-actions {
   justify-content: flex-end;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
 }
 
 .secondary-button {
   min-height: 42px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
   padding: 0 16px;
-  color: #334155;
+  color: var(--color-primary);
   font-weight: 700;
-  background: #ffffff;
+  background: transparent;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-button:hover {
+  background: rgba(0, 85, 138, 0.06);
 }
 
 .secondary-button--small {
@@ -2225,7 +2143,7 @@ td {
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .preview-content {
@@ -2338,6 +2256,7 @@ td {
   .preview-toolbar {
     display: none;
   }
+
   .datos-documento {
     display: grid;
     grid-template-columns: 1fr 1fr 1.4fr;

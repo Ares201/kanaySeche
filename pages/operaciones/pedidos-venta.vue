@@ -4,6 +4,7 @@
       <div>
         <p class="eyebrow">Operaciones</p>
         <h1>Pedido de venta</h1>
+        <span>{{ filteredPedidos.length }} registros</span>
       </div>
       <button class="primary-button" type="button" @click="openCreateModal">
         Nuevo PV
@@ -12,13 +13,7 @@
 
     <!-- Cabecera de la tabla: título a la izquierda, acciones a la derecha -->
     <v-row dense class="table-header-row" align="center">
-      <v-col cols="12" md="3">
-        <div>
-          <h2>Listado de pedidos de venta</h2>
-          <span>{{ filteredPedidos.length }} registros</span>
-        </div>
-      </v-col>
-
+      <v-spacer />
       <v-col cols="12" md="9">
         <v-row align="center" justify="end" no-gutters>
           <v-col cols="auto">
@@ -28,7 +23,6 @@
           <!-- Búsqueda general -->
           <v-col cols="12" sm="auto" md="4" class="mr-3">
             <label class="search-field">
-              <span>Buscar por PV, cliente o placa</span>
               <input v-model.trim="search" type="search" placeholder="Ej. PV-1">
             </label>
           </v-col>
@@ -1251,9 +1245,9 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos generales */
+/* ===== VARIABLES DE MARCA ===== */
 .pv-page {
-  width: min(1280px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }
@@ -1268,7 +1262,7 @@ export default {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #0f766e;
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1292,30 +1286,45 @@ h3 {
   font-size: 16px;
 }
 
-.primary-button,
-.secondary-button {
+.primary-button {
   min-height: 42px;
+  border: 0;
   border-radius: 8px;
   padding: 0 16px;
+  color: #ffffff;
   font-weight: 700;
+  background: var(--color-primary);
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-.primary-button {
-  border: 0;
-  color: #ffffff;
-  background: #0f766e;
+.primary-button:hover {
+  background: var(--color-primary-dark);
 }
 
 .secondary-button {
-  border: 1px solid #cbd5e1;
-  color: #334155;
-  background: #ffffff;
+  min-height: 42px;
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  padding: 0 16px;
+  color: var(--color-primary);
+  font-weight: 700;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-button:hover {
+  background: rgba(0, 85, 138, 0.06);
 }
 
 /* Cabecera de la tabla */
 .table-header-row {
   padding: 16px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
 }
 
 .table-header-row h2 {
@@ -1323,7 +1332,7 @@ h3 {
 }
 
 .table-header-row span {
-  color: #64748b;
+  color: var(--color-muted);
   font-size: 14px;
 }
 
@@ -1352,7 +1361,7 @@ h3 {
 
 .search-field input {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
   color: #0f172a;
@@ -1361,8 +1370,8 @@ h3 {
 }
 
 .search-field input:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
 }
 
 /* Tabla */
@@ -1381,7 +1390,7 @@ td {
   padding: 14px 20px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--color-border);
 }
 
 th {
@@ -1392,7 +1401,7 @@ th {
 }
 
 td {
-  color: #1e293b;
+  color: var(--color-text);
 }
 
 .actions {
@@ -1406,11 +1415,17 @@ td {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #0f766e;
+  color: var(--color-primary);
   background: #ffffff;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-button:hover {
+  background: #f0f6fa;
+  border-color: var(--color-primary);
 }
 
 .icon-button svg {
@@ -1427,8 +1442,13 @@ td {
   color: #dc2626;
 }
 
+.icon-button--danger:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
 .empty-state {
-  color: #64748b;
+  color: var(--color-muted);
   text-align: center;
 }
 
@@ -1462,7 +1482,7 @@ td {
 }
 
 .modal-header {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-close {
@@ -1474,6 +1494,10 @@ td {
   font-size: 18px;
   background: #f1f5f9;
   cursor: pointer;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
 }
 
 .form-grid {
@@ -1491,7 +1515,7 @@ td {
 
 .form-grid input {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
   color: #0f172a;
@@ -1505,14 +1529,14 @@ td {
 }
 
 .form-grid input:disabled {
-  color: #64748b;
+  color: var(--color-muted);
   background: #f8fafc;
   cursor: not-allowed;
 }
 
 .form-grid input:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
 }
 
 .autocomplete-field {
@@ -1526,7 +1550,7 @@ td {
   left: 0;
   z-index: 5;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 16px 30px rgba(15, 23, 42, 0.14);
@@ -1546,12 +1570,12 @@ td {
 }
 
 .autocomplete-list button:hover {
-  background: #ecfdf3;
+  background: #f0f6fa;
 }
 
 .autocomplete-list span,
 .autocomplete-empty {
-  color: #64748b;
+  color: var(--color-muted);
   font-size: 13px;
 }
 
@@ -1566,7 +1590,7 @@ td {
   justify-content: space-between;
   margin: 20px -20px 0;
   padding: 18px 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
 }
 
 .detail-actions {
@@ -1603,9 +1627,15 @@ td {
   height: 38px;
   padding: 8px 9px;
   font-size: 13px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   width: 100%;
+}
+
+.detail-edit-table input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
 }
 
 .detail-col-item {
@@ -1651,7 +1681,7 @@ td {
 
 .modal-actions {
   justify-content: flex-end;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
 }
 
 /* Preview */
@@ -1674,7 +1704,7 @@ td {
 .preview-toolbar {
   justify-content: flex-end;
   padding: 14px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .preview-content {
@@ -1682,7 +1712,7 @@ td {
   overflow: auto;
   max-height: calc(100vh - 190px);
   padding: 22px;
-  background: #e2e8f0;
+  background: var(--color-border);
 }
 
 .preview-sheet {
@@ -1709,9 +1739,7 @@ td {
   font-size: 9px;
 }
 
-/* ... resto de estilos de preview (observations-grid, signature-grid, etc.) ya están en el código, se mantienen */
-/* (He omitido repetir todo el CSS de preview por brevedad, pero está completo en el código original) */
-
+/* Estilos de impresión (no se ven afectados por las variables, se mantienen) */
 @media (max-width: 640px) {
 
   .page-header,

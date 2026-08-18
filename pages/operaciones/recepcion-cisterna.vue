@@ -1032,80 +1032,9 @@ export default {
 </script>
 
 <style scoped>
-/* ===== ESTILOS (los mismos que tenías) ===== */
-.custom-input {
-  width: 100%;
-  height: 42px;
-  padding: 0 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 14px;
-  background: #fff;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.custom-input:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
-}
-
-.custom-input:disabled {
-  background: #f1f5f9;
-  color: #94a3b8;
-  cursor: not-allowed;
-}
-
-.autocomplete-field {
-  position: relative;
-}
-
-.autocomplete-list {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 10;
-  max-height: 200px;
-  overflow-y: auto;
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.autocomplete-list button {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 8px 12px;
-  border: 0;
-  background: #fff;
-  text-align: left;
-  cursor: pointer;
-}
-
-.autocomplete-list button:hover {
-  background: #ecfdf3;
-}
-
-.autocomplete-list button strong {
-  font-weight: 600;
-}
-
-.autocomplete-list button span {
-  font-size: 12px;
-  color: #64748b;
-}
-
-.autocomplete-empty {
-  padding: 10px 12px;
-  color: #64748b;
-  font-size: 13px;
-}
-
+/* ===== VARIABLES DE MARCA ===== */
 .pv-page {
-  width: min(1280px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }
@@ -1120,7 +1049,7 @@ export default {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #0f766e;
+  color: var(--color-secondary);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1144,30 +1073,41 @@ h3 {
   font-size: 16px;
 }
 
-.primary-button,
-.secondary-button {
+.primary-button {
   min-height: 42px;
+  border: 0;
   border-radius: 8px;
   padding: 0 16px;
+  color: #ffffff;
   font-weight: 700;
+  background: var(--color-primary);
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-.primary-button {
-  border: 0;
-  color: #ffffff;
-  background: #0f766e;
+.primary-button:hover {
+  background: var(--color-primary-dark);
 }
 
 .secondary-button {
-  border: 1px solid #cbd5e1;
-  color: #334155;
-  background: #ffffff;
+  min-height: 42px;
+  border: 1px solid var(--color-primary);
+  border-radius: 8px;
+  padding: 0 16px;
+  color: var(--color-primary);
+  font-weight: 700;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-button:hover {
+  background: rgba(0, 85, 138, 0.06);
 }
 
 .content {
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
@@ -1189,7 +1129,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .table-header>div {
@@ -1198,7 +1138,7 @@ h3 {
 }
 
 .table-header span {
-  color: #64748b;
+  color: var(--color-muted);
   font-size: 14px;
 }
 
@@ -1214,7 +1154,7 @@ h3 {
 
 .search-field input {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
   color: #0f172a;
@@ -1223,8 +1163,8 @@ h3 {
 }
 
 .search-field input:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
 }
 
 .excel-button {
@@ -1251,7 +1191,7 @@ td {
   padding: 14px 20px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--color-border);
 }
 
 th {
@@ -1262,7 +1202,7 @@ th {
 }
 
 td {
-  color: #1e293b;
+  color: var(--color-text);
 }
 
 .actions {
@@ -1276,11 +1216,17 @@ td {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #0f766e;
+  color: var(--color-primary);
   background: #ffffff;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-button:hover {
+  background: #f0f6fa;
+  border-color: var(--color-primary);
 }
 
 .icon-button svg {
@@ -1297,8 +1243,13 @@ td {
   color: #dc2626;
 }
 
+.icon-button--danger:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
 .empty-state {
-  color: #64748b;
+  color: var(--color-muted);
   text-align: center;
 }
 
@@ -1331,7 +1282,7 @@ td {
 }
 
 .modal-header {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-close {
@@ -1345,9 +1296,13 @@ td {
   cursor: pointer;
 }
 
+.modal-close:hover {
+  background: #e2e8f0;
+}
+
 .modal-actions {
   justify-content: flex-end;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
 }
 
 .form-grid {
@@ -1360,6 +1315,77 @@ td {
   font-size: 14px;
   color: #334155;
   margin-bottom: 4px;
+}
+
+.custom-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.custom-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
+}
+
+.custom-input:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.autocomplete-field {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.autocomplete-list button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.autocomplete-list button:hover {
+  background: #f0f6fa;
+}
+
+.autocomplete-list button strong {
+  font-weight: 600;
+}
+
+.autocomplete-list button span {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.autocomplete-empty {
+  padding: 10px 12px;
+  color: var(--color-muted);
+  font-size: 13px;
 }
 
 .bg-form-disabled input {

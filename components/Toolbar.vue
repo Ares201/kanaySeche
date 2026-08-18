@@ -7,109 +7,166 @@
         <span />
         <span />
       </button>
-
       <NuxtLink style="text-decoration: none;" to="/" @click.native="closeMenu">
         <div class="brand">
           Gestion Documentaria
         </div>
       </NuxtLink>
+      <div class="user-area">
+        <span class="company-name d-none d-sm-inline">Kanay - Seche</span>
+        <v-menu v-model="userMenuOpen" bottom left offset-y origin="top right" transition="scale-transition">
+          <template v-slot:activator="{ on, attrs }">
+            <div class="avatar-container ripple" v-bind="attrs" v-on="on" role="button" aria-label="Menú de usuario">
+              <img src="/icono2.jpeg" alt="Mascota de Kanay - Seche" class="avatar-image" />
+            </div>
+          </template>
 
-      <v-btn icon class="theme-button" :aria-label="isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro'"
-        :title="isDarkMode ? 'Modo claro' : 'Modo oscuro'" @click="toggleDarkMode">
-        <v-icon>{{ isDarkMode ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
-      </v-btn>
+          <!-- CONTENIDO DEL MENÚ -->
+          <v-list class="user-menu-list">
+            <v-subheader class="d-sm-none">Kanay - Seche</v-subheader>
+
+            <!-- Acción: Modo Oscuro (Mover aquí) -->
+            <v-list-item @click="toggleDarkMode">
+              <v-list-item-icon>
+                <v-icon>
+                  {{
+                    isDarkMode
+                      ? 'mdi-white-balance-sunny'
+                      : 'mdi-weather-night'
+                  }}
+                </v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>
+                  {{ isDarkMode ? 'Activar Modo Claro' : 'Activar Modo Oscuro' }}
+                </v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-divider></v-divider>
+
+            <!-- Acción: Cerrar Sesión (Ejemplo) -->
+            <v-list-item @click="logout">
+              <v-list-item-icon>
+                <v-icon>mdi-logout</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Cerrar Sesión</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
     </header>
 
-    <div v-if="isOpen" class="backdrop" @click="closeMenu" />
+    <!-- =========================
+          BACKDROP (Fondo oscuro al abrir sidebar)
+         ========================= -->
+    <div v-if="isOpen && !menuFijado" class="backdrop" @click="closeMenu" />
 
-    <aside class="sidebar" :class="{ 'sidebar--open': isOpen }" aria-label="Menu principal">
+    <!-- =========================
+          SIDEBAR (Menú de Navegación)
+         ========================= -->
+    <aside class="sidebar" :class="{
+      'sidebar--open': isOpen,
+      'sidebar--fixed': menuFijado
+    }" aria-label="Menu principal">
+
+      <!-- =========================
+            HEADER SIDEBAR (Limpio)
+            ========================= -->
       <div class="sidebar-header">
-        <strong>Kanay - Seche</strong>
-        <button type="button" class="close-button" aria-label="Cerrar menu" @click="closeMenu">
-          x
-        </button>
+        <!-- Título para el sidebar cuando está abierto -->
+        <strong>Navegación</strong>
+
+        <div class="sidebar-actions">
+          <!-- BOTON FIJAR -->
+          <button type="button" class="pin-button" :class="{
+            'pin-button--active': menuFijado
+          }" :aria-label="menuFijado
+                ? 'Desfijar menu'
+                : 'Fijar menu'
+              " :title="menuFijado
+                ? 'Desfijar menu'
+                : 'Fijar menu'
+              " @click="toggleMenuFijado">
+            <v-icon small>
+              {{
+                menuFijado
+                  ? 'mdi-pin'
+                  : 'mdi-pin-outline'
+              }}
+            </v-icon>
+          </button>
+
+          <!-- BOTON CERRAR -->
+          <button v-if="!menuFijado" type="button" class="close-button" aria-label="Cerrar menu" @click="closeMenu">
+            <v-icon small>mdi-close</v-icon>
+          </button>
+        </div>
       </div>
 
+      <!-- =========================
+            NAVEGACION (Contenido)
+            ========================= -->
       <nav class="nav">
+        <!-- ... (resto de tus enlaces de navegación sin cambios) ... -->
+
+        <!-- INICIO -->
         <NuxtLink class="nav-link" to="/" @click.native="closeMenu">
-          Inicio - Graficos
+          <span>Inicio - Graficos</span>
           <svg viewBox="0 0 24 24" aria-hidden="true" class="nav-icon">
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M5 9.5V21h14V9.5" />
             <path d="M9 21v-6h6v6" />
           </svg>
-          <span></span>
         </NuxtLink>
-        <button class="module-button" type="button" @click="togglePlanificacion">
+
+        <!-- PLANIFICACION -->
+        <button class="module-button module-button--spaced" type="button" @click="togglePlanificacion">
           <span>Planificacion</span>
           <span class="chevron" :class="{ 'chevron--open': planificacionOpen }">›</span>
         </button>
-
         <div v-show="planificacionOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/planificacion/agendamientos" @click.native="closeMenu">
-            Agendamientos
+          <NuxtLink class="nav-link" to="/planificacion/agendamientos" @click.native="closeMenu">Agendamientos
           </NuxtLink>
         </div>
 
+        <!-- OPERACIONES -->
         <button class="module-button" type="button" @click="toggleOperaciones">
           <span>Operaciones</span>
           <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
         </button>
-
         <div v-show="operacionesOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">
-            Pedido de venta
+          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">Pedido de venta
           </NuxtLink>
-          <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">
-            Recepcion de cisternas
+          <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">Recepcion de
+            cisternas
           </NuxtLink>
         </div>
 
-        <button class="module-button module-button--spaced" type="button" @click="toggleDocumentos">
+        <!-- DOCUMENTOS -->
+        <button class="module-button" type="button" @click="toggleDocumentos">
           <span>Documentos</span>
           <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
         </button>
-
         <div v-show="documentosOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">
-            Expedientes
-          </NuxtLink>
-          <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
-            Cartas
-          </NuxtLink>
-          <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">
-            Firmar PDF
-          </NuxtLink>
+          <NuxtLink class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">Expedientes</NuxtLink>
+          <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">Cartas</NuxtLink>
+          <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
         </div>
+
+        <!-- CONFIGURACION -->
         <button class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>
         </button>
-
         <div v-show="configuracionOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/configuracion/envases" @click.native="closeMenu">
-            Envases
-          </NuxtLink>
-          <NuxtLink class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">
-            Residuos
-          </NuxtLink>
-          <!-- <NuxtLink class="nav-link" to="/configuracion/productos" @click.native="closeMenu">
-            Productos
-          </NuxtLink> -->
-          <!-- <NuxtLink class="nav-link" to="/configuracion/generador" @click.native="closeMenu">
-            Generador
-          </NuxtLink> -->
-          <NuxtLink class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">
-            Clientes
-          </NuxtLink>
-
-          <NuxtLink class="nav-link" to="/configuracion/personal" @click.native="closeMenu">
-            Personal
-          </NuxtLink>
-
-          <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">
-            Vehiculos
-          </NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/envases" @click.native="closeMenu">Envases</NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">Residuos</NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">Clientes</NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/personal" @click.native="closeMenu">Personal</NuxtLink>
+          <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">Vehiculos</NuxtLink>
         </div>
       </nav>
     </aside>
@@ -118,63 +175,92 @@
 
 <script>
 export default {
-  name: 'Toolbar',
+  name: 'AppShell',
+
   data() {
     return {
       isOpen: false,
+      menuFijado: false,
+      userMenuOpen: false, // Estado del menú de usuario
+
+      // Modulos Open
       planificacionOpen: true,
       operacionesOpen: true,
       configuracionOpen: false,
       documentosOpen: true
     }
   },
+
   computed: {
     isDarkMode() {
-      return this.$vuetify.theme.dark
+      // Nota: Depende de Vuetify configurado.
+      return this.$vuetify?.theme?.dark || false
     }
   },
+
+  mounted() {
+    const menuFijado = localStorage.getItem('menuFijado')
+    if (menuFijado === 'true') {
+      this.menuFijado = true
+      this.isOpen = true
+    }
+  },
+
   methods: {
     toggleMenu() {
       this.isOpen = !this.isOpen
     },
+
     closeMenu() {
-      this.isOpen = false
+      if (!this.menuFijado) {
+        this.isOpen = false
+      }
     },
-    togglePlanificacion() {
-      this.planificacionOpen = !this.planificacionOpen
+
+    toggleMenuFijado() {
+      this.menuFijado = !this.menuFijado
+      localStorage.setItem('menuFijado', this.menuFijado.toString())
+      if (this.menuFijado) {
+        this.isOpen = true
+      }
     },
-    toggleOperaciones() {
-      this.operacionesOpen = !this.operacionesOpen
-    },
-    toggleConfiguracion() {
-      this.configuracionOpen = !this.configuracionOpen
-    },
-    toggleDocumentos() {
-      this.documentosOpen = !this.documentosOpen
-    },
+
     toggleDarkMode() {
-      this.$vuetify.theme.dark = !this.$vuetify.theme.dark
-    }
+      if (this.$vuetify?.theme) {
+        this.$vuetify.theme.dark = !this.$vuetify.theme.dark
+      }
+    },
+
+    logout() {
+      console.log('Cerrando sesión...')
+      // Implementa tu lógica de cierre de sesión aquí
+      this.userMenuOpen = false;
+    },
+
+    // Toggles módulos
+    togglePlanificacion() { this.planificacionOpen = !this.planificacionOpen },
+    toggleOperaciones() { this.operacionesOpen = !this.operacionesOpen },
+    toggleConfiguracion() { this.configuracionOpen = !this.configuracionOpen },
+    toggleDocumentos() { this.documentosOpen = !this.documentosOpen }
   }
 }
 </script>
 
 <style scoped>
-.nav-link {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+/* =========================
+   VARIABLES Mock (Asegúrate de tenerlas globales)
+   ========================= */
+:root {
+  --color-primary: #004b7a;
+  --color-primary-dark: #003a5e;
+  --color-secondary: #f48120;
+  --color-text: #333333;
+  --color-muted: #666666;
 }
 
-.nav-icon {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: #66BB6A;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
+/* =========================
+   TOOLBAR
+   ========================= */
 
 .toolbar {
   position: sticky;
@@ -182,15 +268,80 @@ export default {
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 16px;
   height: 64px;
-  padding: 0 24px;
-  color: #f8fafc;
-  background: #6eb49c;
+  padding: 0 20px;
+  color: #ffffff;
+  background: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 63, 104, 0.18);
 }
 
+.brand {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 12px;
+}
+
+/* ÁREA DE USUARIO (Nuevo contenedor a la derecha) */
+.user-area {
+  margin-left: auto;
+  /* Empuja todo a la derecha */
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.company-name {
+  font-size: 14px;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.avatar-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.avatar-container:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Efecto Ripple simple */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Estilos para el menú de Vuetify */
+.user-menu-list {
+  min-width: 200px;
+}
+
+/* =========================
+   BOTONES
+   ========================= */
 .menu-button,
-.close-button {
+.close-button,
+.pin-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -198,59 +349,46 @@ export default {
   cursor: pointer;
 }
 
-.module-button--spaced {
-  margin-top: 10px;
-}
-
 .menu-button {
   flex-direction: column;
   gap: 5px;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.2s ease;
+}
+
+.menu-button:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .menu-button span {
-  width: 21px;
+  width: 20px;
   height: 2px;
   border-radius: 99px;
   background: #ffffff;
 }
 
-.brand {
-  color: #ffffff;
-  font-size: 24px;
-  text-decoration: none;
-}
-
-.theme-button {
-  margin-left: auto;
-  color: #ffffff !important;
-}
-
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: rgba(15, 23, 42, 0.38);
-}
-
+/* =========================
+   SIDEBAR
+   ========================= */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 40;
-  width: min(320px, 88vw);
+  width: min(300px, 85vw);
   height: 100vh;
-  color: #17352c;
+  color: var(--color-text);
   background: #ffffff;
-  box-shadow: 18px 0 40px rgba(15, 23, 42, 0.22);
+  box-shadow: 18px 0 40px rgba(15, 23, 42, 0.2);
   transform: translateX(-105%);
-  transition: transform 0.22s ease;
+  transition: transform 0.25s ease-out;
 }
 
-.sidebar--open {
+.sidebar--open,
+.sidebar--fixed {
   transform: translateX(0);
 }
 
@@ -258,30 +396,56 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 64px;
-  padding: 0 20px;
-  border-bottom: 1px solid #e2e8f0;
+  height: 64px;
+  padding: 0 16px;
+  color: #ffffff;
+  background: var(--color-primary);
+  border-bottom: 1px solid var(--color-primary-dark);
 }
 
+.sidebar-header strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Botones Sidebar */
+.pin-button,
 .close-button {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  color: #475569;
-  font-size: 18px;
-  background: #f1f5f9;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--color-primary);
+  background: #ffffff;
+  transition: all 0.2s ease;
 }
 
+.pin-button:hover,
+.close-button:hover,
+.pin-button--active {
+  color: #ffffff;
+  background: var(--color-secondary);
+}
+
+/* =========================
+   NAVEGACION CONTENT
+   ========================= */
 .nav {
-  padding: 16px;
+  padding: 12px;
 }
 
 .module-button,
 .nav-link {
   width: 100%;
-  min-height: 44px;
-  border-radius: 8px;
+  min-height: 40px;
+  border-radius: 6px;
   font: inherit;
+  margin-bottom: 2px;
 }
 
 .module-button {
@@ -289,17 +453,27 @@ export default {
   align-items: center;
   justify-content: space-between;
   border: 0;
-  padding: 0 12px;
-  color: #17352c;
-  font-weight: 700;
-  background: #ecfdf3;
+  padding: 0 10px;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 14px;
+  background: #f1f6f9;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.module-button:hover {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.module-button--spaced {
+  margin-top: 8px;
 }
 
 .chevron {
   display: inline-block;
-  font-size: 24px;
-  transform: rotate(0deg);
+  font-size: 18px;
   transition: transform 0.2s ease;
 }
 
@@ -308,26 +482,70 @@ export default {
 }
 
 .submenu {
-  margin-top: 8px;
-  padding-left: 10px;
+  margin-top: 4px;
+  padding-left: 8px;
+  margin-bottom: 8px;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  color: #334155;
+  padding: 0 10px;
+  color: var(--color-muted);
+  font-size: 14px;
   text-decoration: none;
+  transition: all 0.2s ease;
 }
 
-.nav-link:hover,
-.nuxt-link-active {
-  color: #000000;
+.nav-link:hover {
+  color: var(--color-primary);
+  background: #f0f6fa;
+}
+
+.nav-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  fill: none;
+  stroke: var(--color-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-link:hover .nav-icon {
+  stroke: var(--color-primary);
+}
+
+.nav-link.nuxt-link-active {
+  color: var(--color-primary);
+  font-weight: 600;
+  background: #EAF3F8;
+  border-left: 3px solid var(--color-secondary);
+}
+
+/* =========================
+   BACKDROP & RESPONSIVE
+   ========================= */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(15, 23, 42, 0.5);
 }
 
 @media (max-width: 640px) {
-  .toolbar {
-    padding: 0 16px;
+  .brand {
+    font-size: 18px;
+    margin-left: 8px;
+  }
+
+  .sidebar--fixed {
+    transform: translateX(-105%);
+  }
+
+  .sidebar--fixed.sidebar--open {
+    transform: translateX(0);
   }
 }
 </style>
