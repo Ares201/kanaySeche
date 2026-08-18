@@ -1,13 +1,12 @@
 <template>
-  <section class="residuos-page">
+  <section class="residuos-page unified-list-page">
     <div class="page-header">
       <div>
         <p class="eyebrow">Configuracion</p>
         <h1>Residuos</h1>
+        <span class="registros-count">{{ filteredResiduos.length }} registros</span>
       </div>
-      <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo residuo
-      </button>
+      <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nuevo residuo</button></div>
     </div>
 
     <div class="content">
@@ -324,7 +323,7 @@ export default {
 
 <style scoped>
 .residuos-page {
-  width: min(1120px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }

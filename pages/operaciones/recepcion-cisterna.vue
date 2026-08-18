@@ -1,28 +1,34 @@
 <template>
-  <section class="pv-page">
+  <section class="pv-page unified-list-page">
     <!-- ===== HEADER ===== -->
     <div class="page-header">
       <div>
         <p class="eyebrow">Operaciones</p>
         <h1>Cisterna</h1>
+        <span class="registros-count">{{ filteredIngresos.length }} registros</span>
       </div>
-      <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo ingreso
-      </button>
+      <div class="header-actions">
+        <button class="primary-button" type="button" @click="openCreateModal">
+          Nuevo ingreso
+        </button>
+      </div>
     </div>
 
-    <!-- ===== LISTADO ===== -->
+    <!-- ===== FILTROS Y LISTADO ===== -->
     <div class="content">
-      <div class="table-header">
-        <div>
-          <h2>Listado de ingresos</h2>
-          <span>{{ filteredIngresos.length }} registros</span>
-        </div>
-
-        <div class="table-actions">
+      <v-row dense>
+        <v-spacer />
+        <v-col cols="12" sm="6" md="3" class="mb-2 mt-2">
+          <v-text-field v-model.trim="search" dense hide-details outlined type="search"
+            label="Buscar correlativo, transportista o placa" placeholder="Ej. CIS-001" />
+        </v-col>
+        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
+          <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Filtrar por fecha" />
+        </v-col>
+        <v-col cols="12" sm="6" md="1" class="mb-2 mt-2" mr-2>
           <v-menu offset-y>
             <template #activator="{ on, attrs }">
-              <v-btn class="excel-button" color="#107c41" dark v-bind="attrs" v-on="on">
+              <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on" block>
                 <v-icon left>mdi-microsoft-excel</v-icon>
                 Excel
               </v-btn>
@@ -39,15 +45,10 @@
               </v-list-item>
             </v-list>
           </v-menu>
+        </v-col>
+      </v-row>
 
-          <input ref="excelInput" class="excel-input" type="file" accept=".xlsx" @change="importIngresos" />
-
-          <label class="search-field">
-            <span>Buscar por correlativo, transportista o placa</span>
-            <input v-model.trim="search" type="search" placeholder="Ej. CIS-001" />
-          </label>
-        </div>
-      </div>
+      <input ref="excelInput" class="excel-input" type="file" accept=".xlsx" @change="importIngresos" />
 
       <div class="table-wrapper">
         <table>
@@ -239,13 +240,14 @@ import {
   buildIngresoCisternaCodigo
 } from '~/models/ingresoCisterna'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
-import { formatDate, formatDateOnly, formatWeight, escapeHtml, getNowDateTimeInput } from '~/utils/formatters'
+import { formatDate, formatDateOnly, formatWeight, escapeHtml, getNowDateTimeInput, getTodayDateInput } from '~/utils/formatters'
 
 export default {
   name: 'RecepcionCisternaPage',
   data() {
     return {
       search: '',
+      fechaFiltro: getTodayDateInput(),
       loading: false,
       clientesLoading: false,
       isModalOpen: false,
@@ -262,11 +264,14 @@ export default {
   computed: {
     filteredIngresos() {
       const term = this.search.toLowerCase()
-      if (!term) return this.ingresos
+      const fechaFiltro = this.fechaFiltro
+
       return this.ingresos.filter(i =>
-        i.correlativo.toLowerCase().includes(term) ||
-        i.transportista.toLowerCase().includes(term) ||
-        i.placa.toLowerCase().includes(term)
+        (!term ||
+          i.correlativo.toLowerCase().includes(term) ||
+          i.transportista.toLowerCase().includes(term) ||
+          i.placa.toLowerCase().includes(term)) &&
+        (!fechaFiltro || this.getDateInputValue(i.fechaIngreso) === fechaFiltro)
       )
     },
     filteredClientesOptions() {
@@ -328,6 +333,23 @@ export default {
       if (isNaN(dateObj.getTime())) return ''
       const pad = n => String(n).padStart(2, '0')
       return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`
+    },
+
+    getDateInputValue(dateInput) {
+      if (!dateInput) return ''
+
+      if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateInput)) {
+        return dateInput.slice(0, 10)
+      }
+
+      const dateObj = dateInput?.toDate && typeof dateInput.toDate === 'function'
+        ? dateInput.toDate()
+        : new Date(dateInput)
+
+      if (isNaN(dateObj.getTime())) return ''
+
+      const pad = n => String(n).padStart(2, '0')
+      return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`
     },
 
     // ===== CARGA INICIAL =====
@@ -1044,7 +1066,13 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .eyebrow {
@@ -1113,62 +1141,15 @@ h3 {
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
 }
 
-.table-header,
-.table-header>div {
-  display: flex;
-  gap: 12px;
-}
-
-.table-actions {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.table-header {
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.table-header>div {
-  flex-direction: column;
-  gap: 4px;
-}
-
-.table-header span {
-  color: var(--color-muted);
+.registros-count {
+  color: #475569;
   font-size: 14px;
-}
-
-.search-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: #334155;
-  font-size: 14px;
-  font-weight: 700;
-  width: min(320px, 100%);
-}
-
-.search-field input {
-  width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: #0f172a;
-  font: inherit;
-  outline: none;
-}
-
-.search-field input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(0, 85, 138, 0.14);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .excel-button {
-  margin-bottom: 1px;
+  min-height: 40px;
   font-weight: 700;
   text-transform: none;
 }
@@ -1400,8 +1381,7 @@ td {
 @media (max-width: 640px) {
 
   .page-header,
-  .table-header,
-  .table-actions {
+  .header-actions {
     flex-direction: column;
     align-items: flex-start;
   }

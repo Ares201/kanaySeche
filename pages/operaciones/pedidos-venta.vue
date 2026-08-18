@@ -1,16 +1,15 @@
 ﻿<template>
-  <section class="pv-page">
+  <section class="pv-page unified-list-page">
     <div class="page-header">
       <div>
         <p class="eyebrow">Operaciones</p>
         <h1>Pedido de venta</h1>
-        <span>{{ filteredPedidos.length }} registros</span>
+        <span class="registros-count">{{ filteredPedidos.length }} registros</span>
       </div>
-      <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo PV
-      </button>
+      <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nuevo PV</button></div>
     </div>
 
+    <div class="content">
     <!-- Cabecera de la tabla: título a la izquierda, acciones a la derecha -->
     <v-row dense class="table-header-row" align="center">
       <v-spacer />
@@ -22,9 +21,8 @@
 
           <!-- Búsqueda general -->
           <v-col cols="12" sm="auto" md="4" class="mr-3">
-            <label class="search-field">
-              <input v-model.trim="search" type="search" placeholder="Ej. PV-1">
-            </label>
+            <v-text-field v-model.trim="search" dense hide-details outlined type="search"
+              label="Buscar cliente o N° PV" placeholder="Ej. PV-1" />
           </v-col>
 
           <!-- Filtro de fecha -->
@@ -118,6 +116,7 @@
           </tr>
         </tbody>
       </table>
+    </div>
     </div>
 
     <!-- Modal de creación/edición -->

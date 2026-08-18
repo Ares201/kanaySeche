@@ -190,7 +190,7 @@ export default {
 
 <style scoped>
 .renombrar-page {
-  width: min(1120px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }

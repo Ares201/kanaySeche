@@ -1,13 +1,13 @@
 <template>
-  <section class="envases-page">
+  <section class="envases-page unified-list-page">
     <div class="page-header">
       <div>
         <p class="eyebrow">Configuracion</p>
         <h1>Envases</h1>
+        <span class="registros-count">{{ filteredEnvases.length }} registros</span>
       </div>
-      <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo envase
-      </button>
+      <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nuevo
+          envase</button></div>
     </div>
 
     <div class="content">
@@ -38,13 +38,7 @@
             </v-list>
           </v-menu>
 
-          <input
-            ref="envasesExcelInput"
-            class="excel-input"
-            type="file"
-            accept=".xlsx"
-            @change="importEnvases"
-          >
+          <input ref="envasesExcelInput" class="excel-input" type="file" accept=".xlsx" @change="importEnvases">
 
           <label class="search-field">
             <span>Buscar por nombre</span>
@@ -125,49 +119,42 @@
         <div class="form-grid">
           <v-row dense>
             <v-col cols="12" md="4">
-          <label>
-            Código
-            <div class="code-field">
-              <span>ENV-</span>
-              <input
-                v-model.trim="form.numero"
-                type="text"
-                inputmode="numeric"
-                pattern="[0-9]+"
-                required
-                placeholder="001"
-                :disabled="form.autogenerar"
-              >
-            </div>
-          </label>
+              <label>
+                Código
+                <div class="code-field">
+                  <span>ENV-</span>
+                  <input v-model.trim="form.numero" type="text" inputmode="numeric" pattern="[0-9]+" required
+                    placeholder="001" :disabled="form.autogenerar">
+                </div>
+              </label>
             </v-col>
 
             <v-col cols="12" md="3" class="checkbox-col">
-          <label class="checkbox-field">
-            <input v-model="form.autogenerar" type="checkbox" @change="handleAutogenerarChange">
-            Autogenerar
-          </label>
+              <label class="checkbox-field">
+                <input v-model="form.autogenerar" type="checkbox" @change="handleAutogenerarChange">
+                Autogenerar
+              </label>
             </v-col>
 
             <v-col cols="12" md="5">
-          <label>
-            Nombre
-            <input v-model.trim="form.nombre" type="text" required placeholder="Bolsas">
-          </label>
+              <label>
+                Nombre
+                <input v-model.trim="form.nombre" type="text" required placeholder="Bolsas">
+              </label>
             </v-col>
 
             <v-col cols="12">
-          <label class="field-full">
-            Descripcion
-            <textarea v-model.trim="form.descripcion" rows="3" placeholder="Descripcion del envase" />
-          </label>
+              <label class="field-full">
+                Descripcion
+                <textarea v-model.trim="form.descripcion" rows="3" placeholder="Descripcion del envase" />
+              </label>
             </v-col>
 
             <v-col cols="12">
-          <label class="checkbox-field">
-            <input v-model="form.estado" type="checkbox">
-            Envase activo
-          </label>
+              <label class="checkbox-field">
+                <input v-model="form.estado" type="checkbox">
+                Envase activo
+              </label>
             </v-col>
           </v-row>
         </div>
@@ -403,7 +390,7 @@ export default {
 
 <style scoped>
 .envases-page {
-  width: min(1120px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }

@@ -12,3 +12,57 @@
   --color-text: #1E293B;
   --color-muted: #64748B;
 }
+/* Patrón visual compartido para las páginas de listado. */
+.unified-list-page .page-header {
+  margin-bottom: 16px !important;
+}
+
+.unified-list-page .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.unified-list-page .registros-count {
+  display: block;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.unified-list-page .table-header {
+  justify-content: flex-end !important;
+  min-height: 58px;
+  padding: 8px 20px !important;
+}
+
+.unified-list-page .table-header > div:first-child h2,
+.unified-list-page .table-header > div:first-child > span {
+  display: none;
+}
+
+.unified-list-page .table-actions {
+  flex-direction: row !important;
+  align-items: center !important;
+}
+
+.unified-list-page .excel-button {
+  min-height: 40px;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .unified-list-page .page-header,
+  .unified-list-page .header-actions,
+  .unified-list-page .table-header,
+  .unified-list-page .table-actions {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .unified-list-page .header-actions,
+  .unified-list-page .header-actions .primary-button {
+    width: 100%;
+  }
+}

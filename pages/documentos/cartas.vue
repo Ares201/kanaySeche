@@ -1,21 +1,14 @@
 <template>
-  <section class="cartas-page">
+  <section class="cartas-page unified-list-page">
     <div class="page-header">
       <div>
         <p class="eyebrow">Documentos</p>
         <h1>Cartas</h1>
+        <span class="registros-count">{{ filteredCartas.length }} registros</span>
       </div>
-      <button class="primary-button" type="button" @click="openCreateModal">
-        Nueva carta
-      </button>
+      <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nueva carta</button></div>
     </div>
     <div class="content">
-      <div class="table-header">
-        <div>
-          <h2>Listado de cartas</h2>
-          <span>{{ filteredCartas.length }} registros</span>
-        </div>
-      </div>
       <v-row class="table-actions" dense align="end" justify="end">
         <v-col class="table-action-col" cols="3">
           <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined

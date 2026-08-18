@@ -1,13 +1,12 @@
 <template>
-  <section class="clientes-page">
+  <section class="clientes-page unified-list-page">
     <div class="page-header">
       <div>
         <p class="eyebrow">Documentos</p>
         <h1>Clientes</h1>
+        <span class="registros-count">{{ filteredClientes.length }} registros</span>
       </div>
-      <button class="primary-button" type="button" @click="openCreateModal">
-        Nuevo cliente
-      </button>
+      <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nuevo cliente</button></div>
     </div>
 
     <div class="content">
@@ -385,7 +384,7 @@ export default {
 
 <style scoped>
 .clientes-page {
-  width: min(1120px, calc(100% - 32px));
+  width: 90%;
   margin: 0 auto;
   padding: 32px 0;
 }
