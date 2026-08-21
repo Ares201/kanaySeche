@@ -147,33 +147,39 @@
       </div>
 
       <!-- VISTA KANBAN -->
-      <div v-else class="kanban-board">
-        <div v-for="estado in estados" :key="estado" class="kanban-column">
-          <div class="column-header">
-            <h3>{{ estado }}</h3>
-            <span class="badge">{{ kanbanData[estado].length }}</span>
-          </div>
-
-          <draggable v-model="kanbanData[estado]" :group="{ name: 'expedientes' }" :list-name="estado"
-            :move="onDragMove" @change="evt => onDragChange(evt, estado)" tag="div" class="kanban-list">
-            <div v-for="exp in kanbanData[estado]" :key="exp.id" class="kanban-card">
-              <p class="font-bold">{{ exp.correlativo }}</p>
-              <p class="text-xs text-muted">
-                {{ exp.cliente?.nombre?.length > 16
-                  ? exp.cliente.nombre.slice(0, 16) + '...'
-                  : exp.cliente?.nombre || '—' }}
-              </p>
-            </div>
-          </draggable>
-
-          <div v-if="!kanbanData[estado].length" class="empty-state">
-            Sin registros
-          </div>
-        </div>
-
+      <div v-else class="kanban-view">
         <div v-if="loading" class="kanban-loading">Cargando expedientes...</div>
-        <div v-else-if="filteredExpedientes.length === 0" class="kanban-empty">
-          No se encontraron expedientes.
+
+        <div class="kanban-board">
+          <div v-for="estado in estados" :key="estado" class="kanban-column">
+            <div class="column-header">
+              <h3>{{ estado }}</h3>
+              <span class="badge">{{ kanbanColumns[estado].length }}</span>
+            </div>
+
+            <draggable v-model="kanbanColumns[estado]" :group="{ name: 'expedientes' }" :list-name="estado"
+              :move="onDragMove" @start="onDragStart" @end="onDragEnd" @change="evt => onDragChange(evt, estado)"
+              tag="div" class="kanban-list">
+              <div v-for="exp in kanbanColumns[estado]" :key="exp.id" class="kanban-card" role="button" tabindex="0"
+                @click="openKanbanCard(exp)" @keydown.enter.prevent="openKanbanCard(exp)"
+                @keydown.space.prevent="openKanbanCard(exp)">
+                <p class="font-bold">{{ exp.correlativo }}</p>
+                <p class="text-xs text-muted">
+                  {{ exp.cliente?.nombre?.length > 16
+                    ? exp.cliente.nombre.slice(0, 16) + '...'
+                    : exp.cliente?.nombre || '—' }}
+                </p>
+              </div>
+            </draggable>
+
+            <div v-if="!kanbanColumns[estado].length" class="empty-state">
+              Sin registros
+            </div>
+          </div>
+
+          <div v-if="!loading && filteredExpedientes.length === 0" class="kanban-empty">
+            No se encontraron expedientes.
+          </div>
         </div>
       </div>
     </div>
@@ -437,7 +443,9 @@ export default {
         contacto: '',
         telefonoContacto: ''
       },
-      expedientes: []
+      expedientes: [],
+      kanbanColumns: {},
+      isDraggingCard: false
     }
   },
   computed: {
@@ -461,14 +469,6 @@ export default {
 
         return matchesSearch && matchesDate && matchesEstado
       })
-    },
-
-    kanbanData() {
-      const groups = {}
-      this.estados.forEach(est => {
-        groups[est] = this.filteredExpedientes.filter(exp => exp.estado === est)
-      })
-      return groups
     },
 
     filteredClientesOptions() {
@@ -521,6 +521,14 @@ export default {
         .slice(0, 8)
     }
   },
+  watch: {
+    filteredExpedientes: {
+      handler() {
+        this.syncKanbanColumns()
+      },
+      immediate: true
+    }
+  },
   mounted() {
     this.getAll()
     this.loadClientes()
@@ -559,6 +567,14 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+
+    syncKanbanColumns() {
+      const columns = {}
+      this.estados.forEach(estado => {
+        columns[estado] = this.filteredExpedientes.filter(exp => exp.estado === estado)
+      })
+      this.kanbanColumns = columns
     },
 
     async loadClientes() {
@@ -984,6 +1000,22 @@ export default {
     },
 
     // ========== KANBAN DRAG & DROP ==========
+    onDragStart() {
+      this.isDraggingCard = true
+    },
+
+    onDragEnd() {
+      // El clic nativo se emite después de soltar la tarjeta.
+      setTimeout(() => {
+        this.isDraggingCard = false
+      }, 0)
+    },
+
+    openKanbanCard(exp) {
+      if (this.isDraggingCard) return
+      this.openEditModal(exp)
+    },
+
     onDragMove(evt) {
       const exp = evt.draggedContext.element
       const destinoEstado = evt.relatedContext.listName
@@ -1004,6 +1036,7 @@ export default {
         if (!exp || !exp.id) return
 
         try {
+          exp.estado = estadoDestino
           await this.$firebaseApi.update('expedientes', exp.id, { estado: estadoDestino })
           await this.getAll()
         } catch (error) {
@@ -1301,14 +1334,16 @@ td {
 /* ===== KANBAN ===== */
 .kanban-board {
   display: flex;
+  align-items: stretch;
   gap: 16px;
   padding: 16px;
   overflow-x: auto;
+  scrollbar-gutter: stable;
   min-height: 300px;
 }
 
 .kanban-column {
-  flex: 1;
+  flex: 1 1 240px;
   min-width: 220px;
   background: #f8fafc;
   border-radius: 8px;
@@ -1351,14 +1386,21 @@ td {
   border-left: 4px solid var(--color-primary);
   cursor: grab;
   transition: box-shadow 0.2s;
+  overflow-wrap: anywhere;
 }
 
 .kanban-card:active {
   cursor: grabbing;
 }
 
-.kanban-card:hover {
+.kanban-card:hover,
+.kanban-card:focus {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-card:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .kanban-loading,
@@ -1366,7 +1408,11 @@ td {
   padding: 20px;
   text-align: center;
   color: var(--color-muted);
-  width: 100%;
+}
+
+.kanban-loading {
+  border-bottom: 1px solid var(--color-border);
+  background: #f8fafc;
 }
 
 /* ===== MODAL ===== */
