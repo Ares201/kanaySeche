@@ -28,6 +28,10 @@
         <!-- Estado -->
         <v-spacer />
         <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
+          <v-autocomplete v-model="estadoPVFiltro" :items="estadosPVFiltroOptions" label="Estado PV" dense hide-details
+            outlined clearable placeholder="Todos" />
+        </v-col>
+        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
           <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
             clearable />
         </v-col>
@@ -413,6 +417,7 @@ export default {
   components: { draggable },
   data() {
     return {
+      estadoPVFiltro: null,
       viewMode: 'kanban',
       estados: ESTADOS_EXPEDIENTE,
       estadosPV: ESTADOS_PV,
@@ -449,10 +454,14 @@ export default {
     }
   },
   computed: {
+    estadosPVFiltroOptions() {
+      return ['Abierto', 'Cerrado']
+    },
     filteredExpedientes() {
       const term = this.search.toLowerCase().trim()
       const fechaFiltro = this.fechaFiltro
       const estadoFiltro = this.estadoFiltro
+      const estadoPVFiltro = this.estadoPVFiltro // <--- NUEVO
 
       return this.expedientes.filter(exp => {
         const matchesSearch =
@@ -467,7 +476,10 @@ export default {
         const matchesDate = !fechaFiltro || fechaStr === fechaFiltro
         const matchesEstado = !estadoFiltro || exp.estado === estadoFiltro
 
-        return matchesSearch && matchesDate && matchesEstado
+        // NUEVO: Filtrar por estado PV
+        const matchesEstadoPV = !estadoPVFiltro || exp.estadoPV === estadoPVFiltro
+
+        return matchesSearch && matchesDate && matchesEstado && matchesEstadoPV
       })
     },
 

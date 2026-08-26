@@ -114,7 +114,7 @@
 
         <!-- INICIO -->
         <NuxtLink class="nav-link" to="/" @click.native="closeMenu">
-          <span>Inicio - Graficos</span>
+          <span>Inicio</span>
           <svg viewBox="0 0 24 24" aria-hidden="true" class="nav-icon">
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M5 9.5V21h14V9.5" />
@@ -138,6 +138,7 @@
           <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
         </button>
         <div v-show="operacionesOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/operaciones/graficos" @click.native="closeMenu">Gráficos</NuxtLink>
           <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">Pedido de venta
           </NuxtLink>
           <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">Recepcion de
@@ -151,6 +152,7 @@
           <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
         </button>
         <div v-show="documentosOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/documentos/graficos" @click.native="closeMenu">Gráficos</NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">Expedientes</NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">Cartas</NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
