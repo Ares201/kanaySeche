@@ -84,11 +84,11 @@
           <button type="button" class="pin-button" :class="{
             'pin-button--active': menuFijado
           }" :aria-label="menuFijado
-                ? 'Desfijar menu'
-                : 'Fijar menu'
-              " :title="menuFijado
-                ? 'Desfijar menu'
-                : 'Fijar menu'
+            ? 'Desfijar menu'
+            : 'Fijar menu'
+            " :title="menuFijado
+              ? 'Desfijar menu'
+              : 'Fijar menu'
               " @click="toggleMenuFijado">
             <v-icon small>
               {{
@@ -138,7 +138,10 @@
           <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
         </button>
         <div v-show="operacionesOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/operaciones/graficos" @click.native="closeMenu">Gráficos</NuxtLink>
+          <NuxtLink class="nav-link" to="/operaciones/graficos" @click.native="closeMenu">
+            <i class="fas fa-chart-bar"></i>
+            Gráficos
+          </NuxtLink>
           <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">Pedido de venta
           </NuxtLink>
           <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">Recepcion de
@@ -152,7 +155,10 @@
           <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
         </button>
         <div v-show="documentosOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/documentos/graficos" @click.native="closeMenu">Gráficos</NuxtLink>
+          <NuxtLink class="nav-link" to="/documentos/graficos" @click.native="closeMenu">
+            <i class="fas fa-chart-pie"></i>
+            Gráficos
+          </NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">Expedientes</NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">Cartas</NuxtLink>
           <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
