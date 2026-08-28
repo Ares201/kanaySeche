@@ -5,6 +5,9 @@ export function createEmptyPersonalForm() {
     nombres: '',
     telefono: '',
     correo: '',
+    password: '',
+    rolId: '',
+    rolNombre: '',
     estado: true
   }
 }
@@ -19,18 +22,25 @@ export function normalizePersonal(data) {
     nombres: data.nombres || '',
     telefono: data.telefono || '',
     correo: data.correo || '',
+    password: data.password || '',
+    rolId: data.rolId || '',
+    rolNombre: data.rolNombre || data.rol || '',
     estado: data.estado !== false,
     fechaCreacion: normalizeDate(data.fechaCreacion)
   }
 }
 
 export function toPersonalPayload(form) {
-  return {
+  const payload = {
     nombres: form.nombres,
     telefono: form.telefono,
     correo: form.correo,
+    rolId: form.rolId || '',
+    rolNombre: form.rolNombre || '',
     estado: Boolean(form.estado)
   }
+  if (form.password) payload.password = form.password
+  return payload
 }
 
 /**

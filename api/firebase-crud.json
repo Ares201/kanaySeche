@@ -1,5 +1,20 @@
 {
   "apis": {
+    "roles": {
+      "collection": "roles",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "asc"
+    },
+    "paginas": {
+      "collection": "paginas",
+      "orderBy": "nombre",
+      "orderDirection": "asc"
+    },
+    "rolPaginas": {
+      "collection": "rolPaginas",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "asc"
+    },
     "personal": {
       "collection": "personal",
       "model": "personal",

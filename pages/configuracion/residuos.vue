@@ -29,29 +29,16 @@
         </div>
       </div>
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Codigo</th>
-              <th>Nombre</th>
-              <th>Descripcion</th>
-              <th>Estado</th>
-              <th>Fecha creacion</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="residuo in filteredResiduos" :key="residuo.id">
-              <td>{{ residuo.codigo }}</td>
-              <td>{{ residuo.nombre }}</td>
-              <td>{{ residuo.descripcion }}</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredResiduos" :loading="loading" item-key="id"
+          loading-text="Cargando residuos..." no-data-text="No se encontraron residuos."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.estado`]="{ item: residuo }">
                 <span class="status" :class="{ 'status--inactive': !residuo.estado }">
                   {{ residuo.estado ? 'Activo' : 'Inactivo' }}
                 </span>
-              </td>
-              <td>{{ formatDate(residuo.fechaCreacion) }}</td>
-              <td>
+          </template>
+          <template #[`item.fechaCreacion`]="{ item: residuo }">{{ formatDate(residuo.fechaCreacion) }}</template>
+          <template #[`item.actions`]="{ item: residuo }">
                 <div class="actions">
                   <button class="icon-button" type="button" title="Editar" aria-label="Editar residuo"
                     @click="openEditModal(residuo)">
@@ -71,20 +58,8 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="6">
-                Cargando residuos...
-              </td>
-            </tr>
-            <tr v-else-if="filteredResiduos.length === 0">
-              <td class="empty-state" colspan="6">
-                No se encontraron residuos.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
     <div v-if="isModalOpen" class="modal-backdrop">
@@ -167,6 +142,14 @@ export default {
     return {
       search: '',
       loading: false,
+      tableHeaders: [
+        { text: 'Código', value: 'codigo' },
+        { text: 'Nombre', value: 'nombre' },
+        { text: 'Descripción', value: 'descripcion' },
+        { text: 'Estado', value: 'estado' },
+        { text: 'Fecha creación', value: 'fechaCreacion' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       isModalOpen: false,
       editingId: null,
       form: this.getEmptyForm(),

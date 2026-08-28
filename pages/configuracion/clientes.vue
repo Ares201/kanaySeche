@@ -53,27 +53,10 @@
       </div>
 
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>RUC</th>
-              <th>Direccion</th>
-              <!-- <th>Contacto</th> -->
-              <!-- <th>Numero contacto</th> -->
-              <!-- <th>Telefono contacto</th> -->
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="cliente in filteredClientes" :key="cliente.id">
-              <td>{{ cliente.nombre }}</td>
-              <td>{{ cliente.ruc }}</td>
-              <td>{{ cliente.direccion }}</td>
-              <!-- <td>{{ cliente.contacto }}</td> -->
-              <!-- <td>{{ cliente.numeroContacto }}</td> -->
-              <!-- <td>{{ cliente.telefonoContacto }}</td> -->
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredClientes" :loading="loading" item-key="id"
+          loading-text="Cargando clientes..." no-data-text="No se encontraron clientes."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.actions`]="{ item: cliente }">
                 <div class="actions">
                   <button class="icon-button" type="button" title="Editar" aria-label="Editar cliente" @click="openEditModal(cliente)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -91,20 +74,8 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="7">
-                Cargando clientes...
-              </td>
-            </tr>
-            <tr v-else-if="filteredClientes.length === 0">
-              <td class="empty-state" colspan="7">
-                No se encontraron clientes.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -211,6 +182,12 @@ export default {
     return {
       search: '',
       loading: false,
+      tableHeaders: [
+        { text: 'Cliente', value: 'nombre' },
+        { text: 'RUC', value: 'ruc' },
+        { text: 'Dirección', value: 'direccion' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       isModalOpen: false,
       editingId: null,
       form: this.getEmptyForm(),

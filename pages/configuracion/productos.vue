@@ -51,33 +51,16 @@
         </div>
       </div>
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Codigo</th>
-              <th>Nombre</th>
-              <th>Codigo residuo</th>
-              <th>Nombre residuo</th>
-              <th>Zona de recepcion</th>
-              <th>Estado</th>
-              <th>Fecha creacion</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="producto in filteredProductos" :key="producto.id">
-              <td>{{ producto.codigo }}</td>
-              <td>{{ producto.nombre }}</td>
-              <td>{{ producto.codigoResiduo }}</td>
-              <td>{{ producto.nombreResiduo }}</td>
-              <td>{{ producto.zonaRecepcion }}</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredProductos" :loading="loading" item-key="id"
+          loading-text="Cargando productos..." no-data-text="No se encontraron productos."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.estado`]="{ item: producto }">
                 <span class="status" :class="{ 'status--inactive': !producto.estado }">
                   {{ producto.estado ? 'Activo' : 'Inactivo' }}
                 </span>
-              </td>
-              <td>{{ formatDate(producto.fechaCreacion) }}</td>
-              <td>
+          </template>
+          <template #[`item.fechaCreacion`]="{ item: producto }">{{ formatDate(producto.fechaCreacion) }}</template>
+          <template #[`item.actions`]="{ item: producto }">
                 <div class="actions">
                   <button class="icon-button" type="button" title="Editar" aria-label="Editar producto"
                     @click="openEditModal(producto)">
@@ -97,20 +80,8 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="8">
-                Cargando productos...
-              </td>
-            </tr>
-            <tr v-else-if="filteredProductos.length === 0">
-              <td class="empty-state" colspan="8">
-                No se encontraron productos.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -243,6 +214,16 @@ export default {
     return {
       search: '',
       loading: false,
+      tableHeaders: [
+        { text: 'Código', value: 'codigo' },
+        { text: 'Nombre', value: 'nombre' },
+        { text: 'Código residuo', value: 'codigoResiduo' },
+        { text: 'Nombre residuo', value: 'nombreResiduo' },
+        { text: 'Zona de recepción', value: 'zonaRecepcion' },
+        { text: 'Estado', value: 'estado' },
+        { text: 'Fecha creación', value: 'fechaCreacion' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       isModalOpen: false,
       editingId: null,
       form: this.getEmptyForm(),

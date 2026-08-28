@@ -48,29 +48,16 @@
       </div>
 
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Codigo</th>
-              <th>Nombre</th>
-              <th>Descripcion</th>
-              <th>Estado</th>
-              <th>Fecha creacion</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="envase in filteredEnvases" :key="envase.id">
-              <td>{{ envase.codigo }}</td>
-              <td>{{ envase.nombre }}</td>
-              <td>{{ envase.descripcion }}</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredEnvases" :loading="loading" item-key="id"
+          loading-text="Cargando envases..." no-data-text="No se encontraron envases."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.estado`]="{ item: envase }">
                 <span class="status" :class="{ 'status--inactive': !envase.estado }">
                   {{ envase.estado ? 'Activo' : 'Inactivo' }}
                 </span>
-              </td>
-              <td>{{ formatDate(envase.fechaCreacion) }}</td>
-              <td>
+          </template>
+          <template #[`item.fechaCreacion`]="{ item: envase }">{{ formatDate(envase.fechaCreacion) }}</template>
+          <template #[`item.actions`]="{ item: envase }">
                 <div class="actions">
                   <button class="icon-button" type="button" title="Editar" aria-label="Editar envase"
                     @click="openEditModal(envase)">
@@ -90,20 +77,8 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="6">
-                Cargando envases...
-              </td>
-            </tr>
-            <tr v-else-if="filteredEnvases.length === 0">
-              <td class="empty-state" colspan="6">
-                No se encontraron envases.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -201,6 +176,14 @@ export default {
     return {
       search: '',
       loading: false,
+      tableHeaders: [
+        { text: 'Código', value: 'codigo' },
+        { text: 'Nombre', value: 'nombre' },
+        { text: 'Descripción', value: 'descripcion' },
+        { text: 'Estado', value: 'estado' },
+        { text: 'Fecha creación', value: 'fechaCreacion' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       isModalOpen: false,
       editingId: null,
       form: this.getEmptyForm(),

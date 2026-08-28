@@ -59,23 +59,12 @@
 
     <!-- Tabla -->
     <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>PV</th>
-            <th>Cliente</th>
-            <th>Hora ingreso</th>
-            <th>Peso neto</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="pedido in filteredPedidos" :key="pedido.id">
-            <td>{{ formatDateInput(pedido.fecha) }}</td>
-            <td>{{ pedido.codigo }}</td>
-            <td>{{ pedido.cliente.nombre }}</td>
-            <td>{{ formatWeight(pedido.pesoNeto) }}</td>
-            <td>
+      <v-data-table :headers="tableHeaders" :items="filteredPedidos" :loading="loading" item-key="id"
+        loading-text="Cargando pedidos de venta..." no-data-text="No se encontraron pedidos de venta."
+        :footer-props="{ itemsPerPageText: 'Filas por página' }">
+        <template #[`item.fecha`]="{ item: pedido }">{{ formatDateInput(pedido.fecha) }}</template>
+        <template #[`item.pesoNeto`]="{ item: pedido }">{{ formatWeight(pedido.pesoNeto) }}</template>
+        <template #[`item.actions`]="{ item: pedido }">
               <div class="actions">
                 <button class="icon-button" type="button" title="Preview" aria-label="Preview PV"
                   @click="openPreviewModal(pedido)">
@@ -102,20 +91,8 @@
                   </svg>
                 </button>
               </div>
-            </td>
-          </tr>
-          <tr v-if="loading">
-            <td class="empty-state" colspan="8">
-              Cargando pedidos de venta...
-            </td>
-          </tr>
-          <tr v-else-if="filteredPedidos.length === 0">
-            <td class="empty-state" colspan="8">
-              No se encontraron pedidos de venta.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        </template>
+      </v-data-table>
     </div>
     </div>
 
@@ -414,6 +391,13 @@ export default {
       search: '',
       fechaFiltro: this.getTodayInputDate(),
       loading: false,
+      tableHeaders: [
+        { text: 'Fecha', value: 'fecha' },
+        { text: 'PV', value: 'codigo' },
+        { text: 'Cliente', value: 'cliente.nombre' },
+        { text: 'Peso neto', value: 'pesoNeto' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       clientesLoading: false,
       isModalOpen: false,
       isPreviewOpen: false,

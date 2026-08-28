@@ -54,27 +54,16 @@
         </div>
       </div>
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Codigo</th>
-              <th>Nombre</th>
-              <th>Estado</th>
-              <th>Fecha creacion</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="generador in filteredGeneradores" :key="generador.id">
-              <td>{{ generador.codigo }}</td>
-              <td>{{ generador.nombre }}</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredGeneradores" :loading="loading" item-key="id"
+          loading-text="Cargando generadores..." no-data-text="No se encontraron generadores."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.estado`]="{ item: generador }">
                 <span class="status" :class="{ 'status--inactive': !generador.estado }">
                   {{ generador.estado ? 'Activo' : 'Inactivo' }}
                 </span>
-              </td>
-              <td>{{ formatDate(generador.fechaCreacion) }}</td>
-              <td>
+          </template>
+          <template #[`item.fechaCreacion`]="{ item: generador }">{{ formatDate(generador.fechaCreacion) }}</template>
+          <template #[`item.actions`]="{ item: generador }">
                 <div class="actions">
                   <button class="icon-button" type="button" title="Editar" aria-label="Editar generador"
                     @click="openEditModal(generador)">
@@ -94,20 +83,8 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="5">
-                Cargando generadores...
-              </td>
-            </tr>
-            <tr v-else-if="filteredGeneradores.length === 0">
-              <td class="empty-state" colspan="5">
-                No se encontraron generadores.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -194,6 +171,13 @@ export default {
     return {
       search: '',
       loading: false,
+      tableHeaders: [
+        { text: 'Código', value: 'codigo' },
+        { text: 'Nombre', value: 'nombre' },
+        { text: 'Estado', value: 'estado' },
+        { text: 'Fecha creación', value: 'fechaCreacion' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       isModalOpen: false,
       editingId: null,
       form: this.getEmptyForm(),

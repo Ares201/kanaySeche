@@ -128,147 +128,29 @@
 
       <!-- Tabla con diseño premium y tamaños más ajustados -->
       <div v-if="items.length" class="overflow-x-auto rounded-xl border border-white/5 shadow-2xl shadow-black/30 bg-slate-900/40 backdrop-blur-sm">
-        <table class="w-full text-left text-[11px] text-slate-300">
-          <thead>
-            <tr class="bg-gradient-to-r from-slate-800/80 to-slate-800/40 text-slate-200 uppercase font-semibold text-[10px] tracking-wider border-b border-white/5">
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('#')">
-                <div class="flex items-center gap-1">
-                  # 
-                  <span v-if="columnaOrden === '#'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('Fecha')">
-                <div class="flex items-center gap-1">
-                  Fecha
-                  <span v-if="columnaOrden === 'Fecha'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('Hora Ingreso')">
-                <div class="flex items-center gap-1">
-                  Hora
-                  <span v-if="columnaOrden === 'Hora Ingreso'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('No. Pedido de Venta')">
-                <div class="flex items-center gap-1">
-                  N° Pedido
-                  <span v-if="columnaOrden === 'No. Pedido de Venta'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('No. Boleta')">
-                <div class="flex items-center gap-1">
-                  N° Boleta
-                  <span v-if="columnaOrden === 'No. Boleta'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('Cliente')">
-                <div class="flex items-center gap-1">
-                  Cliente
-                  <span v-if="columnaOrden === 'Cliente'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('Generador')">
-                <div class="flex items-center gap-1">
-                  Generador
-                  <span v-if="columnaOrden === 'Generador'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('Residuo')">
-                <div class="flex items-center gap-1">
-                  Residuo
-                  <span v-if="columnaOrden === 'Residuo'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group text-right" @click="ordenarPor('Cantidad')">
-                <div class="flex items-center justify-end gap-1">
-                  Cantidad
-                  <span v-if="columnaOrden === 'Cantidad'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('Placa')">
-                <div class="flex items-center gap-1">
-                  Placa
-                  <span v-if="columnaOrden === 'Placa'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-              <th class="px-3 py-2.5 whitespace-nowrap cursor-pointer hover:text-white transition-colors group" @click="ordenarPor('Guía Remitente')">
-                <div class="flex items-center gap-1">
-                  Guía Rem.
-                  <span v-if="columnaOrden === 'Guía Remitente'" class="text-emerald-400">{{ ordenAsc ? '↑' : '↓' }}</span>
-                  <span v-else class="text-slate-600 group-hover:text-slate-400">↕</span>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-white/5">
-            <tr
-              v-for="(row, idx) in filasPaginadas"
-              :key="idx"
-              class="group hover:bg-white/5 transition-all duration-200 hover:scale-[1.002] hover:shadow-lg"
-            >
-              <td class="px-3 py-2 text-slate-500 font-mono text-[10px]">{{ (paginaActual - 1) * itemsPorPagina + idx + 1 }}</td>
-              <td class="px-3 py-2 whitespace-nowrap text-slate-200 font-medium text-[11px]">{{ formatFecha(row.Fecha) }}</td>
-              <td class="px-3 py-2 whitespace-nowrap text-slate-400 font-mono text-[11px]">{{ row['Hora Ingreso'] || '-' }}</td>
-              <td class="px-3 py-2 whitespace-nowrap">
-                <span class="inline-block px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-400 font-mono font-bold text-[10px]">
-                  {{ row['No. Pedido de Venta'] || '-' }}
-                </span>
-              </td>
-              <td class="px-3 py-2 whitespace-nowrap text-slate-300 font-mono text-[11px]">{{ row['No. Boleta'] || '-' }}</td>
-              <td class="px-3 py-2 max-w-[160px] truncate font-sans text-slate-200 text-[11px]" :title="row.Cliente">{{ row.Cliente || '-' }}</td>
-              <td class="px-3 py-2 max-w-[160px] truncate font-sans text-slate-400 text-[11px]" :title="row.Generador">{{ row.Generador || '-' }}</td>
-              <td class="px-3 py-2 max-w-[140px] truncate font-sans text-slate-300 text-[11px]" :title="row.Residuo">{{ row.Residuo || '-' }}</td>
-              <td class="px-3 py-2 whitespace-nowrap text-right font-mono font-bold text-white text-[11px]">
-                {{ row.Cantidad }} <span class="text-slate-500 text-[9px]">{{ row['Unidad Venta'] || '' }}</span>
-              </td>
-              <td class="px-3 py-2 whitespace-nowrap font-mono text-slate-300 text-[11px]">{{ row.Placa || '-' }}</td>
-              <td class="px-3 py-2 whitespace-nowrap font-mono text-slate-400 text-[11px]">{{ row['Guía Remitente'] || '-' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <v-data-table class="validaciones-table" :headers="tableHeaders" :items="tableItems" :search="busqueda"
+          :loading="cargando" :items-per-page="25"
+          loading-text="Procesando archivo..." no-data-text="No hay datos para mostrar"
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.Fecha`]="{ item }">{{ formatFecha(item.Fecha) }}</template>
+          <template #[`item.horaIngreso`]="{ item }">{{ item.horaIngreso || '-' }}</template>
+          <template #[`item.numeroPedido`]="{ item }">
+            <span class="inline-block px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-400 font-mono font-bold text-[10px]">
+              {{ item.numeroPedido || '-' }}
+            </span>
+          </template>
+          <template #[`item.numeroBoleta`]="{ item }">{{ item.numeroBoleta || '-' }}</template>
+          <template #[`item.Cliente`]="{ item }"><span :title="item.Cliente">{{ item.Cliente || '-' }}</span></template>
+          <template #[`item.Generador`]="{ item }"><span :title="item.Generador">{{ item.Generador || '-' }}</span></template>
+          <template #[`item.Residuo`]="{ item }"><span :title="item.Residuo">{{ item.Residuo || '-' }}</span></template>
+          <template #[`item.Cantidad`]="{ item }">
+            {{ item.Cantidad }} <span class="text-slate-500 text-[9px]">{{ item.unidadVenta || '' }}</span>
+          </template>
+          <template #[`item.Placa`]="{ item }">{{ item.Placa || '-' }}</template>
+          <template #[`item.guiaRemitente`]="{ item }">{{ item.guiaRemitente || '-' }}</template>
+        </v-data-table>
       </div>
 
-      <!-- Paginación compacta -->
-      <div v-if="itemsFiltrados.length > itemsPorPagina" class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-        <span class="bg-white/5 px-2.5 py-1 rounded-lg border border-white/5 text-[11px]">
-          Mostrando <strong class="text-white">{{ (paginaActual - 1) * itemsPorPagina + 1 }}</strong> - <strong class="text-white">{{ Math.min(paginaActual * itemsPorPagina, itemsFiltrados.length) }}</strong> de <strong class="text-white">{{ itemsFiltrados.length }}</strong>
-        </span>
-        <div class="flex gap-1">
-          <button
-            @click="paginaActual = Math.max(1, paginaActual - 1)"
-            :disabled="paginaActual === 1"
-            class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 text-slate-300 hover:text-white text-[11px]"
-          >
-            ← Anterior
-          </button>
-          <button
-            v-for="p in totalPaginas"
-            :key="p"
-            @click="paginaActual = p"
-            class="px-3 py-1 rounded-lg transition-all duration-200 font-medium text-[11px]"
-            :class="p === paginaActual ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white'"
-          >
-            {{ p }}
-          </button>
-          <button
-            @click="paginaActual = Math.min(totalPaginas, paginaActual + 1)"
-            :disabled="paginaActual === totalPaginas"
-            class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 text-slate-300 hover:text-white text-[11px]"
-          >
-            Siguiente →
-          </button>
-        </div>
-      </div>
 
       <!-- Empty State mejorado y más compacto -->
       <div v-else class="mt-8 border-2 border-dashed border-white/10 rounded-2xl p-12 text-center bg-white/5 backdrop-blur-sm transition-all hover:border-white/20">
@@ -301,6 +183,18 @@ export default {
     return {
       items: [],
       itemsFiltrados: [],
+      tableHeaders: [
+        { text: 'Fecha', value: 'Fecha' },
+        { text: 'Hora', value: 'horaIngreso' },
+        { text: 'N° Pedido', value: 'numeroPedido' },
+        { text: 'N° Boleta', value: 'numeroBoleta' },
+        { text: 'Cliente', value: 'Cliente' },
+        { text: 'Generador', value: 'Generador' },
+        { text: 'Residuo', value: 'Residuo' },
+        { text: 'Cantidad', value: 'Cantidad' },
+        { text: 'Placa', value: 'Placa' },
+        { text: 'Guía Rem.', value: 'guiaRemitente' }
+      ],
       busqueda: '',
       columnaOrden: '',
       ordenAsc: true,
@@ -315,6 +209,16 @@ export default {
     }
   },
   computed: {
+    tableItems() {
+      return this.items.map(item => ({
+        ...item,
+        horaIngreso: item['Hora Ingreso'],
+        numeroPedido: item['No. Pedido de Venta'],
+        numeroBoleta: item['No. Boleta'],
+        unidadVenta: item['Unidad Venta'],
+        guiaRemitente: item['Guía Remitente']
+      }))
+    },
     totalPaginas() {
       return Math.ceil(this.itemsFiltrados.length / this.itemsPorPagina)
     },

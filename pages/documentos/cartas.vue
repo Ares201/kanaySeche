@@ -47,21 +47,11 @@
       </v-row>
 
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Correlativo</th>
-              <th>Cliente</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="carta in filteredCartas" :key="carta.id">
-              <td>{{ carta.correlativo }}</td>
-              <td>{{ carta.cliente.nombre }}</td>
-              <td>{{ formatShortDate(carta.fecha) }}</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredCartas" :loading="loading" item-key="id"
+          loading-text="Cargando cartas..." no-data-text="No se encontraron cartas."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.fecha`]="{ item: carta }">{{ formatShortDate(carta.fecha) }}</template>
+          <template #[`item.actions`]="{ item: carta }">
                 <div class="actions">
                   <v-btn icon small class="status-icon-button"
                     :class="`status-icon-button--${getEstadoClass(carta.estadoProceso)}`" :title="getEstadoTitle(carta)"
@@ -104,20 +94,8 @@
                     <v-icon small>mdi-arrow-left</v-icon>
                   </v-btn>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="5">
-                Cargando cartas...
-              </td>
-            </tr>
-            <tr v-else-if="filteredCartas.length === 0">
-              <td class="empty-state" colspan="5">
-                No se encontraron cartas.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -537,6 +515,12 @@ export default {
       fechaFiltro: this.getTodayInputDate(),
       estadoFiltro: null,
       loading: false,
+      tableHeaders: [
+        { text: 'Correlativo', value: 'correlativo' },
+        { text: 'Cliente', value: 'cliente.nombre' },
+        { text: 'Fecha', value: 'fecha' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       isModalOpen: false,
       isPreviewOpen: false,
       isConfirmacionOpen: false,

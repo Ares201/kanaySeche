@@ -51,25 +51,12 @@
       <input ref="excelInput" class="excel-input" type="file" accept=".xlsx" @change="importIngresos" />
 
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Fecha</th>
-              <th>Transportista</th>
-              <th>Placa</th>
-              <th>Peso Neto</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="ingreso in filteredIngresos" :key="ingreso.id">
-              <td>{{ ingreso.correlativo }}</td>
-              <td>{{ formatDateOnly(ingreso.fechaIngreso) }}</td>
-              <td>{{ ingreso.transportista }}</td>
-              <td>{{ ingreso.placa }}</td>
-              <td>{{ formatWeight(ingreso.pesoNeto) }} Kg</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredIngresos" :loading="loading" item-key="id"
+          loading-text="Cargando ingresos..." no-data-text="No se encontraron ingresos."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.fechaIngreso`]="{ item: ingreso }">{{ formatDateOnly(ingreso.fechaIngreso) }}</template>
+          <template #[`item.pesoNeto`]="{ item: ingreso }">{{ formatWeight(ingreso.pesoNeto) }} Kg</template>
+          <template #[`item.actions`]="{ item: ingreso }">
                 <div class="actions">
                   <!-- Botón Imprimir -->
                   <button class="icon-button" type="button" title="Imprimir" @click="imprimirDirecto(ingreso)">
@@ -98,16 +85,8 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="6">Cargando ingresos...</td>
-            </tr>
-            <tr v-else-if="filteredIngresos.length === 0">
-              <td class="empty-state" colspan="6">No se encontraron ingresos.</td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -249,6 +228,14 @@ export default {
       search: '',
       fechaFiltro: getTodayDateInput(),
       loading: false,
+      tableHeaders: [
+        { text: 'Código', value: 'correlativo' },
+        { text: 'Fecha', value: 'fechaIngreso' },
+        { text: 'Transportista', value: 'transportista' },
+        { text: 'Placa', value: 'placa' },
+        { text: 'Peso neto', value: 'pesoNeto' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       clientesLoading: false,
       isModalOpen: false,
       editingId: null,

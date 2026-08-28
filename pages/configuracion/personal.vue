@@ -17,52 +17,30 @@
           <span>{{ filteredPersonal.length }} registros</span>
         </div>
 
-        <label class="search-field">
-          <span>Buscar</span>
-          <input v-model.trim="search" type="search" placeholder="Ej. Juan Perez">
-        </label>
+        <div class="personal-filters">
+          <v-select v-model="rolFiltro" :items="roles" item-text="nombre" item-value="id" label="Rol" dense outlined clearable hide-details />
+          <v-select v-model="estadoFiltro" :items="estadoOptions" label="Estado" dense outlined clearable hide-details />
+          <label class="search-field"><span>Buscar</span><input v-model.trim="search" type="search" placeholder="Ej. Juan Perez"></label>
+        </div>
       </div>
 
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Nombres completos</th>
-              <th>Teléfono</th>
-              <th>Correo</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="item in filteredPersonal" :key="item.id">
-              <td>{{ item.nombres }}</td>
-              <td>{{ item.telefono }}</td>
-              <td>{{ item.correo }}</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredPersonal" :loading="loading" item-key="id"
+          loading-text="Cargando..." no-data-text="Sin registros"
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.estado`]="{ item }">
                 <span class="status" :class="{ 'status--inactive': !item.estado }">
                   {{ item.estado ? 'Activo' : 'Inactivo' }}
                 </span>
-              </td>
-
-              <td>
+          </template>
+          <template #[`item.password`]="{}">••••••••</template>
+          <template #[`item.actions`]="{ item }">
                 <div class="actions">
                   <button class="icon-button" @click="openEditModal(item)">✏️</button>
                   <button class="icon-button icon-button--danger" @click="deletePersonal(item.id)">🗑️</button>
                 </div>
-              </td>
-            </tr>
-
-            <tr v-if="loading">
-              <td colspan="5" class="empty-state">Cargando...</td>
-            </tr>
-
-            <tr v-else-if="filteredPersonal.length === 0">
-              <td colspan="5" class="empty-state">Sin registros</td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -89,6 +67,20 @@
           <label>
             Correo
             <input v-model.trim="form.correo" type="email" />
+          </label>
+
+          <label>
+            Rol
+            <select v-model="form.rolId" required @change="syncRoleName">
+              <option value="" disabled>Selecciona un rol</option>
+              <option v-for="role in activeRoles" :key="role.id" :value="role.id">{{ role.nombre }}</option>
+            </select>
+          </label>
+
+          <label>
+            {{ editingId ? 'Nueva contraseña (opcional)' : 'Contraseña' }}
+            <input v-model="form.password" type="password" autocomplete="new-password" :required="!editingId" />
+            <small v-if="editingId">Déjala vacía para conservar la contraseña actual.</small>
           </label>
 
           <label class="checkbox-field">
@@ -122,12 +114,25 @@ export default {
   data() {
     return {
       search: '',
+      rolFiltro: null,
+      estadoFiltro: null,
+      estadoOptions: [{ text: 'Activo', value: true }, { text: 'Inactivo', value: false }],
       loading: false,
+      tableHeaders: [
+        { text: 'Nombres completos', value: 'nombres' },
+        { text: 'Teléfono', value: 'telefono' },
+        { text: 'Correo', value: 'correo' },
+        { text: 'Rol', value: 'rolNombre' },
+        { text: 'Contraseña', value: 'password', sortable: false },
+        { text: 'Estado', value: 'estado' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       isModalOpen: false,
       editingId: null,
 
       form: createEmptyPersonalForm(),
-      personal: []
+      personal: [],
+      roles: []
     }
   },
 
@@ -135,21 +140,30 @@ export default {
     filteredPersonal() {
       const term = this.search.toLowerCase()
 
-      if (!term) return this.personal
-
-      return this.personal.filter(p =>
-        p.nombres.toLowerCase().includes(term) ||
-        p.telefono.toLowerCase().includes(term) ||
-        p.correo.toLowerCase().includes(term)
-      )
+      return this.personal.filter(p => {
+        const matchesTerm = !term || p.nombres.toLowerCase().includes(term) ||
+          p.telefono.toLowerCase().includes(term) || p.correo.toLowerCase().includes(term)
+        const matchesRole = !this.rolFiltro || p.rolId === this.rolFiltro
+        const matchesState = this.estadoFiltro === null || p.estado === this.estadoFiltro
+        return matchesTerm && matchesRole && matchesState
+      })
+    },
+    activeRoles() {
+      return this.roles.filter(role => role.estado !== false)
     }
   },
 
   mounted() {
-    this.loadPersonal()
+    this.loadData()
   },
 
   methods: {
+    async loadData() {
+      await Promise.all([this.loadPersonal(), this.loadRoles()])
+    },
+    async loadRoles() {
+      this.roles = await this.$firebaseApi.list('roles')
+    },
     async loadPersonal() {
       this.loading = true
       try {
@@ -174,6 +188,9 @@ export default {
         nombres: item.nombres,
         telefono: item.telefono,
         correo: item.correo,
+        password: '',
+        rolId: item.rolId,
+        rolNombre: item.rolNombre,
         estado: item.estado
       }
       this.isModalOpen = true
@@ -185,6 +202,8 @@ export default {
 
     async savePersonal() {
       try {
+        this.syncRoleName()
+        if (!this.editingId && !this.form.password) throw new Error('La contraseña es obligatoria.')
         const payload = toPersonalPayload(this.form)
 
         if (this.editingId) {
@@ -203,8 +222,14 @@ export default {
         this.closeModal()
         this.loadPersonal()
       } catch (e) {
+        alert(e.message || 'No se pudo guardar el usuario.')
         console.error(e)
       }
+    },
+
+    syncRoleName() {
+      const role = this.roles.find(item => item.id === this.form.rolId)
+      this.form.rolNombre = role?.nombre || ''
     },
 
     async deletePersonal(id) {
@@ -285,6 +310,9 @@ h2 {
   flex-direction: column;
   gap: 4px;
 }
+
+.personal-filters { display: flex !important; flex-direction: row !important; align-items: flex-end; gap: 10px; }
+.personal-filters .v-input { min-width: 150px; }
 
 .table-header span {
   color: #64748b;
@@ -435,7 +463,8 @@ td {
   color: #334155;
 }
 
-.form-grid input {
+.form-grid input,
+.form-grid select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 10px 12px;

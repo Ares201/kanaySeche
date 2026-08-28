@@ -32,6 +32,10 @@
             outlined clearable placeholder="Todos" />
         </v-col>
         <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
+          <v-autocomplete v-model="tipoServicioFiltro" :items="tiposServicio" label="Tipo de servicio" dense
+            hide-details outlined clearable placeholder="Todos" />
+        </v-col>
+        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
           <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
             clearable />
         </v-col>
@@ -77,77 +81,67 @@
 
       <!-- VISTA TABLA -->
       <div v-if="viewMode === 'table'" class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th># PV</th>
-              <th>Estado PV</th>
-              <th>Fecha</th>
-              <th>Cliente</th>
-              <th>Acción Inmediata</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="exp in filteredExpedientes" :key="exp.id">
-              <td>{{ exp.correlativo || '—' }}</td>
-              <td>{{ exp.estadoPV || '—' }}</td>
-              <td>{{ formatDateOnly(exp.fecha) }}</td>
-              <td>
-                {{ exp.cliente?.nombre?.length > 20
-                  ? exp.cliente.nombre.slice(0, 20) + '...'
-                  : exp.cliente?.nombre || '—' }}
-              </td>
-              <td>{{ truncate(exp.accionInmediata, 20) }}</td>
-              <td>
-                <div class="actions">
-                  <!-- Retroceder -->
-                  <v-btn icon small class="status-icon-button status-icon-button--back"
-                    :title="canRegress(exp.estado) ? `Retroceder a ${getPreviousEstado(exp.estado)}` : 'No se puede retroceder'"
-                    :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
-                    <v-icon small>mdi-arrow-left</v-icon>
-                  </v-btn>
+        <v-data-table :headers="tableHeaders" :items="filteredExpedientes" :loading="loading" item-key="id"
+          loading-text="Cargando expedientes..." no-data-text="No se encontraron expedientes."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.correlativo`]="{ item }">
+            {{ item.correlativo || '—' }}
+          </template>
+          <template #[`item.estadoPV`]="{ item }">
+            {{ item.estadoPV || '—' }}
+          </template>
+          <template #[`item.fecha`]="{ item }">
+            {{ formatDateOnly(item.fecha) }}
+          </template>
+          <template #[`item.cliente.nombre`]="{ item }">
+            {{ item.cliente?.nombre?.length > 20
+              ? item.cliente.nombre.slice(0, 20) + '...'
+              : item.cliente?.nombre || '—' }}
+          </template>
+          <template #[`item.accionInmediata`]="{ item }">
+            {{ truncate(item.accionInmediata, 20) }}
+          </template>
+          <template #[`item.actions`]="{ item: exp }">
+            <div class="actions">
+              <!-- Retroceder -->
+              <v-btn icon small class="status-icon-button status-icon-button--back"
+                :title="canRegress(exp.estado) ? `Retroceder a ${getPreviousEstado(exp.estado)}` : 'No se puede retroceder'"
+                :disabled="!canRegress(exp.estado)" @click="regressExpedienteEstado(exp)">
+                <v-icon small>mdi-arrow-left</v-icon>
+              </v-btn>
 
-                  <!-- Avanzar / Emitir Carta -->
-                  <v-btn v-if="exp.estado === 'Regularizado'" icon small color="primary"
-                    class="status-icon-button status-icon-button--emitir" title="Emitir carta y cerrar expediente"
-                    @click="emitirCarta(exp)">
-                    <v-icon small>mdi-file-document-edit</v-icon>
-                  </v-btn>
-                  <v-btn v-else icon small class="status-icon-button"
-                    :class="`status-icon-button--${getEstadoClass(exp.estado)}`" :title="getAvanceTitle(exp.estado)"
-                    :disabled="exp.estado === 'Cerrado'" @click="advanceExpedienteEstado(exp)">
-                    <v-icon small>{{ getAvanceIcon(exp.estado) }}</v-icon>
-                  </v-btn>
+              <!-- Avanzar / Emitir Carta -->
+              <v-btn v-if="exp.estado === 'Regularizado'" icon small color="primary"
+                class="status-icon-button status-icon-button--emitir" title="Emitir carta y cerrar expediente"
+                @click="emitirCarta(exp)">
+                <v-icon small>mdi-file-document-edit</v-icon>
+              </v-btn>
+              <v-btn v-else icon small class="status-icon-button"
+                :class="`status-icon-button--${getEstadoClass(exp.estado)}`" :title="getAvanceTitle(exp.estado)"
+                :disabled="exp.estado === 'Cerrado'" @click="advanceExpedienteEstado(exp)">
+                <v-icon small>{{ getAvanceIcon(exp.estado) }}</v-icon>
+              </v-btn>
 
-                  <!-- Editar -->
-                  <button class="icon-button" type="button" title="Editar expediente" aria-label="Editar expediente"
-                    @click="openEditModal(exp)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
-                      <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" fill="currentColor" />
-                      <path d="M13.5 6.5l4 4" fill="currentColor" />
-                    </svg>
-                  </button>
+              <!-- Editar -->
+              <button class="icon-button" type="button" title="Editar expediente" aria-label="Editar expediente"
+                @click="openEditModal(exp)">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+                  <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" fill="currentColor" />
+                  <path d="M13.5 6.5l4 4" fill="currentColor" />
+                </svg>
+              </button>
 
-                  <!-- Eliminar -->
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar expediente"
-                    @click="deleteExpediente(exp.id)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
-                      <path d="M5 7h14M10 11v6M14 11v6M8 7l1 13h6l1-13M9 7V4h6v3" stroke="currentColor" fill="none"
-                        stroke-width="2" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="7">Cargando expedientes...</td>
-            </tr>
-            <tr v-else-if="filteredExpedientes.length === 0">
-              <td class="empty-state" colspan="7">No se encontraron expedientes.</td>
-            </tr>
-          </tbody>
-        </table>
+              <!-- Eliminar -->
+              <button class="icon-button icon-button--danger" type="button" title="Eliminar expediente"
+                @click="deleteExpediente(exp.id)">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+                  <path d="M5 7h14M10 11v6M14 11v6M8 7l1 13h6l1-13M9 7V4h6v3" stroke="currentColor" fill="none"
+                    stroke-width="2" />
+                </svg>
+              </button>
+            </div>
+          </template>
+        </v-data-table>
       </div>
 
       <!-- VISTA KANBAN -->
@@ -167,7 +161,7 @@
               <div v-for="exp in kanbanColumns[estado]" :key="exp.id" class="kanban-card" role="button" tabindex="0"
                 @click="openKanbanCard(exp)" @keydown.enter.prevent="openKanbanCard(exp)"
                 @keydown.space.prevent="openKanbanCard(exp)">
-                <p class="font-bold">{{ exp.correlativo }}</p>
+                <p class="font-bold">{{ exp.correlativo }} - <span>{{ formatDateOnly(exp.fecha) }}</span></p>
                 <p class="text-xs text-muted">
                   {{ exp.cliente?.nombre?.length > 16
                     ? exp.cliente.nombre.slice(0, 16) + '...'
@@ -316,10 +310,19 @@
               </label>
             </v-col>
 
-            <v-col cols="12">
+            <v-col cols="12" md="8">
               <label>
                 Observaciones
                 <textarea v-model.trim="form.observaciones" rows="3" placeholder="Detalle de la observación..." />
+              </label>
+            </v-col>
+
+            <v-col cols="12" md="4">
+              <label>
+                Tipo de servicio
+                <select v-model="form.tipoServicio" required>
+                  <option v-for="tipo in tiposServicio" :key="tipo" :value="tipo">{{ tipo }}</option>
+                </select>
               </label>
             </v-col>
 
@@ -392,7 +395,8 @@ import {
   normalizeExpediente,
   toExpedientePayload,
   ESTADOS_EXPEDIENTE,
-  ESTADOS_PV
+  ESTADOS_PV,
+  TIPOS_SERVICIO
 } from '~/models/expediente'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
 import { formatWeight, getNowDateTimeInput, getTodayDateInput } from '~/utils/formatters'
@@ -409,7 +413,8 @@ const EXCEL_COLUMNS = [
   'Acción Inmediata',
   'Planner',
   'Estado',
-  'Estado PV'
+  'Estado PV',
+  'Tipo de Servicio'
 ]
 
 export default {
@@ -418,9 +423,20 @@ export default {
   data() {
     return {
       estadoPVFiltro: null,
+      tipoServicioFiltro: null,
       viewMode: 'kanban',
       estados: ESTADOS_EXPEDIENTE,
       estadosPV: ESTADOS_PV,
+      tiposServicio: TIPOS_SERVICIO,
+      tableHeaders: [
+        { text: '# PV', value: 'correlativo' },
+        { text: 'Estado PV', value: 'estadoPV' },
+        { text: 'Tipo de servicio', value: 'tipoServicio' },
+        { text: 'Fecha', value: 'fecha' },
+        { text: 'Cliente', value: 'cliente.nombre' },
+        { text: 'Acción Inmediata', value: 'accionInmediata' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       search: '',
       fechaFiltro: null,
       estadoFiltro: null,
@@ -462,6 +478,7 @@ export default {
       const fechaFiltro = this.fechaFiltro
       const estadoFiltro = this.estadoFiltro
       const estadoPVFiltro = this.estadoPVFiltro // <--- NUEVO
+      const tipoServicioFiltro = this.tipoServicioFiltro
 
       return this.expedientes.filter(exp => {
         const matchesSearch =
@@ -478,8 +495,9 @@ export default {
 
         // NUEVO: Filtrar por estado PV
         const matchesEstadoPV = !estadoPVFiltro || exp.estadoPV === estadoPVFiltro
+        const matchesTipoServicio = !tipoServicioFiltro || exp.tipoServicio === tipoServicioFiltro
 
-        return matchesSearch && matchesDate && matchesEstado && matchesEstadoPV
+        return matchesSearch && matchesDate && matchesEstado && matchesEstadoPV && matchesTipoServicio
       })
     },
 
@@ -647,7 +665,7 @@ export default {
     },
 
     canRegress(estado) {
-      return estado !== 'Pendiente' && estado !== 'Cerrado'
+      return Boolean(this.getPreviousEstado(estado))
     },
 
     getAvanceTitle(estado) {
@@ -936,7 +954,8 @@ export default {
         { label: 'Acción Inmediata', value: e => e.accionInmediata || '' },
         { label: 'Planner', value: e => e.planner || '' },
         { label: 'Estado', value: e => e.estado || '' },
-        { label: 'Estado PV', value: e => e.estadoPV || '' }
+        { label: 'Estado PV', value: e => e.estadoPV || '' },
+        { label: 'Tipo de Servicio', value: e => e.tipoServicio || 'Recurrente' }
       ]
     },
 
@@ -997,7 +1016,10 @@ export default {
             accionInmediata: row['Acción Inmediata'] || '',
             planner: row.Planner || '',
             estado: ESTADOS_EXPEDIENTE.includes(row.Estado) ? row.Estado : 'Pendiente',
-            estadoPV: ESTADOS_PV.includes(row['Estado PV']) ? row['Estado PV'] : 'Abierto'
+            estadoPV: ESTADOS_PV.includes(row['Estado PV']) ? row['Estado PV'] : 'Abierto',
+            tipoServicio: TIPOS_SERVICIO.includes(row['Tipo de Servicio'])
+              ? row['Tipo de Servicio']
+              : 'Recurrente'
           }
           const payload = toExpedientePayload(newExp)
           await this.$firebaseApi.create('expedientes', payload)
@@ -1028,17 +1050,7 @@ export default {
       this.openEditModal(exp)
     },
 
-    onDragMove(evt) {
-      const exp = evt.draggedContext.element
-      const destinoEstado = evt.relatedContext.listName
-      if (exp.estado === 'Cerrado' && destinoEstado !== 'Cerrado') {
-        alert('No se puede mover un expediente Cerrado.')
-        return false
-      }
-      if (destinoEstado === 'Cerrado' && exp.estado !== 'Regularizado') {
-        alert('Solo se puede cerrar un expediente que está Regularizado.')
-        return false
-      }
+    onDragMove() {
       return true
     },
 

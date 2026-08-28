@@ -56,31 +56,15 @@
       </div>
 
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Placa</th>
-              <th>Cliente</th>
-              <th>RUC</th>
-              <th>Marca</th>
-              <th>Modelo</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="vehiculo in filteredVehiculos" :key="vehiculo.id">
-              <td>{{ vehiculo.placa }}</td>
-              <td>{{ vehiculo.cliente.nombre }}</td>
-              <td>{{ vehiculo.cliente.ruc }}</td>
-              <td>{{ vehiculo.marca }}</td>
-              <td>{{ vehiculo.modelo }}</td>
-              <td>
+        <v-data-table :headers="tableHeaders" :items="filteredVehiculos" :loading="loading" item-key="id"
+          loading-text="Cargando vehículos..." no-data-text="No se encontraron vehículos."
+          :footer-props="{ itemsPerPageText: 'Filas por página' }">
+          <template #[`item.estado`]="{ item: vehiculo }">
                 <span class="status" :class="{ 'status--inactive': !vehiculo.estado }">
                   {{ vehiculo.estado ? 'Activo' : 'Inactivo' }}
                 </span>
-              </td>
-              <td>
+          </template>
+          <template #[`item.actions`]="{ item: vehiculo }">
                 <div class="actions">
                   <button class="icon-button" type="button" title="Editar" aria-label="Editar vehiculo" @click="openEditModal(vehiculo)">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -98,20 +82,8 @@
                     </svg>
                   </button>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="loading">
-              <td class="empty-state" colspan="7">
-                Cargando vehiculos...
-              </td>
-            </tr>
-            <tr v-else-if="filteredVehiculos.length === 0">
-              <td class="empty-state" colspan="7">
-                No se encontraron vehiculos.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          </template>
+        </v-data-table>
       </div>
     </div>
 
@@ -238,6 +210,15 @@ export default {
     return {
       search: '',
       loading: false,
+      tableHeaders: [
+        { text: 'Placa', value: 'placa' },
+        { text: 'Cliente', value: 'cliente.nombre' },
+        { text: 'RUC', value: 'cliente.ruc' },
+        { text: 'Marca', value: 'marca' },
+        { text: 'Modelo', value: 'modelo' },
+        { text: 'Estado', value: 'estado' },
+        { text: 'Acciones', value: 'actions', sortable: false }
+      ],
       clientesLoading: false,
       isModalOpen: false,
       editingId: null,

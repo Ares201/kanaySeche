@@ -2,6 +2,7 @@
 
 const ESTADOS_EXPEDIENTE = ['Pendiente', 'Notificado', 'Regularizado', 'Cerrado']
 const ESTADOS_PV = ['Abierto', 'Cerrado']
+const TIPOS_SERVICIO = ['Notarial', 'Recurrente']
 
 export function createEmptyExpedienteForm() {
   return {
@@ -21,7 +22,8 @@ export function createEmptyExpedienteForm() {
     accionInmediata: '',
     planner: '',
     estado: 'Pendiente',
-    estadoPV: 'Abierto'                // ← nuevo campo, por defecto Abierto
+    estadoPV: 'Abierto',               // ← nuevo campo, por defecto Abierto
+    tipoServicio: 'Recurrente'
   }
 }
 
@@ -46,6 +48,7 @@ export function normalizeExpediente(data) {
     planner: data.planner || '',
     estado: ESTADOS_EXPEDIENTE.includes(data.estado) ? data.estado : 'Pendiente',
     estadoPV: ESTADOS_PV.includes(data.estadoPV) ? data.estadoPV : 'Abierto',
+    tipoServicio: TIPOS_SERVICIO.includes(data.tipoServicio) ? data.tipoServicio : 'Recurrente',
     fechaCreacion: normalizeDate(data.fechaCreacion),
     cartaId: data.cartaId || null
   }
@@ -72,7 +75,8 @@ export function toExpedientePayload(formulario) {
     accionInmediata: formulario.accionInmediata || '',
     planner: formulario.planner || '',
     estado: ESTADOS_EXPEDIENTE.includes(formulario.estado) ? formulario.estado : 'Pendiente',
-    estadoPV: ESTADOS_PV.includes(formulario.estadoPV) ? formulario.estadoPV : 'Abierto'
+    estadoPV: ESTADOS_PV.includes(formulario.estadoPV) ? formulario.estadoPV : 'Abierto',
+    tipoServicio: TIPOS_SERVICIO.includes(formulario.tipoServicio) ? formulario.tipoServicio : 'Recurrente'
   }
   if (formulario.cartaId) payload.cartaId = formulario.cartaId
   return payload
@@ -91,4 +95,4 @@ function normalizeDate(value) {
   return new Date(value)
 }
 
-export { ESTADOS_EXPEDIENTE, ESTADOS_PV }
+export { ESTADOS_EXPEDIENTE, ESTADOS_PV, TIPOS_SERVICIO }

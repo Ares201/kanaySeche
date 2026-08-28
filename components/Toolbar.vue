@@ -13,7 +13,7 @@
         </div>
       </NuxtLink>
       <div class="user-area">
-        <span class="company-name d-none d-sm-inline">Kanay - Seche</span>
+        <span class="company-name d-none d-sm-inline">{{ currentUserName }} · {{ currentRole }}</span>
         <v-menu v-model="userMenuOpen" bottom left offset-y origin="top right" transition="scale-transition">
           <template v-slot:activator="{ on, attrs }">
             <div class="avatar-container ripple" v-bind="attrs" v-on="on" role="button" aria-label="Menú de usuario">
@@ -113,7 +113,7 @@
         <!-- ... (resto de tus enlaces de navegación sin cambios) ... -->
 
         <!-- INICIO -->
-        <NuxtLink class="nav-link" to="/" @click.native="closeMenu">
+        <NuxtLink v-if="can('/')" class="nav-link" to="/" @click.native="closeMenu">
           <span>Inicio</span>
           <svg viewBox="0 0 24 24" aria-hidden="true" class="nav-icon">
             <path d="M3 10.5L12 3l9 7.5" />
@@ -123,58 +123,64 @@
         </NuxtLink>
 
         <!-- PLANIFICACION -->
-        <button class="module-button module-button--spaced" type="button" @click="togglePlanificacion">
+        <button v-if="hasAccess(['/planificacion/agendamientos'])" class="module-button module-button--spaced" type="button" @click="togglePlanificacion">
           <span>Planificacion</span>
           <span class="chevron" :class="{ 'chevron--open': planificacionOpen }">›</span>
         </button>
-        <div v-show="planificacionOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/planificacion/agendamientos" @click.native="closeMenu">Agendamientos
+        <div v-if="hasAccess(['/planificacion/agendamientos'])" v-show="planificacionOpen" class="submenu">
+          <NuxtLink v-if="can('/planificacion/agendamientos')" class="nav-link" to="/planificacion/agendamientos" @click.native="closeMenu">Agendamientos
           </NuxtLink>
         </div>
 
         <!-- OPERACIONES -->
-        <button class="module-button" type="button" @click="toggleOperaciones">
+        <button v-if="hasAccess(operacionesRoutes)" class="module-button" type="button" @click="toggleOperaciones">
           <span>Operaciones</span>
           <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
         </button>
-        <div v-show="operacionesOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/operaciones/graficos" @click.native="closeMenu">
+        <div v-if="hasAccess(operacionesRoutes)" v-show="operacionesOpen" class="submenu">
+          <NuxtLink v-if="can('/operaciones/graficos')" class="nav-link" to="/operaciones/graficos" @click.native="closeMenu">
             <i class="fas fa-chart-bar"></i>
             Gráficos
           </NuxtLink>
-          <NuxtLink class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">Pedido de venta
+          <NuxtLink v-if="can('/operaciones/pedidos-venta')" class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">Pedido de venta
           </NuxtLink>
-          <NuxtLink class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">Recepcion de
+          <NuxtLink v-if="can('/operaciones/recepcion-cisterna')" class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">Recepcion de
             cisternas
           </NuxtLink>
         </div>
 
         <!-- DOCUMENTOS -->
-        <button class="module-button" type="button" @click="toggleDocumentos">
+        <button v-if="hasAccess(documentosRoutes)" class="module-button" type="button" @click="toggleDocumentos">
           <span>Documentos</span>
           <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
         </button>
-        <div v-show="documentosOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/documentos/graficos" @click.native="closeMenu">
+        <div v-if="hasAccess(documentosRoutes)" v-show="documentosOpen" class="submenu">
+          <NuxtLink v-if="can('/documentos/graficos')" class="nav-link" to="/documentos/graficos" @click.native="closeMenu">
             <i class="fas fa-chart-pie"></i>
             Gráficos
           </NuxtLink>
-          <NuxtLink class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">Expedientes</NuxtLink>
-          <NuxtLink class="nav-link" to="/documentos/cartas" @click.native="closeMenu">Cartas</NuxtLink>
-          <NuxtLink class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
+          <NuxtLink v-if="can('/documentos/expedientes')" class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">Expedientes</NuxtLink>
+          <NuxtLink v-if="can('/documentos/cartas')" class="nav-link" to="/documentos/cartas" @click.native="closeMenu">Cartas</NuxtLink>
+          <NuxtLink v-if="can('/documentos/firmar-pdf')" class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
+          <NuxtLink v-if="can('/documentos/boletas')" class="nav-link" to="/documentos/boletas" @click.native="closeMenu">Boletas</NuxtLink>
+          <NuxtLink v-if="can('/documentos/validaciones')" class="nav-link" to="/documentos/validaciones" @click.native="closeMenu">Validaciones</NuxtLink>
+          <NuxtLink v-if="can('/documentos/renombraPv')" class="nav-link" to="/documentos/renombraPv" @click.native="closeMenu">Renombrar PV</NuxtLink>
         </div>
 
         <!-- CONFIGURACION -->
-        <button class="module-button" type="button" @click="toggleConfiguracion">
+        <button v-if="hasAccess(configuracionRoutes)" class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>
         </button>
-        <div v-show="configuracionOpen" class="submenu">
-          <NuxtLink class="nav-link" to="/configuracion/envases" @click.native="closeMenu">Envases</NuxtLink>
-          <NuxtLink class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">Residuos</NuxtLink>
-          <NuxtLink class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">Clientes</NuxtLink>
-          <NuxtLink class="nav-link" to="/configuracion/personal" @click.native="closeMenu">Personal</NuxtLink>
-          <NuxtLink class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">Vehiculos</NuxtLink>
+        <div v-if="hasAccess(configuracionRoutes)" v-show="configuracionOpen" class="submenu">
+          <NuxtLink v-if="can('/configuracion/envases')" class="nav-link" to="/configuracion/envases" @click.native="closeMenu">Envases</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/residuos')" class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">Residuos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/clientes')" class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">Clientes</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/productos')" class="nav-link" to="/configuracion/productos" @click.native="closeMenu">Productos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/generador')" class="nav-link" to="/configuracion/generador" @click.native="closeMenu">Generadores</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/personal')" class="nav-link" to="/configuracion/personal" @click.native="closeMenu">Personal</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/roles')" class="nav-link" to="/configuracion/roles" @click.native="closeMenu">Roles y permisos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/vehiculos')" class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">Vehiculos</NuxtLink>
         </div>
       </nav>
     </aside>
@@ -203,7 +209,12 @@ export default {
     isDarkMode() {
       // Nota: Depende de Vuetify configurado.
       return this.$vuetify?.theme?.dark || false
-    }
+    },
+    currentUserName() { return this.$auth?.user?.nombres || 'Kanay - Seche' },
+    currentRole() { return this.$auth?.user?.rolNombre || '' },
+    operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
+    documentosRoutes() { return ['/documentos/graficos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones', '/documentos/renombraPv'] },
+    configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos'] }
   },
 
   mounted() {
@@ -240,10 +251,12 @@ export default {
     },
 
     logout() {
-      console.log('Cerrando sesión...')
-      // Implementa tu lógica de cierre de sesión aquí
-      this.userMenuOpen = false;
+      this.userMenuOpen = false
+      this.$auth.logout()
     },
+
+    can(route) { return this.$auth?.can(route) || false },
+    hasAccess(routes) { return routes.some(route => this.can(route)) },
 
     // Toggles módulos
     togglePlanificacion() { this.planificacionOpen = !this.planificacionOpen },
