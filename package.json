@@ -9,6 +9,7 @@
     "generate": "nuxt generate"
   },
   "dependencies": {
+    "@google-cloud/bigquery": "^9.0.3",
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/vuetify": "^1.12.3",
     "chart.js": "^4.5.1",

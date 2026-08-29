@@ -7,6 +7,7 @@ export const SYSTEM_PAGES = [
   { nombre: 'Pedidos de venta', ruta: '/operaciones/pedidos-venta', modulo: 'Operaciones' },
   { nombre: 'Recepción de cisternas', ruta: '/operaciones/recepcion-cisterna', modulo: 'Operaciones' },
   { nombre: 'Gráficos documentarios', ruta: '/documentos/graficos', modulo: 'Documentos' },
+  { nombre: 'Graficos de control y aceptacion', ruta: '/control-aceptacion/graficos', modulo: 'Control y Aceptacion' },
   { nombre: 'Expedientes', ruta: '/documentos/expedientes', modulo: 'Documentos' },
   { nombre: 'Cartas', ruta: '/documentos/cartas', modulo: 'Documentos' },
   { nombre: 'Firmar PDF', ruta: '/documentos/firmar-pdf', modulo: 'Documentos' },

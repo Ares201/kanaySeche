@@ -50,19 +50,20 @@ export default {
 
   axios: {
     baseURL: process.env.API_URL || 'https://renombrador-pv-api.onrender.com',
-    // Opcional: timeout
-    timeout: 60000 // 60 segundos para procesar archivos grandes
+    timeout: 60000
   },
 
+  // Middleware del servidor (APIs internas de Nuxt)
   serverMiddleware: [
-    { path: '/api/pdf/sign', handler: '~/server/api/pdf/sign.js' }
+    { path: '/api/pdf/sign', handler: '~/server/api/pdf/sign.js' },
+    { path: '/api/bigquery/movimientos', handler: '~/services/bigQuery/movimientos.js' }
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
     transpile: [
       'chart.js',
-      'vue-chartjs' // si lo estás usando
+      'vue-chartjs'
     ]
   }
 }

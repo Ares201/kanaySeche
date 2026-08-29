@@ -149,6 +149,15 @@
           </NuxtLink>
         </div>
 
+        <!-- CONTROL Y ACEPTACION -->
+        <button v-if="hasAccess(controlAceptacionRoutes)" class="module-button" type="button" @click="toggleControlAceptacion">
+          <span>Control y Aceptación</span>
+          <span class="chevron" :class="{ 'chevron--open': controlAceptacionOpen }">›</span>
+        </button>
+        <div v-if="hasAccess(controlAceptacionRoutes)" v-show="controlAceptacionOpen" class="submenu">
+          <NuxtLink v-if="can('/control-aceptacion/graficos')" class="nav-link" to="/control-aceptacion/graficos" @click.native="closeMenu">Gráficos</NuxtLink>
+        </div>
+
         <!-- DOCUMENTOS -->
         <button v-if="hasAccess(documentosRoutes)" class="module-button" type="button" @click="toggleDocumentos">
           <span>Documentos</span>
@@ -200,6 +209,7 @@ export default {
       // Modulos Open
       planificacionOpen: true,
       operacionesOpen: true,
+      controlAceptacionOpen: true,
       configuracionOpen: false,
       documentosOpen: true
     }
@@ -213,6 +223,7 @@ export default {
     currentUserName() { return this.$auth?.user?.nombres || 'Kanay - Seche' },
     currentRole() { return this.$auth?.user?.rolNombre || '' },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
+    controlAceptacionRoutes() { return ['/control-aceptacion/graficos'] },
     documentosRoutes() { return ['/documentos/graficos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones', '/documentos/renombraPv'] },
     configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos'] }
   },
@@ -261,6 +272,7 @@ export default {
     // Toggles módulos
     togglePlanificacion() { this.planificacionOpen = !this.planificacionOpen },
     toggleOperaciones() { this.operacionesOpen = !this.operacionesOpen },
+    toggleControlAceptacion() { this.controlAceptacionOpen = !this.controlAceptacionOpen },
     toggleConfiguracion() { this.configuracionOpen = !this.configuracionOpen },
     toggleDocumentos() { this.documentosOpen = !this.documentosOpen }
   }
