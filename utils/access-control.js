@@ -13,7 +13,6 @@ export const SYSTEM_PAGES = [
   { nombre: 'Firmar PDF', ruta: '/documentos/firmar-pdf', modulo: 'Documentos' },
   { nombre: 'Boletas', ruta: '/documentos/boletas', modulo: 'Documentos' },
   { nombre: 'Validaciones', ruta: '/documentos/validaciones', modulo: 'Documentos' },
-  { nombre: 'Renombrar PV', ruta: '/documentos/renombraPv', modulo: 'Documentos' },
   { nombre: 'Envases', ruta: '/configuracion/envases', modulo: 'Configuración' },
   { nombre: 'Residuos', ruta: '/configuracion/residuos', modulo: 'Configuración' },
   { nombre: 'Clientes', ruta: '/configuracion/clientes', modulo: 'Configuración' },

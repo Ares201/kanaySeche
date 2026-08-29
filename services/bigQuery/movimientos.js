@@ -1,12 +1,52 @@
 import { BigQuery } from '@google-cloud/bigquery'
+import fs from 'fs'
 import path from 'path'
 
 const TABLE = '`light-height-446600-i4.lab_historico.control_cisternas`'
-const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || './configGoogle/credentialsPath.json'
-const bigquery = new BigQuery({ 
-  projectId: process.env.GCP_PROJECT_ID || 'light-height-446600-i4', 
-  keyFilename: path.resolve(process.cwd(), credentialsPath) 
-})
+
+const projectId = process.env.GCP_PROJECT_ID || 'light-height-446600-i4'
+
+function crearClienteBigQuery() {
+  try {
+    // Recomendado para despliegues: el JSON completo en una variable secreta.
+    if (process.env.GCP_CREDENTIALS) {
+      const credentials = JSON.parse(process.env.GCP_CREDENTIALS)
+      if (credentials.private_key) credentials.private_key = credentials.private_key.replace(/\\n/g, '\n')
+      return new BigQuery({ projectId, credentials })
+    }
+
+    if (process.env.GCP_CLIENT_EMAIL && process.env.GCP_PRIVATE_KEY) {
+      return new BigQuery({
+        projectId,
+        credentials: {
+          client_email: process.env.GCP_CLIENT_EMAIL,
+          private_key: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, '\n')
+        }
+      })
+    }
+
+    // Google Cloud y GOOGLE_APPLICATION_CREDENTIALS usan ADC automáticamente.
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_CLOUD_PROJECT) {
+      return new BigQuery({ projectId })
+    }
+
+    // Respaldo exclusivo para desarrollo; nunca debe estar dentro de static/.
+    const localCredentialsPath = path.resolve(process.cwd(), 'configGoogle', 'credentialsPath.json')
+    if (fs.existsSync(localCredentialsPath)) {
+      return new BigQuery({ projectId, keyFilename: localCredentialsPath })
+    }
+
+    throw new Error(
+      'Credenciales de BigQuery no configuradas. Define GCP_CREDENTIALS, ' +
+      'GCP_CLIENT_EMAIL/GCP_PRIVATE_KEY o GOOGLE_APPLICATION_CREDENTIALS.'
+    )
+  } catch (error) {
+    console.error('❌ Error configurando BigQuery:', error.message)
+    throw error
+  }
+}
+
+const bigquery = crearClienteBigQuery()
 
 const FIELDS = {
   fecha_ingreso: '`Fecha de Ingreso de Cisterna`',
@@ -50,9 +90,15 @@ async function consultar(query, params) {
   const key = JSON.stringify([query, params])
   const cached = cache.get(key)
   if (cached && Date.now() - cached.createdAt < CACHE_TTL) return cached.data
-  const [rows] = await bigquery.query({ query, params })
-  cache.set(key, { createdAt: Date.now(), data: rows })
-  return rows
+
+  try {
+    const [rows] = await bigquery.query({ query, params })
+    cache.set(key, { createdAt: Date.now(), data: rows })
+    return rows
+  } catch (error) {
+    console.error('❌ Error en consulta BigQuery:', error)
+    throw error
+  }
 }
 
 export async function buscarOpciones(field, filters = {}, search = '', limit = 30) {
@@ -83,8 +129,8 @@ export async function obtenerEstadisticas(filters = {}) {
   const fecha = FIELDS.fecha_ingreso
 
   const clauses = [
-    ...where.clauses, 
-    `${ubicacion} IS NOT NULL`, 
+    ...where.clauses,
+    `${ubicacion} IS NOT NULL`,
     `TRIM(CAST(${ubicacion} AS STRING)) != ''`,
     `${fecha} IS NOT NULL`
   ]
@@ -134,27 +180,44 @@ export async function obtenerRegistros(filters = {}, limit = 200) {
 }
 
 export default async function (req, res) {
+  // Configurar Encabezados CORS
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
+
+  // Responder de inmediato a las peticiones de verificación previa del navegador (Preflight OPTIONS)
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 200
+    return res.end()
+  }
+
   if (req.method !== 'GET') {
     res.statusCode = 405
     return res.end(JSON.stringify({ success: false, error: 'Método no permitido' }))
   }
+
   try {
     const url = new URL(req.url, 'http://localhost')
     const query = Object.fromEntries(url.searchParams.entries())
     const filters = filtrosDesdeQuery(query)
     let data
-    if (query.action === 'opciones') data = await buscarOpciones(query.field, filters, query.search || '', query.limit)
-    else if (query.action === 'registros') data = await obtenerRegistros(filters, query.limit)
-    else if (!query.action || query.action === 'estadisticas') data = await obtenerEstadisticas(filters)
-    else {
+
+    if (query.action === 'opciones') {
+      data = await buscarOpciones(query.field, filters, query.search || '', query.limit)
+    } else if (query.action === 'registros') {
+      data = await obtenerRegistros(filters, query.limit)
+    } else if (!query.action || query.action === 'estadisticas') {
+      data = await obtenerEstadisticas(filters)
+    } else {
       res.statusCode = 400
       return res.end(JSON.stringify({ success: false, error: 'Acción no válida' }))
     }
+
     res.statusCode = 200
     return res.end(JSON.stringify({ success: true, data }))
   } catch (error) {
-    console.error('Error al consultar BigQuery:', error)
+    console.error('❌ Error al consultar BigQuery:', error)
     res.statusCode = 500
     return res.end(JSON.stringify({ success: false, error: error.message }))
   }

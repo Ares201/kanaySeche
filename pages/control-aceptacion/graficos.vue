@@ -169,7 +169,7 @@ export default {
       return params
     },
     async solicitar(params) {
-      // Usamos $axios.$get para apuntar directamente a tu API en Render
+      // Consulta el middleware de BigQuery en el mismo dominio de la aplicación.
       const response = await this.$axios.$get(`/api/bigquery/movimientos?${params.toString()}`)
 
       // Axios parsea automáticamente el JSON y extrae la propiedad data/success

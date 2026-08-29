@@ -173,7 +173,6 @@
           <NuxtLink v-if="can('/documentos/firmar-pdf')" class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
           <NuxtLink v-if="can('/documentos/boletas')" class="nav-link" to="/documentos/boletas" @click.native="closeMenu">Boletas</NuxtLink>
           <NuxtLink v-if="can('/documentos/validaciones')" class="nav-link" to="/documentos/validaciones" @click.native="closeMenu">Validaciones</NuxtLink>
-          <NuxtLink v-if="can('/documentos/renombraPv')" class="nav-link" to="/documentos/renombraPv" @click.native="closeMenu">Renombrar PV</NuxtLink>
         </div>
 
         <!-- CONFIGURACION -->
@@ -224,7 +223,7 @@ export default {
     currentRole() { return this.$auth?.user?.rolNombre || '' },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
     controlAceptacionRoutes() { return ['/control-aceptacion/graficos'] },
-    documentosRoutes() { return ['/documentos/graficos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones', '/documentos/renombraPv'] },
+    documentosRoutes() { return ['/documentos/graficos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones'] },
     configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos'] }
   },
 

@@ -48,11 +48,6 @@ export default {
     '@nuxtjs/axios'
   ],
 
-  axios: {
-    baseURL: process.env.API_URL || 'https://renombrador-pv-api.onrender.com',
-    timeout: 60000
-  },
-
   // Middleware del servidor (APIs internas de Nuxt)
   serverMiddleware: [
     { path: '/api/pdf/sign', handler: '~/server/api/pdf/sign.js' },
@@ -65,5 +60,11 @@ export default {
       'chart.js',
       'vue-chartjs'
     ]
+  },
+
+  // Variables de entorno disponibles en el lado del servidor
+  env: {
+    GCP_PROJECT_ID: process.env.GCP_PROJECT_ID,
+    BIGQUERY_TABLE: process.env.BIGQUERY_TABLE
   }
 }
