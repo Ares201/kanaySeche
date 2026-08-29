@@ -1,4 +1,12 @@
 export default {
+  target: 'static', // Aprovecha para corregir la advertencia inicial del log
+  generate: {
+    exclude: [
+      /^\/planificacion\/components\/.*/, // Excluye todo lo que esté dentro de una carpeta components en planificacion
+      /^\/planificacion\/Calendar.*/,
+      /^\/planificacion\/AgendamientoModal/
+    ]
+  },
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: 'kanaySeche',
