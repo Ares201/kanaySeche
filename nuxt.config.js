@@ -1,3 +1,9 @@
+const apiBaseURL = process.env.API_URL || (
+  process.env.NODE_ENV === 'production'
+    ? 'https://api-query-lab.vercel.app'
+    : '/'
+)
+
 export default {
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
@@ -48,10 +54,16 @@ export default {
     '@nuxtjs/axios'
   ],
 
+  axios: {
+    // Desarrollo usa el middleware local; producción consume la API desplegada en Vercel.
+    browserBaseURL: apiBaseURL,
+    timeout: 60000
+  },
+
   // Middleware del servidor (APIs internas de Nuxt)
   serverMiddleware: [
     { path: '/api/pdf/sign', handler: '~/server/api/pdf/sign.js' },
-    { path: '/api/bigquery/movimientos', handler: '~/services/bigQuery/movimientos.js' }
+    { path: '/api/reporteLab', handler: '~/services/bigQuery/movimientos.js' }
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
