@@ -169,10 +169,14 @@ export default {
       return params
     },
     async solicitar(params) {
-      const response = await fetch(`/api/bigquery/movimientos?${params.toString()}`)
-      const body = await response.json()
-      if (!response.ok || !body.success) throw new Error(body.error || `Error HTTP ${response.status}`)
-      return body.data
+      // Usamos $axios.$get para apuntar directamente a tu API en Render
+      const response = await this.$axios.$get(`/api/bigquery/movimientos?${params.toString()}`)
+
+      // Axios parsea automáticamente el JSON y extrae la propiedad data/success
+      if (!response || !response.success) {
+        throw new Error(response?.error || 'Error al obtener datos desde la API')
+      }
+      return response.data
     },
     async cargarOpciones(field, search = '') {
       this.$set(this.optionLoading, field, true)
