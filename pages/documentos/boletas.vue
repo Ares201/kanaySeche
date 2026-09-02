@@ -1,353 +1,148 @@
 <template>
-  <v-container fluid>
-    <v-card class="no-print mb-5" elevation="2">
-      <v-toolbar flat color="primary" dark>
-        <v-toolbar-title>
-          Generador de Boletas
-        </v-toolbar-title>
-      </v-toolbar>
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" md="4">
-            <v-menu v-model="menuInicio" :close-on-content-click="false" transition="scale-transition" offset-y>
-              <template v-slot:activator="{ on, attrs }">
-                <v-text-field v-model="fechaInicioFormateada" label="Fecha Inicio" prepend-icon="mdi-calendar" readonly
-                  outlined dense v-bind="attrs" v-on="on" />
-              </template>
-              <v-date-picker v-model="fechaInicio" locale="es" @input="menuInicio = false" />
-            </v-menu>
+  <div class="contenedor">
+    <h2>Procesador de Boletas PDF</h2>
 
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-menu v-model="menuFin" :close-on-content-click="false" transition="scale-transition" offset-y>
-              <template v-slot:activator="{ on, attrs }">
-                <v-text-field v-model="fechaFinFormateada" label="Fecha Final" prepend-icon="mdi-calendar" readonly
-                  outlined dense v-bind="attrs" v-on="on" />
-              </template>
-              <v-date-picker v-model="fechaFin" locale="es" @input="menuFin = false" />
-            </v-menu>
-          </v-col>
-          <v-col cols="12" md="4" class="d-flex align-center">
-            <v-btn color="primary" class="mr-2" large @click="generarBoletas">
-              <v-icon left>
-                mdi-eye
-              </v-icon>
-              Vista previa
-            </v-btn>
-            <v-btn color="success" large :disabled="boletas.length === 0" @click="imprimir">
-              <v-icon left>
-                mdi-printer
-              </v-icon>
-              Imprimir
-            </v-btn>
-          </v-col>
-        </v-row>
-        <v-alert class="mt-4" type="info" dense outlined>
-          Se imprimirán
-          <strong>{{ boletas.length }}</strong>
-          boletas.
-        </v-alert>
-      </v-card-text>
-    </v-card>
-    <div v-for="(boleta, index) in boletas" :key="index" class="print-page">
-      <div class="boleta">
-        <div class="titulo">
-          INSTITUTO NACIONAL DE SALUD DEL NIÑO
-        </div>
-        <div class="items">
-          <div class="item">
-            <span class="label">
-              Bolsa Rojas
-            </span>
-          </div>
-          <div class="item">
-            <span class="label">
-              Cajas con Agujas
-            </span>
-          </div>
-          <div class="item">
-            <span class="label">
-              Nutrición
-            </span>
-          </div>
-          <div class="item">
-            <span class="label">
-              Bolsa Amarillas
-            </span>
-          </div>
-          <div class="item">
-            <span class="label">
-              Líquido Laboratorio
-            </span>
-          </div>
-        </div>
-        <div class="fecha">
-          {{ boleta.fecha }}
-        </div>
-      </div>
+    <div class="card">
+      <input 
+        type="file" 
+        ref="fileInput"
+        accept=".pdf" 
+        @change="seleccionarArchivo" 
+      />
+
+      <button 
+        :disabled="!archivoSeleccionado || cargando" 
+        @click="procesarBoletas"
+      >
+        {{ cargando ? 'Procesando...' : 'Procesar y Descargar ZIP' }}
+      </button>
+
+      <p v-if="mensajeError" class="error">{{ mensajeError }}</p>
+      <p v-if="mensajeExito" class="exito">{{ mensajeExito }}</p>
     </div>
-  </v-container>
+  </div>
 </template>
+
 <script>
-import {
-  formatDateOnly,
-  getTodayDateInput,
-  parseDate
-} from '~/utils/formatters'
+import firebase from 'firebase/app'
+import 'firebase/firestore'
 
 export default {
-  name: 'Boletas',
-
+  name: 'ProcesadorBoletasPage',
   data() {
     return {
-      menuInicio: false,
-      menuFin: false,
-
-      fechaInicio: getTodayDateInput(),
-      fechaFin: getTodayDateInput(),
-
-      boletas: []
+      archivoSeleccionado: null,
+      cargando: false,
+      mensajeError: '',
+      mensajeExito: ''
     }
   },
-
-  computed: {
-
-    fechaInicioFormateada() {
-      return formatDateOnly(this.fechaInicio)
-    },
-
-    fechaFinFormateada() {
-      return formatDateOnly(this.fechaFin)
-    }
-
-  },
-
-  mounted() {
-    this.generarBoletas()
-  },
-
   methods: {
-
-    generarBoletas() {
-
-      this.boletas = []
-
-      const inicio = parseDate(this.fechaInicio)
-      const fin = parseDate(this.fechaFin)
-
-      if (!inicio || !fin) return
-
-      if (inicio > fin) {
-        this.$swal({
-          icon: 'warning',
-          title: 'Fechas inválidas',
-          text: 'La fecha inicial no puede ser mayor a la fecha final.'
+    async registrarBoletasProcesadas() {
+      try {
+        await this.$db.collection('procesarBoletas').add({
+          contador: 1,
+          fecha: firebase.firestore.FieldValue.serverTimestamp()
         })
-        return
+      } catch (error) {
+        // La estadistica no debe impedir que el usuario reciba su archivo.
+        console.error('Error al registrar el procesamiento de boletas:', error)
       }
-
-      const actual = new Date(inicio)
-
-      while (actual <= fin) {
-
-        this.boletas.push({
-
-          fecha: formatDateOnly(actual)
-
-        })
-
-        actual.setDate(actual.getDate() + 1)
-
-      }
-
     },
+    seleccionarArchivo(event) {
+      const files = event.target.files
+      if (files.length > 0) {
+        this.archivoSeleccionado = files[0]
+        this.mensajeError = ''
+        this.mensajeExito = ''
+      }
+    },
+    async procesarBoletas() {
+      if (!this.archivoSeleccionado) return
 
-    imprimir() {
+      this.cargando = true
+      this.mensajeError = ''
+      this.mensajeExito = ''
 
-      if (!this.boletas.length) {
+      const formData = new FormData()
+      formData.append('file', this.archivoSeleccionado)
 
-        this.$swal({
-          icon: 'warning',
-          title: 'No existen boletas para imprimir.'
+      try {
+        // Reemplaza con tu URL de Vercel
+        const urlAPI = 'https://api-query-control-pesaje.vercel.app/api/procesar-boletas'
+
+        const response = await fetch(urlAPI, {
+          method: 'POST',
+          body: formData
         })
 
-        return
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.detail || `Error en el servidor (${response.status})`)
+        }
 
+        // Obtener el blob del ZIP devuelto
+        const blob = await response.blob()
+
+        // Crear enlace temporal para forzar la descarga en el navegador
+        const downloadUrl = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = downloadUrl
+        a.download = 'boletas_procesadas.zip'
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        window.URL.revokeObjectURL(downloadUrl)
+        await this.registrarBoletasProcesadas()
+
+        this.mensajeExito = '¡Archivo procesado y descargado con éxito!'
+        
+        // Limpiar input
+        this.archivoSeleccionado = null
+        if (this.$refs.fileInput) this.$refs.fileInput.value = ''
+
+      } catch (error) {
+        this.mensajeError = error.message || 'Ocurrió un error al procesar el archivo.'
+      } finally {
+        this.cargando = false
       }
-
-      window.print()
-
     }
-
   }
-
 }
 </script>
+
 <style scoped>
-.print-page {
-
+.contenedor {
+  max-width: 500px;
+  margin: 40px auto;
+  font-family: sans-serif;
+}
+.card {
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   display: flex;
-  justify-content: center;
-  align-items: center;
-
-  margin-bottom: 25px;
-
+  flex-direction: column;
+  gap: 15px;
 }
-
-.boleta {
-
-  position: relative;
-
-  width: 297mm;
-  height: 210mm;
-
-  background: #fff;
-
-  overflow: hidden;
-
+button {
+  padding: 10px 15px;
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
-
-
-/***************
- TITULO
-****************/
-
-.titulo {
-
-  position: absolute;
-
-  top: 84mm;
-  left: 78mm;
-
-  font-size: 18px;
-
-  font-family: Arial;
-
-  font-weight: bold;
-
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
-
-
-/***************
- FECHA
-****************/
-
-.fecha {
-
-  position: absolute;
-
-  top: 91mm;
-  right: 30mm;
-
-  font-size: 18px;
-
-  font-weight: bold;
-
-
+.error {
+  color: #d32f2f;
+  font-size: 14px;
 }
-
-
-/***************
- ITEMS
-****************/
-
-.items {
-
-  position: absolute;
-
-  left: 70mm;
-
-  top: 116mm;
-
-}
-
-.item {
-
-  font-size: 15px;
-
-  font-family: Arial;
-
-  font-weight: bold;
-
-  margin-bottom: 10px;
-
-}
-
-.label {
-
-  display: inline-block;
-
-}
-
-
-/********************
- IMPRESIÓN
-********************/
-
-@page {
-
-  size: A4 landscape;
-
-  margin: 0;
-
-}
-
-@media print {
-
-  html,
-  body {
-
-    margin: 0;
-    padding: 0;
-
-    width: 297mm;
-    height: 210mm;
-
-    background: white;
-
-  }
-
-  .no-print {
-
-    display: none !important;
-
-  }
-
-  .v-toolbar,
-  .v-card,
-  .v-alert {
-
-    display: none !important;
-
-  }
-
-  .print-page {
-
-    width: 297mm;
-    height: 210mm;
-
-    margin: 0;
-
-    page-break-after: always;
-
-    page-break-inside: avoid;
-
-  }
-
-  .print-page:last-child {
-
-    page-break-after: auto;
-
-  }
-
-  .boleta {
-
-    width: 297mm;
-    height: 210mm;
-
-    margin: 0;
-
-  }
-
+.exito {
+  color: #2e7d32;
+  font-size: 14px;
 }
 </style>

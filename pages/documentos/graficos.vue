@@ -16,6 +16,8 @@
     <section class="pdf-summary">
       <article><v-icon>mdi-file-pdf-box</v-icon><span>PDFs generados</span><strong>{{ contadorPDF }}</strong></article>
       <article><v-icon>mdi-clock-outline</v-icon><span>Última generación</span><strong class="date-value">{{ ultimaFechaPDF ? formatDate(ultimaFechaPDF) : 'Sin datos' }}</strong></article>
+      <article><v-icon>mdi-file-document-multiple</v-icon><span>Boletas generadas</span><strong>{{ contadorBoletas }}</strong></article>
+      <article><v-icon>mdi-clock-outline</v-icon><span>Ultima generacion de boletas</span><strong class="date-value">{{ ultimaFechaBoletas ? formatDate(ultimaFechaBoletas) : 'Sin datos' }}</strong></article>
     </section>
 
     <article class="chart-card">
@@ -36,7 +38,7 @@ import Chart from 'chart.js/auto'
 
 export default {
   name: 'GraficosDocumentosPage',
-  data: () => ({ loading: false, cartas: [], contadorPDF: 0, ultimaFechaPDF: null, fechaInicio: '', fechaFin: '', chart: null }),
+  data: () => ({ loading: false, cartas: [], contadorPDF: 0, ultimaFechaPDF: null, contadorBoletas: 0, ultimaFechaBoletas: null, fechaInicio: '', fechaFin: '', chart: null }),
   computed: {
     cartasFiltradas() {
       return this.cartas.filter(carta => {
@@ -54,7 +56,7 @@ export default {
     }
   },
   watch: { cartasFiltradas() { this.renderizarGrafico() } },
-  mounted() { this.resetFiltros(); this.cargarDatos(); this.cargarContadorPDF() },
+  mounted() { this.resetFiltros(); this.cargarDatos(); this.cargarContadorPDF(); this.cargarContadorBoletas() },
   beforeDestroy() { if (this.chart) this.chart.destroy() },
   methods: {
     async cargarDatos() {
@@ -73,6 +75,19 @@ export default {
       } catch (error) {
         console.error('Error cargando contador PDF:', error)
         if (error.code === 'failed-precondition') { const respaldo = await this.$db.collection('firmarPdf').limit(1).get(); this.ultimaFechaPDF = respaldo.empty ? null : respaldo.docs[0].data().fecha || null }
+      }
+    },
+    async cargarContadorBoletas() {
+      try {
+        const total = await this.$db.collection('procesarBoletas').get(); this.contadorBoletas = total.size
+        const ultimo = await this.$db.collection('procesarBoletas').orderBy('fecha', 'desc').limit(1).get()
+        this.ultimaFechaBoletas = ultimo.empty ? null : ultimo.docs[0].data().fecha || null
+      } catch (error) {
+        console.error('Error cargando contador de boletas:', error)
+        if (error.code === 'failed-precondition') {
+          const respaldo = await this.$db.collection('procesarBoletas').limit(1).get()
+          this.ultimaFechaBoletas = respaldo.empty ? null : respaldo.docs[0].data().fecha || null
+        }
       }
     },
     contarEstado(estado) { return this.cartasFiltradas.filter(carta => carta.estadoProceso === estado).length },

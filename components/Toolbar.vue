@@ -206,9 +206,9 @@ export default {
       userMenuOpen: false, // Estado del menú de usuario
 
       // Modulos Open
-      planificacionOpen: true,
-      operacionesOpen: true,
-      controlAceptacionOpen: true,
+      planificacionOpen: false,
+      operacionesOpen: false,
+      controlAceptacionOpen: false,
       configuracionOpen: false,
       documentosOpen: true
     }
@@ -238,6 +238,9 @@ export default {
   methods: {
     toggleMenu() {
       this.isOpen = !this.isOpen
+      if (this.isOpen) {
+        this.userMenuOpen = false
+      }
     },
 
     closeMenu() {
@@ -269,11 +272,26 @@ export default {
     hasAccess(routes) { return routes.some(route => this.can(route)) },
 
     // Toggles módulos
-    togglePlanificacion() { this.planificacionOpen = !this.planificacionOpen },
-    toggleOperaciones() { this.operacionesOpen = !this.operacionesOpen },
-    toggleControlAceptacion() { this.controlAceptacionOpen = !this.controlAceptacionOpen },
-    toggleConfiguracion() { this.configuracionOpen = !this.configuracionOpen },
-    toggleDocumentos() { this.documentosOpen = !this.documentosOpen }
+    toggleModule(module) {
+      const stateKey = `${module}Open`
+      const shouldOpen = !this[stateKey]
+      const modules = [
+        'planificacionOpen',
+        'operacionesOpen',
+        'controlAceptacionOpen',
+        'configuracionOpen',
+        'documentosOpen'
+      ]
+
+      modules.forEach((key) => {
+        this[key] = shouldOpen && key === stateKey
+      })
+    },
+    togglePlanificacion() { this.toggleModule('planificacion') },
+    toggleOperaciones() { this.toggleModule('operaciones') },
+    toggleControlAceptacion() { this.toggleModule('controlAceptacion') },
+    toggleConfiguracion() { this.toggleModule('configuracion') },
+    toggleDocumentos() { this.toggleModule('documentos') }
   }
 }
 </script>
