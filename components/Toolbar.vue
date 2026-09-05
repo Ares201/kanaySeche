@@ -156,6 +156,7 @@
         </button>
         <div v-if="hasAccess(controlAceptacionRoutes)" v-show="controlAceptacionOpen" class="submenu">
           <NuxtLink v-if="can('/control-aceptacion/graficos')" class="nav-link" to="/control-aceptacion/graficos" @click.native="closeMenu">Gráficos</NuxtLink>
+          <NuxtLink v-if="can('/control-aceptacion/ingresos-cisterna')" class="nav-link" to="/control-aceptacion/ingresos-cisterna" @click.native="closeMenu">Ingresos Cisterna</NuxtLink>
         </div>
 
         <!-- DOCUMENTOS -->
@@ -168,6 +169,7 @@
             <i class="fas fa-chart-pie"></i>
             Gráficos
           </NuxtLink>
+          <NuxtLink v-if="can('/documentos/controlDeIngresos')" class="nav-link" to="/documentos/controlDeIngresos" @click.native="closeMenu">Control de Ingresos</NuxtLink>
           <NuxtLink v-if="can('/documentos/expedientes')" class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">Expedientes</NuxtLink>
           <NuxtLink v-if="can('/documentos/cartas')" class="nav-link" to="/documentos/cartas" @click.native="closeMenu">Cartas</NuxtLink>
           <NuxtLink v-if="can('/documentos/firmar-pdf')" class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
@@ -222,8 +224,8 @@ export default {
     currentUserName() { return this.$auth?.user?.nombres || 'Kanay - Seche' },
     currentRole() { return this.$auth?.user?.rolNombre || '' },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
-    controlAceptacionRoutes() { return ['/control-aceptacion/graficos'] },
-    documentosRoutes() { return ['/documentos/graficos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones'] },
+    controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/ingresos-cisterna'] },
+    documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones'] },
     configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos'] }
   },
 

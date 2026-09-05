@@ -60,6 +60,8 @@ const FIELDS = {
   fecha_muestra: '`Fecha de Ingreso de Muestra`'
 }
 
+const WRITABLE_FIELDS = Object.keys(FIELDS)
+
 const cache = new Map()
 const CACHE_TTL = 30000
 
@@ -99,6 +101,95 @@ async function consultar(query, params) {
     console.error('❌ Error en consulta BigQuery:', error)
     throw error
   }
+}
+
+function limpiarCache() {
+  cache.clear()
+}
+
+function leerCuerpo(req) {
+  return new Promise((resolve, reject) => {
+    let body = ''
+    req.on('data', chunk => {
+      body += chunk
+      if (body.length > 1024 * 1024) reject(new Error('El cuerpo de la solicitud es demasiado grande'))
+    })
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {})
+      } catch (_) {
+        reject(new Error('El cuerpo JSON no es válido'))
+      }
+    })
+    req.on('error', reject)
+  })
+}
+
+function normalizarRegistro(data) {
+  return WRITABLE_FIELDS.reduce((record, field) => {
+    record[field] = data && data[field] !== undefined && data[field] !== null
+      ? String(data[field]).trim()
+      : ''
+    return record
+  }, {})
+}
+
+function valorSql(field) {
+  if (field === 'fecha_ingreso' || field === 'fecha_muestra') {
+    return `IF(@${field} = '', NULL, SAFE_CAST(@${field} AS DATE))`
+  }
+  return `NULLIF(@${field}, '')`
+}
+
+export async function crearRegistro(data) {
+  const record = normalizarRegistro(data)
+  if (!record.fecha_ingreso || !record.pedido_venta || !record.ubicacion) {
+    throw new Error('Fecha de ingreso, pedido de venta y ubicación son obligatorios')
+  }
+  const columns = WRITABLE_FIELDS.map(field => FIELDS[field]).join(', ')
+  const values = WRITABLE_FIELDS.map(valorSql).join(', ')
+  const query = `INSERT INTO ${TABLE} (${columns}) VALUES (${values})`
+  await bigquery.query({ query, params: record })
+  limpiarCache()
+  return record
+}
+
+export async function actualizarRegistro(pedidoVenta, data) {
+  if (!pedidoVenta) throw new Error('Se requiere el "Pedido de Venta" para actualizar')
+  const record = normalizarRegistro(data)
+  const query = `
+    UPDATE ${TABLE}
+    SET
+      ${FIELDS.generador} = @generador,
+      ${FIELDS.producto_cliente} = @producto_cliente,
+      ${FIELDS.transportista} = @transportista,
+      ${FIELDS.tratamiento} = @tratamiento,
+      ${FIELDS.ubicacion} = @ubicacion,
+      ${FIELDS.tipo} = @tipo
+    WHERE ${FIELDS.pedido_venta} = @pedido_venta
+  `
+  await bigquery.query({
+    query,
+    params: {
+      pedido_venta: pedidoVenta,
+      generador: record.generador,
+      producto_cliente: record.producto_cliente,
+      transportista: record.transportista,
+      tratamiento: record.tratamiento,
+      ubicacion: record.ubicacion,
+      tipo: record.tipo
+    }
+  })
+  limpiarCache()
+  return { message: 'Registro actualizado exitosamente' }
+}
+
+export async function eliminarRegistro(pedidoVenta) {
+  if (!pedidoVenta) throw new Error('Se requiere el "Pedido de Venta" para eliminar')
+  const query = `DELETE FROM ${TABLE} WHERE ${FIELDS.pedido_venta} = @pedido_venta`
+  await bigquery.query({ query, params: { pedido_venta: pedidoVenta } })
+  limpiarCache()
+  return { message: 'Registro eliminado exitosamente' }
 }
 
 export async function buscarOpciones(field, filters = {}, search = '', limit = 30) {
@@ -182,7 +273,7 @@ export async function obtenerRegistros(filters = {}, limit = 200) {
 export default async function (req, res) {
   // Configurar Encabezados CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
 
@@ -192,12 +283,35 @@ export default async function (req, res) {
     return res.end()
   }
 
-  if (req.method !== 'GET') {
+  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
     res.statusCode = 405
     return res.end(JSON.stringify({ success: false, error: 'Método no permitido' }))
   }
 
   try {
+    if (req.method === 'POST') {
+      const body = await leerCuerpo(req)
+      const data = await crearRegistro(body)
+      res.statusCode = 201
+      return res.end(JSON.stringify({ success: true, data }))
+    }
+
+    if (req.method === 'PUT') {
+      const body = await leerCuerpo(req)
+      const url = new URL(req.url, 'http://localhost')
+      const data = await actualizarRegistro(url.searchParams.get('pedido_venta') || body.pedido_venta, body)
+      res.statusCode = 200
+      return res.end(JSON.stringify({ success: true, data }))
+    }
+
+    if (req.method === 'DELETE') {
+      const body = await leerCuerpo(req)
+      const url = new URL(req.url, 'http://localhost')
+      const data = await eliminarRegistro(url.searchParams.get('pedido_venta') || body.pedido_venta)
+      res.statusCode = 200
+      return res.end(JSON.stringify({ success: true, data }))
+    }
+
     const url = new URL(req.url, 'http://localhost')
     const query = Object.fromEntries(url.searchParams.entries())
     const filters = filtrosDesdeQuery(query)

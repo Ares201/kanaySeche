@@ -44,7 +44,7 @@ export default ({ app, $firebaseApi }, inject) => {
       const pages = await $firebaseApi.list('paginas')
       const existingRelations = await $firebaseApi.list('rolPaginas')
       const defaults = {
-        'Gestión Documentaria': ['/documentos/expedientes', '/documentos/cartas'],
+        'Gestión Documentaria': ['/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas'],
         Operaciones: ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna']
       }
       for (const [roleName, routes] of Object.entries(defaults)) {

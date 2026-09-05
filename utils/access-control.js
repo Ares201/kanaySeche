@@ -8,6 +8,8 @@ export const SYSTEM_PAGES = [
   { nombre: 'Recepción de cisternas', ruta: '/operaciones/recepcion-cisterna', modulo: 'Operaciones' },
   { nombre: 'Gráficos documentarios', ruta: '/documentos/graficos', modulo: 'Documentos' },
   { nombre: 'Graficos de control y aceptacion', ruta: '/control-aceptacion/graficos', modulo: 'Control y Aceptacion' },
+  { nombre: 'Ingresos Cisterna', ruta: '/control-aceptacion/ingresos-cisterna', modulo: 'Control y Aceptacion' },
+  { nombre: 'Control de Ingresos', ruta: '/documentos/controlDeIngresos', modulo: 'Documentos' },
   { nombre: 'Expedientes', ruta: '/documentos/expedientes', modulo: 'Documentos' },
   { nombre: 'Cartas', ruta: '/documentos/cartas', modulo: 'Documentos' },
   { nombre: 'Firmar PDF', ruta: '/documentos/firmar-pdf', modulo: 'Documentos' },
