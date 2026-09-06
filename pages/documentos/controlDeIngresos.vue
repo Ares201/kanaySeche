@@ -22,37 +22,24 @@
       </div>
     </div>
 
-    <!-- Barra de filtros (ahora justo debajo del header) -->
+    <!-- Barra de búsqueda y filtros desplegables -->
     <div class="content">
-      <v-row dense>
-        <!-- Estado -->
-        <v-spacer />
-        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
-          <v-autocomplete v-model="estadoPVFiltro" :items="estadosPVFiltroOptions" label="Estado PV" dense hide-details
-            outlined clearable placeholder="Todos" />
-        </v-col>
-        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
-          <v-autocomplete v-model="tipoServicioFiltro" :items="tiposServicio" label="Tipo de servicio" dense
-            hide-details outlined clearable placeholder="Todos" />
-        </v-col>
-        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
-          <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
-            clearable />
-        </v-col>
-        <!-- Buscar -->
-        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
-          <v-text-field v-model.trim="search" dense hide-details outlined type="search" label="Buscar cliente o N° PV"
-            placeholder="Ej. PV-001" />
-        </v-col>
-        <!-- Fecha -->
-        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
-          <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Filtrar por fecha" />
-        </v-col>
-        <!-- Excel -->
-        <v-col cols="12" sm="6" md="1" class="mb-2 mt-2" mr-2>
+      <div class="toolbar-filters">
+        <v-text-field v-model.trim="search" class="search-field" dense hide-details outlined type="search"
+          prepend-inner-icon="mdi-magnify" label="Buscar" placeholder="Cliente, N° PV, sede, transportista..." />
+
+        <v-btn class="filter-toggle" type="button" outlined :color="filtersOpen ? 'primary' : ''"
+          @click="filtersOpen = !filtersOpen">
+          <v-icon left>mdi-filter-variant</v-icon>
+          Filtros
+          <span v-if="activeFilterCount" class="filter-count">{{ activeFilterCount }}</span>
+          <v-icon right small>{{ filtersOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+        </v-btn>
+
+        <div class="excel-action">
           <v-menu offset-y>
             <template #activator="{ on, attrs }">
-              <v-btn color="#107c41" dark type="button" v-bind="attrs" v-on="on" block>
+              <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
                 <v-icon left>mdi-microsoft-excel</v-icon>
                 Excel
               </v-btn>
@@ -72,8 +59,34 @@
               </v-list-item>
             </v-list>
           </v-menu>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
+
+      <v-expand-transition>
+        <div v-show="filtersOpen" class="advanced-filters">
+          <div class="advanced-filters__header">
+            <div>
+              <strong>Filtrar registros</strong>
+              <span>Combina uno o más criterios para precisar los resultados.</span>
+            </div>
+            <v-btn v-if="activeFilterCount" text small color="primary" type="button" @click="clearFilters">
+              <v-icon left small>mdi-filter-remove-outline</v-icon>
+              Limpiar filtros
+            </v-btn>
+          </div>
+          <div class="advanced-filters__grid">
+            <v-autocomplete v-model="plannerFiltro" :items="plannersEnRegistros" label="Planner" dense hide-details
+              outlined clearable placeholder="Todos" prepend-inner-icon="mdi-account-outline" />
+            <v-autocomplete v-model="estadoPVFiltro" :items="estadosPVFiltroOptions" label="Estado PV" dense
+              hide-details outlined clearable placeholder="Todos" />
+            <v-autocomplete v-model="tipoServicioFiltro" :items="tiposServicio" label="Tipo de servicio" dense
+              hide-details outlined clearable placeholder="Todos" />
+            <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
+              clearable placeholder="Todos" />
+            <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Fecha" clearable />
+          </div>
+        </div>
+      </v-expand-transition>
 
       <!-- Input oculto para importar -->
       <input ref="excelInput" class="excel-input" type="file" accept=".xlsx" style="display: none;"
@@ -424,6 +437,8 @@ export default {
     return {
       estadoPVFiltro: null,
       tipoServicioFiltro: null,
+      plannerFiltro: null,
+      filtersOpen: false,
       viewMode: 'kanban',
       estados: ESTADOS_EXPEDIENTE,
       estadosPV: ESTADOS_PV,
@@ -473,12 +488,21 @@ export default {
     estadosPVFiltroOptions() {
       return ['Abierto', 'Cerrado']
     },
+    plannersEnRegistros() {
+      return [...new Set(this.expedientes.map(exp => String(exp.planner || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+    },
+    activeFilterCount() {
+      return [this.plannerFiltro, this.estadoPVFiltro, this.tipoServicioFiltro, this.estadoFiltro, this.fechaFiltro]
+        .filter(Boolean).length
+    },
     filteredExpedientes() {
       const term = this.search.toLowerCase().trim()
       const fechaFiltro = this.fechaFiltro
       const estadoFiltro = this.estadoFiltro
       const estadoPVFiltro = this.estadoPVFiltro // <--- NUEVO
       const tipoServicioFiltro = this.tipoServicioFiltro
+      const plannerFiltro = this.plannerFiltro
 
       return this.expedientes.filter(exp => {
         const matchesSearch =
@@ -496,8 +520,9 @@ export default {
         // NUEVO: Filtrar por estado PV
         const matchesEstadoPV = !estadoPVFiltro || exp.estadoPV === estadoPVFiltro
         const matchesTipoServicio = !tipoServicioFiltro || exp.tipoServicio === tipoServicioFiltro
+        const matchesPlanner = !plannerFiltro || exp.planner === plannerFiltro
 
-        return matchesSearch && matchesDate && matchesEstado && matchesEstadoPV && matchesTipoServicio
+        return matchesSearch && matchesDate && matchesEstado && matchesEstadoPV && matchesTipoServicio && matchesPlanner
       })
     },
 
@@ -567,6 +592,14 @@ export default {
   methods: {
     formatWeight,
     getNowDateTimeInput,
+
+    clearFilters() {
+      this.plannerFiltro = null
+      this.estadoPVFiltro = null
+      this.tipoServicioFiltro = null
+      this.estadoFiltro = null
+      this.fechaFiltro = null
+    },
 
     formatDateOnly(value) {
       const d = this.parseDate(value)
@@ -686,13 +719,30 @@ export default {
       return String(estado || 'Pendiente').toLowerCase()
     },
 
+    getEstadoTransitionPayload(expediente, estadoDestino) {
+      const estadoActual = expediente.estado
+      const payload = { estado: estadoDestino }
+      if (estadoActual === 'Pendiente' && estadoDestino === 'Notificado') {
+        const accionActual = String(expediente.accionInmediata || '').trim()
+        const accionPorDefecto = 'Se envió correo'
+        payload.accionInmediata = accionActual && !accionActual.toLowerCase().includes(accionPorDefecto.toLowerCase())
+          ? `${accionActual}\n${accionPorDefecto}`
+          : accionActual || accionPorDefecto
+      }
+      if (estadoActual === 'Notificado' && ['Regularizado', 'Cerrado'].includes(estadoDestino)) {
+        payload.estadoPV = 'Cerrado'
+      }
+      return payload
+    },
+
     async advanceExpedienteEstado(exp) {
       const next = this.getNextEstado(exp.estado)
       if (!next) return
       if (!confirm(`¿Cambiar estado de "${exp.estado}" a "${next}"?`)) return
 
       try {
-        await this.$firebaseApi.update('expedientes', exp.id, { estado: next })
+        const payload = this.getEstadoTransitionPayload(exp, next)
+        await this.$firebaseApi.update('expedientes', exp.id, payload)
         await this.getAll()
       } catch (error) {
         alert('No se pudo actualizar el estado')
@@ -729,7 +779,14 @@ export default {
           cartaId: cartaCreada.id
         })
         await this.getAll()
-        alert(`Carta ${cartaCreada.correlativo || 'generada'} creada exitosamente.`)
+        const nombreCarta = cartaCreada.correlativo || 'generada'
+        const goToCarta = confirm(`Carta ${nombreCarta} creada exitosamente.\n\n¿Desea ir al nuevo registro en la página de Cartas?`)
+        if (goToCarta) {
+          await this.$router.push({
+            path: '/documentos/cartas',
+            query: { cartaId: cartaCreada.id }
+          })
+        }
       } catch (error) {
         alert('Error al emitir la carta')
         console.error(error)
@@ -1060,8 +1117,10 @@ export default {
         if (!exp || !exp.id) return
 
         try {
+          const payload = this.getEstadoTransitionPayload(exp, estadoDestino)
           exp.estado = estadoDestino
-          await this.$firebaseApi.update('expedientes', exp.id, { estado: estadoDestino })
+          if (payload.estadoPV) exp.estadoPV = payload.estadoPV
+          await this.$firebaseApi.update('expedientes', exp.id, payload)
           await this.getAll()
         } catch (error) {
           alert('Error al actualizar estado')
@@ -1188,6 +1247,80 @@ h1 {
 }
 
 /* ===== Barra de filtros ===== */
+.toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.search-field {
+  flex: 1 1 420px;
+  max-width: 680px;
+}
+
+.filter-toggle {
+  min-height: 40px;
+  text-transform: none;
+  font-weight: 700;
+}
+
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  margin-left: 8px;
+  border-radius: 999px;
+  padding: 0 6px;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 12px;
+}
+
+.excel-action {
+  margin-left: auto;
+}
+
+.advanced-filters {
+  padding: 16px 20px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, #f8fafc 0%, #f3f7f8 100%);
+}
+
+.advanced-filters__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.advanced-filters__header strong,
+.advanced-filters__header span {
+  display: block;
+}
+
+.advanced-filters__header strong {
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.advanced-filters__header span {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.advanced-filters__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 12px;
+}
+
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -1597,6 +1730,12 @@ td {
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+  .advanced-filters__grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
 @media (max-width: 640px) {
   .page-header {
     flex-direction: column;
@@ -1606,6 +1745,31 @@ td {
   .header-actions {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .toolbar-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-field {
+    flex-basis: auto;
+    max-width: none;
+  }
+
+  .filter-toggle,
+  .excel-action,
+  .excel-action .v-btn {
+    width: 100%;
+  }
+
+  .advanced-filters__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .advanced-filters__grid {
+    grid-template-columns: 1fr;
   }
 
   .filter-bar {

@@ -13,6 +13,9 @@
         </div>
       </NuxtLink>
       <div class="user-area">
+        <div class="info-item status">
+          <span class="status-indicator online" aria-label="Estado: Operativo"></span>
+        </div>
         <span class="company-name d-none d-sm-inline">{{ currentUserName }} · {{ currentRole }}</span>
         <v-menu v-model="userMenuOpen" bottom left offset-y origin="top right" transition="scale-transition">
           <template v-slot:activator="{ on, attrs }">
@@ -123,12 +126,14 @@
         </NuxtLink>
 
         <!-- PLANIFICACION -->
-        <button v-if="hasAccess(['/planificacion/agendamientos'])" class="module-button module-button--spaced" type="button" @click="togglePlanificacion">
+        <button v-if="hasAccess(['/planificacion/agendamientos'])" class="module-button module-button--spaced"
+          type="button" @click="togglePlanificacion">
           <span>Planificacion</span>
           <span class="chevron" :class="{ 'chevron--open': planificacionOpen }">›</span>
         </button>
         <div v-if="hasAccess(['/planificacion/agendamientos'])" v-show="planificacionOpen" class="submenu">
-          <NuxtLink v-if="can('/planificacion/agendamientos')" class="nav-link" to="/planificacion/agendamientos" @click.native="closeMenu">Agendamientos
+          <NuxtLink v-if="can('/planificacion/agendamientos')" class="nav-link" to="/planificacion/agendamientos"
+            @click.native="closeMenu">Agendamientos
           </NuxtLink>
         </div>
 
@@ -138,25 +143,31 @@
           <span class="chevron" :class="{ 'chevron--open': operacionesOpen }">›</span>
         </button>
         <div v-if="hasAccess(operacionesRoutes)" v-show="operacionesOpen" class="submenu">
-          <NuxtLink v-if="can('/operaciones/graficos')" class="nav-link" to="/operaciones/graficos" @click.native="closeMenu">
+          <NuxtLink v-if="can('/operaciones/graficos')" class="nav-link" to="/operaciones/graficos"
+            @click.native="closeMenu">
             <i class="fas fa-chart-bar"></i>
             Gráficos
           </NuxtLink>
-          <NuxtLink v-if="can('/operaciones/pedidos-venta')" class="nav-link" to="/operaciones/pedidos-venta" @click.native="closeMenu">Pedido de venta
+          <NuxtLink v-if="can('/operaciones/pedidos-venta')" class="nav-link" to="/operaciones/pedidos-venta"
+            @click.native="closeMenu">Pedido de venta
           </NuxtLink>
-          <NuxtLink v-if="can('/operaciones/recepcion-cisterna')" class="nav-link" to="/operaciones/recepcion-cisterna" @click.native="closeMenu">Recepcion de
+          <NuxtLink v-if="can('/operaciones/recepcion-cisterna')" class="nav-link" to="/operaciones/recepcion-cisterna"
+            @click.native="closeMenu">Recepcion de
             cisternas
           </NuxtLink>
         </div>
 
         <!-- CONTROL Y ACEPTACION -->
-        <button v-if="hasAccess(controlAceptacionRoutes)" class="module-button" type="button" @click="toggleControlAceptacion">
+        <button v-if="hasAccess(controlAceptacionRoutes)" class="module-button" type="button"
+          @click="toggleControlAceptacion">
           <span>Control y Aceptación</span>
           <span class="chevron" :class="{ 'chevron--open': controlAceptacionOpen }">›</span>
         </button>
         <div v-if="hasAccess(controlAceptacionRoutes)" v-show="controlAceptacionOpen" class="submenu">
-          <NuxtLink v-if="can('/control-aceptacion/graficos')" class="nav-link" to="/control-aceptacion/graficos" @click.native="closeMenu">Gráficos</NuxtLink>
-          <NuxtLink v-if="can('/control-aceptacion/ingresos-cisterna')" class="nav-link" to="/control-aceptacion/ingresos-cisterna" @click.native="closeMenu">Ingresos Cisterna</NuxtLink>
+          <NuxtLink v-if="can('/control-aceptacion/graficos')" class="nav-link" to="/control-aceptacion/graficos"
+            @click.native="closeMenu">Gráficos</NuxtLink>
+          <NuxtLink v-if="can('/control-aceptacion/ingresos-cisterna')" class="nav-link"
+            to="/control-aceptacion/ingresos-cisterna" @click.native="closeMenu">Ingresos Cisterna</NuxtLink>
         </div>
 
         <!-- DOCUMENTOS -->
@@ -165,16 +176,24 @@
           <span class="chevron" :class="{ 'chevron--open': documentosOpen }">›</span>
         </button>
         <div v-if="hasAccess(documentosRoutes)" v-show="documentosOpen" class="submenu">
-          <NuxtLink v-if="can('/documentos/graficos')" class="nav-link" to="/documentos/graficos" @click.native="closeMenu">
+          <NuxtLink v-if="can('/documentos/graficos')" class="nav-link" to="/documentos/graficos"
+            @click.native="closeMenu">
             <i class="fas fa-chart-pie"></i>
             Gráficos
           </NuxtLink>
-          <NuxtLink v-if="can('/documentos/controlDeIngresos')" class="nav-link" to="/documentos/controlDeIngresos" @click.native="closeMenu">Control de Ingresos</NuxtLink>
-          <NuxtLink v-if="can('/documentos/expedientes')" class="nav-link" to="/documentos/expedientes" @click.native="closeMenu">Expedientes</NuxtLink>
-          <NuxtLink v-if="can('/documentos/cartas')" class="nav-link" to="/documentos/cartas" @click.native="closeMenu">Cartas</NuxtLink>
-          <NuxtLink v-if="can('/documentos/firmar-pdf')" class="nav-link" to="/documentos/firmar-pdf" @click.native="closeMenu">Firmar PDF</NuxtLink>
-          <NuxtLink v-if="can('/documentos/boletas')" class="nav-link" to="/documentos/boletas" @click.native="closeMenu">Boletas</NuxtLink>
-          <NuxtLink v-if="can('/documentos/validaciones')" class="nav-link" to="/documentos/validaciones" @click.native="closeMenu">Validaciones</NuxtLink>
+          <NuxtLink v-if="can('/documentos/controlDeIngresos')" class="nav-link" to="/documentos/controlDeIngresos"
+            @click.native="closeMenu">Control de Ingresos</NuxtLink>
+          <NuxtLink v-if="can('/documentos/expedientes')" class="nav-link" to="/documentos/expedientes"
+            @click.native="closeMenu">Expedientes</NuxtLink>
+          <NuxtLink v-if="can('/documentos/cartas')" class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
+            Cartas</NuxtLink>
+          <NuxtLink v-if="can('/documentos/firmar-pdf')" class="nav-link" to="/documentos/firmar-pdf"
+            @click.native="closeMenu">Firmar PDF</NuxtLink>
+          <NuxtLink v-if="can('/documentos/boletas')" class="nav-link" to="/documentos/boletas"
+            @click.native="closeMenu">
+            Boletas</NuxtLink>
+          <NuxtLink v-if="can('/documentos/validaciones')" class="nav-link" to="/documentos/validaciones"
+            @click.native="closeMenu">Validaciones</NuxtLink>
         </div>
 
         <!-- CONFIGURACION -->
@@ -183,14 +202,23 @@
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>
         </button>
         <div v-if="hasAccess(configuracionRoutes)" v-show="configuracionOpen" class="submenu">
-          <NuxtLink v-if="can('/configuracion/envases')" class="nav-link" to="/configuracion/envases" @click.native="closeMenu">Envases</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/residuos')" class="nav-link" to="/configuracion/residuos" @click.native="closeMenu">Residuos</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/clientes')" class="nav-link" to="/configuracion/clientes" @click.native="closeMenu">Clientes</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/productos')" class="nav-link" to="/configuracion/productos" @click.native="closeMenu">Productos</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/generador')" class="nav-link" to="/configuracion/generador" @click.native="closeMenu">Generadores</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/personal')" class="nav-link" to="/configuracion/personal" @click.native="closeMenu">Personal</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/roles')" class="nav-link" to="/configuracion/roles" @click.native="closeMenu">Roles y permisos</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/vehiculos')" class="nav-link" to="/configuracion/vehiculos" @click.native="closeMenu">Vehiculos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/envases')" class="nav-link" to="/configuracion/envases"
+            @click.native="closeMenu">Envases</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/residuos')" class="nav-link" to="/configuracion/residuos"
+            @click.native="closeMenu">Residuos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/clientes')" class="nav-link" to="/configuracion/clientes"
+            @click.native="closeMenu">Clientes</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/productos')" class="nav-link" to="/configuracion/productos"
+            @click.native="closeMenu">Productos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/generador')" class="nav-link" to="/configuracion/generador"
+            @click.native="closeMenu">Generadores</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/personal')" class="nav-link" to="/configuracion/personal"
+            @click.native="closeMenu">Personal</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/roles')" class="nav-link" to="/configuracion/roles"
+            @click.native="closeMenu">
+            Roles y permisos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/vehiculos')" class="nav-link" to="/configuracion/vehiculos"
+            @click.native="closeMenu">Vehiculos</NuxtLink>
         </div>
       </nav>
     </aside>
@@ -310,14 +338,85 @@ export default {
   --color-muted: #666666;
 }
 
+/* Estado de Color parpadero */
+/* ===== INDICADOR DE ESTADO CON PARPADEO ===== */
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Estado ONLINE con parpadeo */
+.status-indicator.online {
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+/* Estado OFFLINE (sin parpadeo) */
+.status-indicator.offline {
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Estado WARNING (parpadeo lento) */
+.status-indicator.warning {
+  background: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+
+/* ===== ANIMACIÓN DE PARPADEO ===== */
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+    box-shadow: 0 0 16px rgba(52, 211, 153, 0.2);
+  }
+}
+
+/* ===== ESTILO DEL CONTENEDOR INFO-ITEM ===== */
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.info-item.status {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 12px 4px 8px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
 /* =========================
    TOOLBAR
    ========================= */
 
 .toolbar {
-  position: sticky;
+  position: fixed;
+  /* CAMBIA de sticky a fixed */
   top: 0;
-  z-index: 20;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  /* Asegura que esté por encima de todo */
   display: flex;
   align-items: center;
   height: 64px;
@@ -325,6 +424,12 @@ export default {
   color: #ffffff;
   background: var(--color-primary);
   box-shadow: 0 2px 8px rgba(0, 63, 104, 0.18);
+}
+
+/* Agrega esto nuevo */
+.app-shell {
+  padding-top: 64px;
+  /* Misma altura que el toolbar */
 }
 
 .brand {

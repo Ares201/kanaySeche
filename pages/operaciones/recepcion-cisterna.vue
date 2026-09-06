@@ -171,7 +171,9 @@
             <!-- Destino -->
             <v-col cols="12" md="12">
               <label class="form-label">Lugar de destino</label>
-              <v-text-field v-model="form.destino" outlined dense hide-details placeholder="Ingrese el destino" />
+              <v-combobox v-model="form.destino" :items="destinosSugeridos" outlined dense hide-details clearable
+                placeholder="Selecciona o escribe un destino" no-data-text="Escribe para agregar otro destino"
+                prepend-inner-icon="mdi-map-marker-outline" />
             </v-col>
             <!-- Peso Bruto -->
             <v-col cols="12" md="4">
@@ -245,7 +247,13 @@ export default {
       form: createEmptyIngresoCisternaForm(),
       ingresos: [],
       clientes: [],
-      vehiculos: []
+      vehiculos: [],
+      destinosSugeridos: [
+        'Rotoplast',
+        'Osmosis -Tapa verde',
+        'PTT CONSUMO - TAPA VERDE',
+        'Potable'
+      ]
     }
   },
   computed: {

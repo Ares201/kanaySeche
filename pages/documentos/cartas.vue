@@ -9,19 +9,19 @@
       <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nueva carta</button></div>
     </div>
     <div class="content">
-      <v-row class="table-actions" dense align="end" justify="end">
-        <v-col class="table-action-col" cols="3">
-          <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
-            clearable />
-        </v-col>
-        <v-col class="table-action-col" cols="4">
-          <v-text-field v-model.trim="search" dense hide-details outlined type="search"
-            label="Buscar cliente o correlativo" placeholder="Ej. CARTA-001" />
-        </v-col>
-        <v-col class="table-action-col" cols="3">
-          <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Filtrar por fecha" />
-        </v-col>
-        <v-col class="table-action-col table-action-col--excel" cols="2">
+      <div class="toolbar-filters">
+        <v-text-field v-model.trim="search" class="search-field" dense hide-details outlined type="search"
+          prepend-inner-icon="mdi-magnify" label="Buscar" placeholder="Cliente o correlativo..." />
+
+        <v-btn class="filter-toggle" type="button" outlined :color="filtersOpen ? 'primary' : ''"
+          @click="filtersOpen = !filtersOpen">
+          <v-icon left>mdi-filter-variant</v-icon>
+          Filtros
+          <span v-if="activeFilterCount" class="filter-count">{{ activeFilterCount }}</span>
+          <v-icon right small>{{ filtersOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+        </v-btn>
+
+        <div class="excel-action">
           <v-menu offset-y>
             <template #activator="{ on, attrs }">
               <v-btn class="excel-button" color="#107c41" dark type="button" v-bind="attrs" v-on="on">
@@ -41,10 +41,32 @@
               </v-list-item>
             </v-list>
           </v-menu>
-        </v-col>
+        </div>
 
         <input ref="cartasExcelInput" class="excel-input" type="file" accept=".xlsx" @change="importCartas">
-      </v-row>
+      </div>
+
+      <v-expand-transition>
+        <div v-show="filtersOpen" class="advanced-filters">
+          <div class="advanced-filters__header">
+            <div>
+              <strong>Filtrar cartas</strong>
+              <span>Combina los criterios para encontrar los registros necesarios.</span>
+            </div>
+            <v-btn v-if="activeFilterCount" text small color="primary" type="button" @click="clearFilters">
+              <v-icon left small>mdi-filter-remove-outline</v-icon>
+              Limpiar filtros
+            </v-btn>
+          </div>
+          <div class="advanced-filters__grid">
+            <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
+              clearable placeholder="Todos" />
+            <v-select v-model="direccionFiltro" :items="direccionOptions" label="Dirección" dense hide-details
+              outlined clearable placeholder="Todas" prepend-inner-icon="mdi-map-marker-outline" />
+            <v-text-field v-model="fechaFiltro" dense hide-details outlined clearable type="date" label="Fecha" />
+          </div>
+        </div>
+      </v-expand-transition>
 
       <div class="table-wrapper">
         <v-data-table :headers="tableHeaders" :items="filteredCartas" :loading="loading" item-key="id"
@@ -512,8 +534,11 @@ export default {
     return {
       estados: CARTA_ESTADOS,
       search: '',
-      fechaFiltro: this.getTodayInputDate(),
+      fechaFiltro: null,
       estadoFiltro: null,
+      direccionFiltro: null,
+      direccionOptions: ['Recojo en planta'],
+      filtersOpen: false,
       loading: false,
       tableHeaders: [
         { text: 'Correlativo', value: 'correlativo' },
@@ -547,12 +572,19 @@ export default {
     }
   },
   computed: {
+    activeFilterCount() {
+      return [this.estadoFiltro, this.direccionFiltro, this.fechaFiltro].filter(Boolean).length
+    },
     filteredCartas() {
+      const cartaId = String(this.$route.query.cartaId || '')
+      if (cartaId) return this.cartas.filter(carta => carta.id === cartaId)
+
       const term = this.search.toLowerCase()
       const fechaFiltro = this.fechaFiltro
       const estadoFiltro = this.estadoFiltro
+      const direccionFiltro = this.direccionFiltro
 
-      if (!term && !fechaFiltro && !estadoFiltro) return this.cartas
+      if (!term && !fechaFiltro && !estadoFiltro && !direccionFiltro) return this.cartas
 
       return this.cartas.filter(carta => {
         const cliente = carta.cliente || {}
@@ -570,7 +602,11 @@ export default {
           !estadoFiltro ||
           carta.estadoProceso === estadoFiltro
 
-        return matchesSearch && matchesDate && matchesEstado
+        const matchesDireccion =
+          !direccionFiltro ||
+          String(cliente.direccion || '').trim().toLowerCase() === direccionFiltro.toLowerCase()
+
+        return matchesSearch && matchesDate && matchesEstado && matchesDireccion
       })
     },
     filteredClientesOptions() {
@@ -594,6 +630,11 @@ export default {
     this.loadClientes()
   },
   methods: {
+    clearFilters() {
+      this.estadoFiltro = null
+      this.direccionFiltro = null
+      this.fechaFiltro = null
+    },
     // ========== GESTIÓN DE ESTADOS ==========
     getPreviousEstado(estadoActual) {
       const index = CARTA_ESTADOS.indexOf(estadoActual);
@@ -935,19 +976,11 @@ export default {
       try {
         const updatedCarta = await this.$firebaseApi.update('cartas', id, {
           estadoProceso: 'Anulado',
-          estado: 'Anulado'
+          estado: 'Anulado',
+          anulado: true
         })
 
-        this.cartas = this.cartas.map(carta => {
-          return carta.id === id
-            ? this.normalizeCarta({
-              ...carta,
-              ...updatedCarta,
-              estadoProceso: 'Anulado',
-              estado: 'Anulado'
-            })
-            : carta
-        })
+        if (updatedCarta) this.cartas = this.cartas.filter(carta => carta.id !== id)
       } catch (error) {
         alert('No se pudo anular la carta')
         console.error(error)
@@ -1751,6 +1784,80 @@ h3 {
   gap: 4px;
 }
 
+.toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.search-field {
+  flex: 1 1 420px;
+  max-width: 680px;
+}
+
+.filter-toggle {
+  min-height: 40px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  margin-left: 8px;
+  border-radius: 999px;
+  padding: 0 6px;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 12px;
+}
+
+.excel-action {
+  margin-left: auto;
+}
+
+.advanced-filters {
+  padding: 16px 20px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, #f8fafc 0%, #f3f7f8 100%);
+}
+
+.advanced-filters__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.advanced-filters__header strong,
+.advanced-filters__header span {
+  display: block;
+}
+
+.advanced-filters__header strong {
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.advanced-filters__header span {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.advanced-filters__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+}
+
 .table-actions {
   width: min(760px, 100%);
   display: flex;
@@ -2157,6 +2264,31 @@ td {
     width: 100%;
     flex-direction: row;
     flex-wrap: nowrap;
+  }
+
+  .toolbar-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-field {
+    flex-basis: auto;
+    max-width: none;
+  }
+
+  .filter-toggle,
+  .excel-action,
+  .excel-action .v-btn {
+    width: 100%;
+  }
+
+  .advanced-filters__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .advanced-filters__grid {
+    grid-template-columns: 1fr;
   }
 
   .primary-button,

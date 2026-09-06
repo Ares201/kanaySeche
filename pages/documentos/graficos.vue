@@ -62,7 +62,7 @@ export default {
     async cargarDatos() {
       this.loading = true
       try {
-        const cartas = await this.$firebaseApi.list('cartas')
+        const cartas = await this.$firebaseApi.list('cartas', { includeAnulados: true })
         this.cartas = cartas.map(carta => ({ id: carta.id || '', estadoProceso: carta.estadoProceso || carta.estado || 'Emitido', fecha: carta.fecha || null, fechaCreacion: carta.fechaCreacion || null }))
       } catch (error) { console.error('Error al cargar las cartas:', error); alert('No se pudieron cargar los datos de las cartas') }
       finally { this.loading = false; this.$nextTick(this.renderizarGrafico) }

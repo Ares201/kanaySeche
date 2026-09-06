@@ -40,11 +40,15 @@ function serializeDoc(doc) {
   }
 }
 
+function isAnulado(record) {
+  return record.anulado === true || record.estado === 'Anulado' || record.estadoProceso === 'Anulado'
+}
+
 function createFirebaseApi(db) {
   return {
     config: crudConfig.apis,
 
-    async list(apiName) {
+    async list(apiName, options = {}) {
       const apiConfig = getApiConfig(apiName)
       let query = db.collection(apiConfig.collection)
 
@@ -57,7 +61,8 @@ function createFirebaseApi(db) {
 
       const snapshot = await query.get()
 
-      return snapshot.docs.map(serializeDoc)
+      const records = snapshot.docs.map(serializeDoc)
+      return options.includeAnulados ? records : records.filter(record => !isAnulado(record))
     },
 
     async create(apiName, payload) {
@@ -90,7 +95,12 @@ function createFirebaseApi(db) {
     async remove(apiName, id) {
       const apiConfig = getApiConfig(apiName)
 
-      await db.collection(apiConfig.collection).doc(id).delete()
+      await db.collection(apiConfig.collection).doc(id).update({
+        anulado: true,
+        estado: 'Anulado',
+        fechaAnulacion: firebase.firestore.FieldValue.serverTimestamp(),
+        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+      })
 
       return id
     }

@@ -5,7 +5,9 @@ const SESSION_KEY = 'kanay_session'
 
 function readSession() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY))
+    // Elimina sesiones persistentes creadas por versiones anteriores.
+    localStorage.removeItem(SESSION_KEY)
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY))
   } catch (_) {
     return null
   }
@@ -84,14 +86,15 @@ export default ({ app, $firebaseApi }, inject) => {
       }
 
       state.session = { id: user.id, nombres: user.nombres, correo: user.correo, rolId: user.rolId || null, rolNombre, rutasPermitidas }
-      localStorage.setItem(SESSION_KEY, JSON.stringify(state.session))
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(state.session))
       return state.session
     },
 
     logout() {
       state.session = null
+      sessionStorage.removeItem(SESSION_KEY)
       localStorage.removeItem(SESSION_KEY)
-      app.router.push('/login')
+      app.router.replace('/login')
     }
   }
 

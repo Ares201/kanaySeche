@@ -871,8 +871,8 @@ export default {
 /* ========================================================= */
 .sticky-toolbar {
   position: sticky;
-  top: 0;
-  z-index: 100;
+  top: 76px;
+  z-index: 10;
   border-radius: 10px;
 }
 

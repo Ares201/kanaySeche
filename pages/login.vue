@@ -43,7 +43,7 @@ export default {
         } else {
           await this.$auth.login(this.correo, this.password)
         }
-        this.$router.replace(this.$route.query.redirect || '/')
+        this.$router.replace('/')
       } catch (error) {
         this.error = error.message || 'No se pudo iniciar sesión.'
       } finally {
