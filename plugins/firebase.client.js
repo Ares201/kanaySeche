@@ -2,6 +2,8 @@ import firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/storage'
 import crudConfig from '~/api/firebase-crud.json'
+import { createFirebaseApi } from '~/utils/firebase-api'
+import { SYSTEM_PAGES } from '~/utils/access-control'
 // import 'firebase/auth' (si luego usas login)
 
 
@@ -23,95 +25,32 @@ if (!firebase.apps.length) {
 const db = firebase.firestore()
 const storage = firebase.storage()
 
-function getApiConfig(apiName) {
-  const apiConfig = crudConfig.apis[apiName]
+let appContext = null
 
-  if (!apiConfig) {
-    throw new Error(`No existe configuracion Firebase para "${apiName}"`)
-  }
-
-  return apiConfig
-}
-
-function serializeDoc(doc) {
-  return {
-    id: doc.id,
-    ...doc.data()
-  }
-}
-
-function isAnulado(record) {
-  return record.anulado === true || record.estado === 'Anulado' || record.estadoProceso === 'Anulado'
-}
-
-function createFirebaseApi(db) {
-  return {
-    config: crudConfig.apis,
-
-    async list(apiName, options = {}) {
-      const apiConfig = getApiConfig(apiName)
-      let query = db.collection(apiConfig.collection)
-
-      if (apiConfig.orderBy) {
-        query = query.orderBy(
-          apiConfig.orderBy,
-          apiConfig.orderDirection || 'asc'
-        )
-      }
-
-      const snapshot = await query.get()
-
-      const records = snapshot.docs.map(serializeDoc)
-      return options.includeAnulados ? records : records.filter(record => !isAnulado(record))
-    },
-
-    async create(apiName, payload) {
-      const apiConfig = getApiConfig(apiName)
-      const now = firebase.firestore.FieldValue.serverTimestamp()
-      const docRef = await db.collection(apiConfig.collection).add({
-        ...payload,
-        fechaCreacion: payload.fechaCreacion || now,
-        fechaActualizacion: now
-      })
-      const doc = await docRef.get()
-
-      return serializeDoc(doc)
-    },
-
-    async update(apiName, id, payload) {
-      const apiConfig = getApiConfig(apiName)
-      const docRef = db.collection(apiConfig.collection).doc(id)
-
-      await docRef.update({
-        ...payload,
-        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
-      })
-
-      const doc = await docRef.get()
-
-      return serializeDoc(doc)
-    },
-
-    async remove(apiName, id) {
-      const apiConfig = getApiConfig(apiName)
-
-      await db.collection(apiConfig.collection).doc(id).update({
-        anulado: true,
-        estado: 'Anulado',
-        fechaAnulacion: firebase.firestore.FieldValue.serverTimestamp(),
-        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
-      })
-
-      return id
+const firebaseApi = createFirebaseApi({
+  db,
+  config: crudConfig.apis,
+  timestamp: () => firebase.firestore.FieldValue.serverTimestamp(),
+  getContext: () => {
+    const ruta = appContext?.router?.currentRoute?.path || '/'
+    const page = SYSTEM_PAGES.find(item => item.ruta === ruta)
+    const isPublicConfirmation = ruta.startsWith('/confirmacion/')
+    const user = isPublicConfirmation ? null : appContext?.$auth?.user
+    return {
+      usuarioId: user?.id || '',
+      usuario: isPublicConfirmation ? 'Confirmaci\u00f3n externa' : user?.nombres || user?.correo || 'Sin sesi\u00f3n',
+      ruta: isPublicConfirmation ? '/confirmacion' : ruta,
+      pagina: isPublicConfirmation ? 'Confirmaci\u00f3n de carta' : page?.nombre || (ruta === '/login' ? 'Acceso al sistema' : ruta),
+      modulo: isPublicConfirmation ? 'Documentos' : page?.modulo || 'General'
     }
-  }
-}
-
-const firebaseApi = createFirebaseApi(db)
+  },
+  canReadHistory: () => Boolean(appContext?.$auth?.can('/configuracion/historial'))
+})
 
 export { db, storage, firebaseApi }
 
-export default (_context, inject) => {
+export default ({ app }, inject) => {
+  appContext = app
   inject('db', db)
   inject('storage', storage)
   inject('firebaseApi', firebaseApi)

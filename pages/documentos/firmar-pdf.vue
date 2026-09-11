@@ -302,10 +302,10 @@ export default {
   methods: {
     async actualizarContador() {
       try {
-        await this.$db.collection('firmarPdf').add({
+        await this.$firebaseApi.create('firmarPdf', {
           contador: 1,  // o cualquier valor, pero realmente solo necesitas la fecha
           fecha: firebase.firestore.FieldValue.serverTimestamp()
-        })
+        }, { accion: 'Firmar PDF' })
         console.log('📄 Evento registrado')
       } catch (error) {
         console.error('❌ Error al registrar evento:', error)

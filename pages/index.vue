@@ -1,175 +1,155 @@
 <template>
-  <section class="home-page">
-    <!-- Estrellas/Partículas flotando -->
-    <div class="particles-container" aria-hidden="true">
-      <div v-for="n in 40" :key="n" class="particle" :style="{
-        left: Math.random() * 100 + '%',
-        top: Math.random() * 100 + '%',
-        animationDuration: (8 + Math.random() * 18) + 's',
-        animationDelay: (Math.random() * -15) + 's',
-        width: (2 + Math.random() * 5) + 'px',
-        height: (2 + Math.random() * 5) + 'px',
-        opacity: 0.3 + Math.random() * 0.6
-      }"></div>
-    </div>
+  <v-container fluid class="home-page pa-4 pa-md-8">
+    <!-- ===== HERO HEADER ===== -->
+    <v-card class="hero-card mb-6" rounded="xl" flat>
+      <div class="hero-gradient"></div>
+      <v-card-text class="hero-content pa-6 pa-md-8">
+        <v-row align="center" no-gutters>
+          <v-col cols="12" md="8">
+            <p class="text-overline home-brand mb-2">Ecocentro Chilca</p>
+            <h1 class="text-h5 text-md-h4 font-weight-bold mb-1">
+              Bienvenido, {{ userName }} 👋
+            </h1>
+            <p class="text-body-2 text--secondary mb-0">
+              Panel de control · <span class="font-weight-medium">{{ userRole }}</span>
+            </p>
+          </v-col>
+          <v-col cols="12" md="4" class="text-md-right mt-3 mt-md-0">
+            <v-chip small class="date-chip" label rounded="lg">
+              <v-icon small left>mdi-calendar-blank-outline</v-icon>
+              {{ currentDate }}
+            </v-chip>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
-    <!-- Estrellas más grandes (destellos) -->
-    <div class="particles-container" aria-hidden="true">
-      <div v-for="n in 8" :key="'big-' + n" class="particle star-big" :style="{
-        left: Math.random() * 100 + '%',
-        top: Math.random() * 100 + '%',
-        animationDuration: (12 + Math.random() * 15) + 's',
-        animationDelay: (Math.random() * -10) + 's',
-        width: (6 + Math.random() * 10) + 'px',
-        height: (6 + Math.random() * 10) + 'px',
-        opacity: 0.2 + Math.random() * 0.4
-      }"></div>
-    </div>
-
-    <!-- Header superior -->
-    <header class="page-header">
-      <div class="header-left">
-        <span class="brand">🌿 Ecocentro Chilca</span>
-      </div>
-      <div class="header-right">
-        <span class="date-badge">{{ currentDate }}</span>
-      </div>
-    </header>
-
-    <!-- Bienvenida -->
-    <div class="welcome-section">
-      <h1>👋 Bienvenido, {{ userName }}</h1>
-      <p class="welcome-sub">Panel de control · {{ userRole }}</p>
-    </div>
-
-    <!-- ===== SECCIÓN 1: PEDIDO DE VENTA ===== -->
-    <section class="section-control">
-      <div class="section-header">
-        <h2>📊 Estado de Pedido de Venta</h2>
-        <span class="section-subtitle">Total: {{ expedientes.length }}</span>
-      </div>
-
-      <div class="control-cards">
-        <!-- Tarjeta: Vencidos > 10 días (DESTACADA) -->
-        <div class="control-card vencidos">
-          <div class="control-card-header">
-            <span class="status-dot danger"></span>
-            <span class="badge danger">⚠️ Urgente</span>
-          </div>
-          <span class="control-number">{{ expedientesVencidos.length }}</span>
-          <span class="control-label">Vencidos > 10 días</span>
-          <span class="control-detail">Sin actualizar</span>
-          <div class="card-actions">
-            <span class="control-action" @click="goToVencidos">Revisar ahora →</span>
-            <button class="btn-excel" @click="exportVencidosExcel" title="Exportar a Excel">
-              📥 Excel
-            </button>
-          </div>
+    <!-- ===== SECCIONES ===== -->
+    <section
+      v-for="section in dashboardSections"
+      :key="section.id"
+      :aria-labelledby="section.id + '-title'"
+      class="mb-8"
+    >
+      <!-- Section header -->
+      <div class="section-header d-flex align-center mb-4">
+        <div class="section-icon mr-3">
+          <v-icon color="var(--color-primary)">{{ section.icon }}</v-icon>
         </div>
-
-        <!-- Tarjeta: Pendiente -->
-        <div class="control-card emitido" @click="goToFilter('Pendiente')">
-          <div class="control-card-header">
-            <span class="status-dot warning"></span>
-            <span class="badge">Pendiente</span>
-          </div>
-          <span class="control-number">{{ expedientesPorEstado.Pendiente || 0 }}</span>
-          <span class="control-label">Pedidos de venta pendientes</span>
-          <span class="control-action">Ver todos →</span>
+        <div class="flex-grow-1">
+          <h2 :id="section.id + '-title'" class="text-h6 font-weight-bold mb-0">
+            {{ section.title }}
+          </h2>
+          <p class="text-caption text--secondary mb-0">
+            {{ section.total }} registros en total
+          </p>
         </div>
-
-        <!-- Tarjeta: Notificado -->
-        <div class="control-card enviado" @click="goToFilter('Notificado')">
-          <div class="control-card-header">
-            <span class="status-dot info"></span>
-            <span class="badge">Notificado</span>
-          </div>
-          <span class="control-number">{{ expedientesPorEstado.Notificado || 0 }}</span>
-          <span class="control-label">Pedidos de venta notificados</span>
-          <span class="control-action">Ver todos →</span>
-        </div>
-
-        <!-- Tarjeta: Regularizado -->
-        <div class="control-card entregado" @click="goToFilter('Regularizado')">
-          <div class="control-card-header">
-            <span class="status-dot success"></span>
-            <span class="badge">Regularizado</span>
-          </div>
-          <span class="control-number">{{ expedientesPorEstado.Regularizado || 0 }}</span>
-          <span class="control-label">Pedidos de venta regularizados</span>
-          <span class="control-action">Ver todos →</span>
-        </div>
-
+        <v-chip small outlined rounded="lg" class="section-total">
+          Total: {{ section.total }}
+        </v-chip>
       </div>
+
+      <!-- Cards grid -->
+      <v-row dense>
+        <!-- Card: Requieren atención -->
+        <v-col cols="12" sm="6" lg="3">
+          <v-card
+            rounded="xl"
+            class="kpi-card kpi-card--alert d-flex flex-column fill-height"
+          >
+            <v-card-text class="flex-grow-1 pa-5">
+              <div class="kpi-icon-wrap kpi-icon-wrap--alert mb-3">
+                <v-icon color="#E65100">mdi-alert-circle-outline</v-icon>
+              </div>
+              <p class="text-caption font-weight-medium kpi-label mb-1">
+                Requieren atención
+              </p>
+              <p class="text-h3 font-weight-bold kpi-number mb-1">
+                {{ section.overdue }}
+              </p>
+              <p class="text-subtitle-2 font-weight-medium kpi-sublabel mb-0">
+                {{ section.overdueLabel }}
+              </p>
+              <p class="text-caption kpi-hint mb-0">Sin actualizar</p>
+            </v-card-text>
+            <v-divider class="kpi-divider" />
+            <v-card-actions class="px-3 py-2">
+              <v-btn
+                text
+                small
+                color="#E65100"
+                class="text-none font-weight-medium"
+                @click="section.review()"
+              >
+                <v-icon left small>mdi-eye-outline</v-icon>
+                Revisar ahora
+              </v-btn>
+              <v-spacer />
+              <v-btn
+                text
+                small
+                color="green darken-2"
+                class="text-none"
+                :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a Excel'"
+                @click="section.exportExcel()"
+              >
+                <v-icon left small>mdi-microsoft-excel</v-icon>
+                Excel
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+
+        <!-- Cards: Estados -->
+        <v-col
+          v-for="status in section.statuses"
+          :key="status.name"
+          cols="12"
+          sm="6"
+          lg="3"
+        >
+          <v-card
+            rounded="xl"
+            class="kpi-card kpi-card--info d-flex flex-column fill-height"
+          >
+            <v-card-text class="flex-grow-1 pa-5">
+              <div class="kpi-icon-wrap kpi-icon-wrap--info mb-3">
+                <v-icon color="#1565C0">{{ status.icon }}</v-icon>
+              </div>
+              <p class="text-caption font-weight-medium kpi-label mb-1">
+                {{ status.name }}
+              </p>
+              <p class="text-h3 font-weight-bold kpi-number mb-1">
+                {{ status.count }}
+              </p>
+              <p class="text-subtitle-2 font-weight-medium kpi-sublabel mb-0">
+                {{ status.label }}
+              </p>
+            </v-card-text>
+            <v-divider class="kpi-divider" />
+            <v-card-actions class="px-3 py-2">
+              <v-btn
+                text
+                small
+                color="#1565C0"
+                class="text-none font-weight-medium"
+                :aria-label="'Ver ' + status.label.toLowerCase()"
+                @click="section.filter(status.name)"
+              >
+                Ver todos
+                <v-icon right small>mdi-arrow-right</v-icon>
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
     </section>
-
-    <!-- ===== SECCIÓN 2: CARTAS ===== -->
-    <section class="section-control section-cartas">
-      <div class="section-header">
-        <h2>📋 Estado de Cartas</h2>
-        <span class="section-subtitle">Total: {{ cartas.length }}</span>
-      </div>
-
-      <div class="control-cards">
-        <!-- Tarjeta: Vencidos > 10 días (DESTACADA) -->
-        <div class="control-card vencidos">
-          <div class="control-card-header">
-            <span class="status-dot danger"></span>
-            <span class="badge danger">⚠️ Urgente</span>
-          </div>
-          <span class="control-number">{{ cartasVencidas.length }}</span>
-          <span class="control-label">Vencidas > 10 días</span>
-          <span class="control-detail">Sin actualizar</span>
-          <div class="card-actions">
-            <span class="control-action" @click="goToCartasVencidas">Revisar ahora →</span>
-            <button class="btn-excel" @click="exportCartasVencidasExcel" title="Exportar a Excel">
-              📥 Excel
-            </button>
-          </div>
-        </div>
-
-        <!-- Tarjeta: Emitido -->
-        <div class="control-card emitido" @click="goToCartasFilter('Emitido')">
-          <div class="control-card-header">
-            <span class="status-dot warning"></span>
-            <span class="badge">Emitido</span>
-          </div>
-          <span class="control-number">{{ cartasPorEstado.Emitido || 0 }}</span>
-          <span class="control-label">Cartas emitidas</span>
-          <span class="control-action">Ver todos →</span>
-        </div>
-
-        <!-- Tarjeta: Enviado -->
-        <div class="control-card enviado" @click="goToCartasFilter('Enviado')">
-          <div class="control-card-header">
-            <span class="status-dot info"></span>
-            <span class="badge">Enviado</span>
-          </div>
-          <span class="control-number">{{ cartasPorEstado.Enviado || 0 }}</span>
-          <span class="control-label">Cartas enviadas</span>
-          <span class="control-action">Ver todos →</span>
-        </div>
-
-        <!-- Tarjeta: Entregado -->
-        <div class="control-card entregado" @click="goToCartasFilter('Entregado')">
-          <div class="control-card-header">
-            <span class="status-dot success"></span>
-            <span class="badge">Entregado</span>
-          </div>
-          <span class="control-number">{{ cartasPorEstado.Entregado || 0 }}</span>
-          <span class="control-label">Cartas entregadas</span>
-          <span class="control-action">Ver todos →</span>
-        </div>
-      </div>
-    </section>
-
-  </section>
+  </v-container>
 </template>
 
 <script>
 import {
   normalizeExpediente,
-  toExpedientePayload,
   ESTADOS_EXPEDIENTE,
 } from '~/models/expediente'
 import ExcelJS from 'exceljs'
@@ -211,16 +191,9 @@ function normalizeCarta(carta) {
 export default {
   name: 'IndexPage',
   data: () => ({
-    selectedBackground: 0,
     expedientes: [],
     cartas: [],
-    loading: false,
-    backgrounds: [
-      {
-        url: 'https://s1.significados.com/foto/medio-ambiente-og.jpg',
-        alt: 'Ecocentro Chilca'
-      }
-    ]
+    loading: false
   }),
   computed: {
     userName() {
@@ -237,9 +210,41 @@ export default {
         day: 'numeric'
       })
     },
-    backgroundStyle() {
-      const background = this.backgrounds[0]
-      return { backgroundImage: `url("${background.url}")` }
+    dashboardSections() {
+      return [
+        {
+          id: 'pedidos',
+          title: 'Pedidos de venta',
+          icon: 'mdi-clipboard-text-outline',
+          total: this.expedientes.length,
+          overdue: this.expedientesVencidos.length,
+          overdueLabel: 'Vencidos > 10 días',
+          review: this.goToVencidos,
+          exportExcel: this.exportVencidosExcel,
+          filter: this.goToFilter,
+          statuses: [
+            { name: 'Pendiente', label: 'Pedidos pendientes', icon: 'mdi-clock-outline' },
+            { name: 'Notificado', label: 'Pedidos notificados', icon: 'mdi-email-outline' },
+            { name: 'Regularizado', label: 'Pedidos regularizados', icon: 'mdi-check-circle-outline' }
+          ].map(status => ({ ...status, count: this.expedientesPorEstado[status.name] || 0 }))
+        },
+        {
+          id: 'cartas',
+          title: 'Cartas',
+          icon: 'mdi-file-document-outline',
+          total: this.cartas.length,
+          overdue: this.cartasVencidas.length,
+          overdueLabel: 'Vencidas > 10 días',
+          review: this.goToCartasVencidas,
+          exportExcel: this.exportCartasVencidasExcel,
+          filter: this.goToCartasFilter,
+          statuses: [
+            { name: 'Emitido', label: 'Cartas emitidas', icon: 'mdi-file-outline' },
+            { name: 'Enviado', label: 'Cartas enviadas', icon: 'mdi-email-outline' },
+            { name: 'Entregado', label: 'Cartas entregadas', icon: 'mdi-check-circle-outline' }
+          ].map(status => ({ ...status, count: this.cartasPorEstado[status.name] || 0 }))
+        }
+      ]
     },
 
     // ===== COMPUTED DE EXPEDIENTES =====
@@ -720,426 +725,226 @@ export default {
 </script>
 
 <style scoped>
-/* ===== ESTILOS: UNIVERSO (PÚRPURA + AZUL + NEGRO) ===== */
 .home-page {
-  position: relative;
   min-height: calc(100vh - 64px);
-  padding: 28px clamp(24px, 5vw, 60px);
-  background:
-    radial-gradient(ellipse at 20% 50%,
-      rgba(120, 50, 180, 0.3) 0%,
-      transparent 50%),
-    radial-gradient(ellipse at 80% 30%,
-      rgba(60, 30, 150, 0.25) 0%,
-      transparent 45%),
-    radial-gradient(ellipse at 50% 80%,
-      rgba(200, 50, 150, 0.2) 0%,
-      transparent 40%),
-    linear-gradient(180deg,
-      #050510 0%,
-      #0a0a2a 20%,
-      #150830 40%,
-      #0d0d3a 60%,
-      #080825 80%,
-      #050510 100%);
-  overflow-y: auto;
+  background: var(--color-background);
 }
 
-.home-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 35%,
-      rgba(180, 80, 220, 0.08) 0%,
-      rgba(100, 50, 200, 0.05) 25%,
-      rgba(60, 30, 150, 0.03) 50%,
-      transparent 70%);
-  z-index: 0;
-}
-
-.particles-container {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+/* ===== HERO ===== */
+.hero-card {
+  position: relative;
   overflow: hidden;
+  border: 1px solid rgba(31, 78, 121, 0.12);
+  border-radius: 24px !important;
+  background: linear-gradient(
+    135deg,
+    rgba(31, 78, 121, 0.10) 0%,
+    rgba(31, 78, 121, 0.04) 45%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.hero-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    rgba(31, 78, 121, 0.15),
+    transparent 60%
+  );
   pointer-events: none;
 }
 
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle,
-      rgba(255, 255, 255, 0.9),
-      rgba(200, 150, 255, 0.4));
-  animation: float-star 10s infinite alternate ease-in-out;
-  box-shadow: 0 0 10px rgba(180, 80, 220, 0.2);
-  will-change: transform, opacity;
-}
-
-.star-big {
-  background: radial-gradient(circle,
-      rgba(255, 255, 255, 0.95),
-      rgba(200, 100, 255, 0.3));
-  box-shadow:
-    0 0 15px rgba(180, 80, 220, 0.3),
-    0 0 30px rgba(120, 50, 200, 0.1);
-  animation: twinkle-star 6s infinite alternate ease-in-out;
-}
-
-@keyframes float-star {
-  0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.2;
-  }
-
-  33% {
-    transform: translate(20px, -30px) scale(1.3);
-    opacity: 0.7;
-  }
-
-  66% {
-    transform: translate(-15px, -50px) scale(0.8);
-    opacity: 0.4;
-  }
-
-  100% {
-    transform: translate(15px, -20px) scale(1.1);
-    opacity: 0.6;
-  }
-}
-
-@keyframes twinkle-star {
-  0% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.3;
-    box-shadow: 0 0 15px rgba(180, 80, 220, 0.3);
-  }
-
-  50% {
-    transform: scale(1.4) rotate(10deg);
-    opacity: 0.9;
-    box-shadow: 0 0 30px rgba(200, 100, 255, 0.5);
-  }
-
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.3;
-    box-shadow: 0 0 15px rgba(180, 80, 220, 0.3);
-  }
-}
-
-.page-header {
+.hero-content {
   position: relative;
   z-index: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  flex-wrap: wrap;
-  gap: 12px;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+.home-brand {
+  color: var(--color-primary);
+  letter-spacing: 1.5px;
 }
 
-.brand {
-  color: #c084fc;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-shadow: 0 0 20px rgba(192, 132, 252, 0.2);
+.date-chip {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(31, 78, 121, 0.18);
+  backdrop-filter: blur(6px);
+  font-weight: 500;
 }
 
-.date-badge {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 14px;
-  border-radius: 20px;
-}
-
-.header-right {
+/* ===== SECTION HEADER ===== */
+.section-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgba(31, 78, 121, 0.14),
+    rgba(31, 78, 121, 0.06)
+  );
 }
 
-.welcome-section {
+.section-total {
+  font-weight: 500;
+  border-radius: 12px !important;
+}
+
+/* ===== KPI CARDS ===== */
+.kpi-card {
   position: relative;
-  z-index: 1;
-  margin: 32px 0 28px;
-}
-
-.welcome-section h1 {
-  color: white;
-  font-size: clamp(28px, 3.5vw, 42px);
-  margin: 0 0 4px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(192, 132, 252, 0.1);
-}
-
-.welcome-sub {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 15px;
-  margin: 0;
-}
-
-.section-control {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 20px;
-  padding: 28px 30px;
-  margin-bottom: 32px;
-}
-
-.section-cartas {
-  border-color: rgba(192, 132, 252, 0.15);
-}
-
-.section-header {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.section-header h2 {
-  color: white;
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.section-subtitle {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 12px;
-  border-radius: 20px;
-}
-
-.control-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.control-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 16px;
-  padding: 20px 22px;
-  cursor: pointer;
-  transition: all 0.25s ease;
+  overflow: hidden;
+  border-radius: 24px !important;
   border: 1px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.control-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(192, 132, 252, 0.2);
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 25px rgba(120, 50, 200, 0.08);
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10);
 }
 
-.control-card-header {
+/* Card con alerta (ámbar/rojo suave) */
+.kpi-card--alert {
+  background: linear-gradient(
+    160deg,
+    rgba(255, 152, 0, 0.10) 0%,
+    rgba(255, 255, 255, 0) 55%
+  );
+  border-color: rgba(230, 81, 0, 0.25);
+  border-top: 4px solid #E65100;
+}
+
+.kpi-card--alert:hover {
+  border-color: rgba(230, 81, 0, 0.45);
+  box-shadow: 0 10px 24px rgba(230, 81, 0, 0.18);
+}
+
+/* Card info (azul suave) */
+.kpi-card--info {
+  background: linear-gradient(
+    160deg,
+    rgba(21, 101, 192, 0.08) 0%,
+    rgba(255, 255, 255, 0) 55%
+  );
+  border-color: rgba(21, 101, 192, 0.20);
+  border-top: 4px solid #1565C0;
+}
+
+.kpi-card--info:hover {
+  border-color: rgba(21, 101, 192, 0.40);
+  box-shadow: 0 10px 24px rgba(21, 101, 192, 0.15);
+}
+
+/* Icon wrap */
+.kpi-icon-wrap {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  justify-content: center;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
+.kpi-icon-wrap--alert {
+  background: rgba(230, 81, 0, 0.14);
 }
 
-.status-dot.warning {
-  background: #fbbf24;
+.kpi-icon-wrap--info {
+  background: rgba(21, 101, 192, 0.14);
 }
 
-.status-dot.info {
-  background: #60a5fa;
-}
-
-.status-dot.success {
-  background: #34d399;
-}
-
-.status-dot.muted {
-  background: #6b7280;
-}
-
-.status-dot.danger {
-  background: #ef4444;
-  animation: pulse-danger 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-danger {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-  }
-
-  50% {
-    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
-  }
-}
-
-.badge {
-  font-size: 10px;
-  font-weight: 700;
+/* Tipografía */
+.kpi-label {
+  color: #616161;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 10px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px !important;
 }
 
-.badge.danger {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
-.control-number {
-  display: block;
-  color: white;
-  font-size: 34px;
-  font-weight: 700;
+.kpi-number {
   line-height: 1.1;
+  letter-spacing: -0.5px;
+  color: #212121 !important;
 }
 
-.control-label {
-  display: block;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 14px;
-  margin: 2px 0 4px;
+.kpi-sublabel {
+  color: #424242 !important;
 }
 
-.control-detail {
-  display: block;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 12px;
-  margin-bottom: 10px;
+.kpi-hint {
+  color: #9E9E9E;
 }
 
-.control-action {
-  color: #c084fc;
-  font-size: 13px;
-  font-weight: 600;
-  transition: 0.2s;
+.kpi-divider {
+  border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
-.control-card:hover .control-action {
-  transform: translateX(6px);
-  display: inline-block;
+/* ===== DARK MODE ===== */
+.theme--dark .home-page {
+  background: inherit;
 }
 
-.control-card.vencidos {
-  border-color: rgba(239, 68, 68, 0.2);
-  background: rgba(239, 68, 68, 0.05);
+.theme--dark .hero-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 45%,
+    transparent 100%
+  );
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
-.control-card.vencidos:hover {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.08);
-  box-shadow: 0 4px 25px rgba(239, 68, 68, 0.1);
+.theme--dark .date-chip {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-.control-card.vencidos .control-number {
-  color: #ef4444;
+.theme--dark .section-icon {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.04)
+  );
 }
 
-.card-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
+.theme--dark .kpi-card--alert {
+  background: linear-gradient(
+    160deg,
+    rgba(230, 81, 0, 0.18) 0%,
+    rgba(255, 255, 255, 0.02) 55%
+  );
 }
 
-.btn-excel {
-  background: rgba(33, 150, 83, 0.2);
-  border: 1px solid rgba(33, 150, 83, 0.3);
-  color: #4caf50;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.theme--dark .kpi-card--info {
+  background: linear-gradient(
+    160deg,
+    rgba(21, 101, 192, 0.20) 0%,
+    rgba(255, 255, 255, 0.02) 55%
+  );
 }
 
-.btn-excel:hover {
-  background: rgba(33, 150, 83, 0.35);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(33, 150, 83, 0.2);
+.theme--dark .kpi-number {
+  color: #FFFFFF !important;
 }
 
-.control-card.emitido {
-  border-left: 4px solid #fbbf24;
+.theme--dark .kpi-sublabel {
+  color: #E0E0E0 !important;
 }
 
-.control-card.enviado {
-  border-left: 4px solid #60a5fa;
+.theme--dark .kpi-label {
+  color: #BDBDBD;
 }
 
-.control-card.entregado {
-  border-left: 4px solid #34d399;
+.theme--dark .kpi-divider {
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .header-right {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .control-cards {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .section-control {
-    padding: 20px;
-  }
-
-  .card-actions {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .btn-excel {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .control-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .home-page {
-    padding: 16px;
-  }
+/* ===== FOCUS VISIBLE ===== */
+.kpi-card:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 </style>

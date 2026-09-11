@@ -40,10 +40,10 @@ export default {
   methods: {
     async registrarExpedientesProcesados() {
       try {
-        await this.$db.collection('procesarExpedientes').add({
+        await this.$firebaseApi.create('procesarExpedientes', {
           contador: 1,
           fecha: firebase.firestore.FieldValue.serverTimestamp()
-        })
+        }, { accion: 'Procesar expedientes' })
       } catch (error) {
         // La estadística no debe impedir que el usuario reciba su archivo.
         console.error('Error al registrar el procesamiento de expedientes:', error)

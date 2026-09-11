@@ -217,6 +217,8 @@
           <NuxtLink v-if="can('/configuracion/roles')" class="nav-link" to="/configuracion/roles"
             @click.native="closeMenu">
             Roles y permisos</NuxtLink>
+          <NuxtLink v-if="can('/configuracion/historial')" class="nav-link" to="/configuracion/historial"
+            @click.native="closeMenu">Historial</NuxtLink>
           <NuxtLink v-if="can('/configuracion/vehiculos')" class="nav-link" to="/configuracion/vehiculos"
             @click.native="closeMenu">Vehiculos</NuxtLink>
         </div>
@@ -254,7 +256,7 @@ export default {
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
     controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/ingresos-cisterna'] },
     documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones'] },
-    configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos'] }
+    configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos', '/configuracion/historial'] }
   },
 
   mounted() {

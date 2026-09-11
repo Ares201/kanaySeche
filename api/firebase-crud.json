@@ -158,6 +158,16 @@
         "update": "update",
         "delete": "remove"
       }
+    },
+    "procesarBoletas": {
+      "collection": "procesarBoletas",
+      "orderBy": "fecha",
+      "orderDirection": "desc"
+    },
+    "procesarExpedientes": {
+      "collection": "procesarExpedientes",
+      "orderBy": "fecha",
+      "orderDirection": "desc"
     }
   }
 }

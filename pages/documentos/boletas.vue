@@ -40,10 +40,10 @@ export default {
   methods: {
     async registrarBoletasProcesadas() {
       try {
-        await this.$db.collection('procesarBoletas').add({
+        await this.$firebaseApi.create('procesarBoletas', {
           contador: 1,
           fecha: firebase.firestore.FieldValue.serverTimestamp()
-        })
+        }, { accion: 'Procesar boletas' })
       } catch (error) {
         // La estadistica no debe impedir que el usuario reciba su archivo.
         console.error('Error al registrar el procesamiento de boletas:', error)
