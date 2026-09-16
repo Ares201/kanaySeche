@@ -196,6 +196,17 @@
             @click.native="closeMenu">Validaciones</NuxtLink>
         </div>
 
+        <!-- INVENTARIO -->
+        <button v-if="hasAccess(inventarioRoutes)" class="module-button" type="button" @click="toggleInventario">
+          <span>Inventario</span>
+          <span class="chevron" :class="{ 'chevron--open': inventarioOpen }">›</span>
+        </button>
+        <div v-if="hasAccess(inventarioRoutes)" v-show="inventarioOpen" class="submenu">
+          <NuxtLink v-if="can('/inventario')" class="nav-link" to="/inventario" @click.native="closeMenu">Almacén</NuxtLink>
+          <NuxtLink v-if="can('/inventario/requerimientos')" class="nav-link" to="/inventario/requerimientos" @click.native="closeMenu">Requerimientos</NuxtLink>
+          <NuxtLink v-if="can('/inventario/productos')" class="nav-link" to="/inventario/productos" @click.native="closeMenu">Productos</NuxtLink>
+        </div>
+
         <!-- CONFIGURACION -->
         <button v-if="hasAccess(configuracionRoutes)" class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
@@ -242,6 +253,7 @@ export default {
       operacionesOpen: false,
       controlAceptacionOpen: false,
       configuracionOpen: false,
+      inventarioOpen: false,
       documentosOpen: true
     }
   },
@@ -256,6 +268,7 @@ export default {
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
     controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/ingresos-cisterna'] },
     documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones'] },
+    inventarioRoutes() { return ['/inventario', '/inventario/requerimientos', '/inventario/productos'] },
     configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos', '/configuracion/historial'] }
   },
 
@@ -311,6 +324,7 @@ export default {
         'planificacionOpen',
         'operacionesOpen',
         'controlAceptacionOpen',
+        'inventarioOpen',
         'configuracionOpen',
         'documentosOpen'
       ]
@@ -322,6 +336,7 @@ export default {
     togglePlanificacion() { this.toggleModule('planificacion') },
     toggleOperaciones() { this.toggleModule('operaciones') },
     toggleControlAceptacion() { this.toggleModule('controlAceptacion') },
+    toggleInventario() { this.toggleModule('inventario') },
     toggleConfiguracion() { this.toggleModule('configuracion') },
     toggleDocumentos() { this.toggleModule('documentos') }
   }

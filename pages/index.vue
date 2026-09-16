@@ -947,4 +947,4 @@ export default {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
-</style>
+</style>  

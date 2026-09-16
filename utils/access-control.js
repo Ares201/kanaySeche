@@ -23,6 +23,9 @@ export const SYSTEM_PAGES = [
   { nombre: 'Roles y permisos', ruta: '/configuracion/roles', modulo: 'Administración', soloAdministrador: true },
   { nombre: 'Vehículos', ruta: '/configuracion/vehiculos', modulo: 'Configuración' },
   { nombre: 'Productos', ruta: '/configuracion/productos', modulo: 'Configuración' },
+  { nombre: 'Almacén de útiles', ruta: '/inventario', modulo: 'Inventario' },
+  { nombre: 'Requerimientos de útiles', ruta: '/inventario/requerimientos', modulo: 'Inventario' },
+  { nombre: 'Productos de inventario', ruta: '/inventario/productos', modulo: 'Inventario' },
   { nombre: 'Generadores', ruta: '/configuracion/generador', modulo: 'Configuración' }
 ]
 

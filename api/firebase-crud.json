@@ -63,6 +63,21 @@
         "delete": "remove"
       }
     },
+    "utilesOficina": {
+      "collection": "utilesOficina",
+      "orderBy": "nombre",
+      "orderDirection": "asc"
+    },
+    "requerimientosUtiles": {
+      "collection": "requerimientosUtiles",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc"
+    },
+    "movimientosUtiles": {
+      "collection": "movimientosUtiles",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc"
+    },
     "generadores": {
       "collection": "generadores",
       "model": "generador",
