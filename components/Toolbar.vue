@@ -116,14 +116,15 @@
         <!-- ... (resto de tus enlaces de navegación sin cambios) ... -->
 
         <!-- INICIO -->
-        <NuxtLink v-if="can('/')" class="nav-link" to="/" @click.native="closeMenu">
+        <button class="module-button module-button--spaced" type="button" @click="toggleInicio">
           <span>Inicio</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true" class="nav-icon">
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-            <path d="M9 21v-6h6v6" />
-          </svg>
-        </NuxtLink>
+          <span class="chevron" :class="{ 'chevron--open': inicioOpen }">â€º</span>
+        </button>
+        <div v-show="inicioOpen" class="submenu">
+          <NuxtLink class="nav-link" to="/" @click.native="closeMenu">Panel principal</NuxtLink>
+          <NuxtLink v-if="can('/inicio/tareas')" class="nav-link" to="/inicio/tareas" @click.native="closeMenu">Tareas</NuxtLink>
+          <NuxtLink v-if="can('/inicio/graficos')" class="nav-link" to="/inicio/graficos" @click.native="closeMenu">Mis grÃ¡ficos</NuxtLink>
+        </div>
 
         <!-- PLANIFICACION -->
         <button v-if="hasAccess(['/planificacion/agendamientos'])" class="module-button module-button--spaced"
@@ -249,6 +250,7 @@ export default {
       userMenuOpen: false, // Estado del menú de usuario
 
       // Modulos Open
+      inicioOpen: true,
       planificacionOpen: false,
       operacionesOpen: false,
       controlAceptacionOpen: false,
@@ -265,6 +267,7 @@ export default {
     },
     currentUserName() { return this.$auth?.user?.nombres || 'Kanay - Seche' },
     currentRole() { return this.$auth?.user?.rolNombre || '' },
+    inicioRoutes() { return ['/', '/inicio/tareas', '/inicio/graficos'] },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
     controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/ingresos-cisterna'] },
     documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones'] },
@@ -322,6 +325,7 @@ export default {
       const shouldOpen = !this[stateKey]
       const modules = [
         'planificacionOpen',
+        'inicioOpen',
         'operacionesOpen',
         'controlAceptacionOpen',
         'inventarioOpen',
@@ -334,6 +338,7 @@ export default {
       })
     },
     togglePlanificacion() { this.toggleModule('planificacion') },
+    toggleInicio() { this.toggleModule('inicio') },
     toggleOperaciones() { this.toggleModule('operaciones') },
     toggleControlAceptacion() { this.toggleModule('controlAceptacion') },
     toggleInventario() { this.toggleModule('inventario') },

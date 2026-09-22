@@ -81,7 +81,7 @@
               hide-details outlined clearable placeholder="Todos" />
             <v-autocomplete v-model="tipoServicioFiltro" :items="tiposServicio" label="Tipo de servicio" dense
               hide-details outlined clearable placeholder="Todos" />
-            <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
+            <v-autocomplete v-model="estadoFiltro" :items="estadosFiltro" label="Estado" dense hide-details outlined
               clearable placeholder="Todos" />
             <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Fecha" clearable />
           </div>
@@ -442,6 +442,7 @@ export default {
       filtersOpen: false,
       viewMode: 'kanban',
       estados: ESTADOS_EXPEDIENTE,
+      estadosFiltro: [...ESTADOS_EXPEDIENTE, 'Vencido'],
       estadosPV: ESTADOS_PV,
       tiposServicio: TIPOS_SERVICIO,
       tableHeaders: [
@@ -516,7 +517,11 @@ export default {
 
         const fechaStr = this.formatDateInput(exp.fecha)
         const matchesDate = !fechaFiltro || fechaStr === fechaFiltro
-        const matchesEstado = !estadoFiltro || exp.estado === estadoFiltro
+        const matchesEstado = !estadoFiltro || (
+          estadoFiltro === 'Vencido'
+            ? this.isExpedienteVencido(exp)
+            : exp.estado === estadoFiltro
+        )
 
         // NUEVO: Filtrar por estado PV
         const matchesEstadoPV = !estadoPVFiltro || exp.estadoPV === estadoPVFiltro
@@ -583,9 +588,16 @@ export default {
         this.syncKanbanColumns()
       },
       immediate: true
+    },
+    '$route.query': {
+      handler() {
+        this.applyRouteFilters()
+      },
+      deep: true
     }
   },
   mounted() {
+    this.applyRouteFilters()
     this.getAll()
     this.loadClientes()
     this.loadPersonal()
@@ -593,6 +605,30 @@ export default {
   methods: {
     formatWeight,
     getNowDateTimeInput,
+
+    applyRouteFilters() {
+      const { filter, estado } = this.$route.query
+      if (filter === 'vencidos') {
+        this.estadoFiltro = 'Vencido'
+        this.filtersOpen = true
+      } else if (ESTADOS_EXPEDIENTE.includes(estado)) {
+        this.estadoFiltro = estado
+        this.filtersOpen = true
+      }
+    },
+
+    isExpedienteVencido(expediente) {
+      if (['Regularizado', 'Cerrado'].includes(expediente.estado) || !expediente.fecha) return false
+
+      const fechaPedido = this.parseDate(expediente.fecha)
+      if (!fechaPedido || Number.isNaN(fechaPedido.getTime())) return false
+
+      const limite = new Date()
+      limite.setHours(0, 0, 0, 0)
+      limite.setDate(limite.getDate() - 10)
+      fechaPedido.setHours(0, 0, 0, 0)
+      return fechaPedido <= limite
+    },
 
     clearFilters() {
       this.plannerFiltro = null

@@ -24,6 +24,19 @@
       </v-card-text>
     </v-card>
 
+    <v-row v-if="canTasks || canTaskCharts" dense class="mb-6">
+      <v-col v-if="canTasks" cols="12" md="6">
+        <v-card to="/inicio/tareas" rounded="xl" class="quick-link-card pa-5" outlined>
+          <div class="d-flex align-center"><div class="quick-link-icon mr-4"><v-icon color="#00558a">mdi-view-dashboard-outline</v-icon></div><div><h2 class="text-h6 mb-1">Mis tareas</h2><p class="text-body-2 text--secondary mb-0">Crea, comparte y organiza tus tareas por estado.</p></div><v-spacer/><v-icon>mdi-arrow-right</v-icon></div>
+        </v-card>
+      </v-col>
+      <v-col v-if="canTaskCharts" cols="12" md="6">
+        <v-card to="/inicio/graficos" rounded="xl" class="quick-link-card pa-5" outlined>
+          <div class="d-flex align-center"><div class="quick-link-icon mr-4"><v-icon color="#0f766e">mdi-chart-bar</v-icon></div><div><h2 class="text-h6 mb-1">Mis gráficos</h2><p class="text-body-2 text--secondary mb-0">Consulta el avance, prioridad y fechas de tus tareas.</p></div><v-spacer/><v-icon>mdi-arrow-right</v-icon></div>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- ===== SECCIONES ===== -->
     <section
       v-for="section in dashboardSections"
@@ -95,6 +108,17 @@
               >
                 <v-icon left small>mdi-microsoft-excel</v-icon>
                 Excel
+              </v-btn>
+              <v-btn
+                text
+                small
+                color="red darken-2"
+                class="text-none"
+                :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a PDF'"
+                @click="section.exportPdf()"
+              >
+                <v-icon left small>mdi-file-pdf-box</v-icon>
+                PDF
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -210,6 +234,8 @@ export default {
         day: 'numeric'
       })
     },
+    canTasks() { return Boolean(this.$auth?.can('/inicio/tareas')) },
+    canTaskCharts() { return Boolean(this.$auth?.can('/inicio/graficos')) },
     dashboardSections() {
       return [
         {
@@ -218,9 +244,10 @@ export default {
           icon: 'mdi-clipboard-text-outline',
           total: this.expedientes.length,
           overdue: this.expedientesVencidos.length,
-          overdueLabel: 'Vencidos > 10 días',
+          overdueLabel: 'Vencidos desde la fecha del pedido (10 días o más)',
           review: this.goToVencidos,
           exportExcel: this.exportVencidosExcel,
+          exportPdf: () => this.exportVencidosPdf(),
           filter: this.goToFilter,
           statuses: [
             { name: 'Pendiente', label: 'Pedidos pendientes', icon: 'mdi-clock-outline' },
@@ -234,9 +261,10 @@ export default {
           icon: 'mdi-file-document-outline',
           total: this.cartas.length,
           overdue: this.cartasVencidas.length,
-          overdueLabel: 'Vencidas > 10 días',
+          overdueLabel: 'Vencidas desde la fecha de servicio (10 días o más)',
           review: this.goToCartasVencidas,
           exportExcel: this.exportCartasVencidasExcel,
+          exportPdf: () => this.exportCartasVencidasPdf(),
           filter: this.goToCartasFilter,
           statuses: [
             { name: 'Emitido', label: 'Cartas emitidas', icon: 'mdi-file-outline' },
@@ -250,13 +278,16 @@ export default {
     // ===== COMPUTED DE EXPEDIENTES =====
     expedientesVencidos() {
       const today = new Date()
+      today.setHours(0, 0, 0, 0)
       const tenDaysAgo = new Date(today)
       tenDaysAgo.setDate(today.getDate() - 10)
       const estadosExcluidos = ['Cerrado', 'Regularizado']
       return this.expedientes.filter(exp => {
         if (estadosExcluidos.includes(exp.estado)) return false
-        if (!exp.fecha) return true
+        if (!exp.fecha) return false
         const fecha = new Date(exp.fecha)
+        if (isNaN(fecha.getTime())) return false
+        fecha.setHours(0, 0, 0, 0)
         return fecha <= tenDaysAgo
       })
     },
@@ -277,6 +308,7 @@ export default {
     // ===== COMPUTED DE CARTAS =====
     cartasVencidas() {
       const today = new Date()
+      today.setHours(0, 0, 0, 0)
       const tenDaysAgo = new Date(today)
       tenDaysAgo.setDate(today.getDate() - 10)
 
@@ -288,8 +320,9 @@ export default {
         if (!estadosActivos.includes(carta.estadoProceso)) return false
 
         const fecha = this.extraerFecha(carta.fechaServicio)
-        if (!fecha) return true
-        if (isNaN(fecha.getTime())) return true
+        if (!fecha) return false
+        if (isNaN(fecha.getTime())) return false
+        fecha.setHours(0, 0, 0, 0)
 
         return fecha <= tenDaysAgo
       })
@@ -320,6 +353,11 @@ export default {
   methods: {
     extraerFecha(timestamp) {
       if (!timestamp) return null
+
+      if (typeof timestamp === 'string') {
+        const match = timestamp.match(/^(\d{4})-(\d{2})-(\d{2})/)
+        if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      }
 
       // Si es un timestamp de Firestore con seconds
       if (timestamp.seconds !== undefined) {
@@ -361,6 +399,153 @@ export default {
       } catch (error) {
         console.error('No se pudieron cargar las cartas:', error)
       }
+    },
+
+    async exportVencidosPdf() {
+      await this.exportReporteVencidosPdf('pedidos')
+    },
+
+    async exportCartasVencidasPdf() {
+      await this.exportReporteVencidosPdf('cartas')
+    },
+
+    async exportReporteVencidosPdf(tipo) {
+      const esCartas = tipo === 'cartas'
+      const registros = esCartas ? this.cartasVencidas : this.expedientesVencidos
+      if (!registros.length) {
+        alert(`No hay ${esCartas ? 'cartas' : 'pedidos de venta'} vencidos para exportar`)
+        return
+      }
+
+      const estados = registros.reduce((resultado, registro) => {
+        const estado = esCartas ? registro.estadoProceso : registro.estado
+        resultado[estado || 'Sin estado'] = (resultado[estado || 'Sin estado'] || 0) + 1
+        return resultado
+      }, {})
+      const dias = registros.map(registro => {
+        const fecha = esCartas ? this.extraerFecha(registro.fechaServicio) : registro.fecha
+        return Number(this.calcularDias(fecha)) || 0
+      })
+      const promedio = Math.round(dias.reduce((total, valor) => total + valor, 0) / dias.length)
+      const maximo = Math.max(...dias)
+      const mayorEstado = Math.max(...Object.values(estados), 1)
+      const escape = this.escapePdfHtml
+      const fechaGeneracion = new Date().toLocaleDateString('es-PE', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      })
+
+      let logo = '/kanay.jpeg'
+      try {
+        logo = await this.getImageDataUrl('/kanay.jpeg')
+      } catch (error) {
+        console.warn('No se pudo incluir el logo en el PDF', error)
+      }
+
+      const barras = Object.entries(estados).map(([estado, cantidad]) => `
+        <div class="chart-row">
+          <span class="chart-label">${escape(estado)}</span>
+          <div class="chart-track"><div class="chart-bar" style="width:${Math.max((cantidad / mayorEstado) * 100, 4)}%"></div></div>
+          <strong>${cantidad}</strong>
+        </div>
+      `).join('')
+
+      const filas = registros.map(registro => {
+        const fechaBase = esCartas ? this.extraerFecha(registro.fechaServicio) : registro.fecha
+        const valores = esCartas
+          ? [
+              registro.correlativo,
+              registro.cliente?.nombre,
+              this.formatDateExcel(fechaBase),
+              registro.estadoProceso,
+              registro.asunto,
+              this.calcularDias(fechaBase)
+            ]
+          : [
+              registro.correlativo,
+              registro.cliente?.nombre,
+              this.formatDateExcel(fechaBase),
+              registro.estado,
+              registro.planner,
+              this.calcularDias(fechaBase)
+            ]
+        return `<tr>${valores.map(valor => `<td>${escape(valor)}</td>`).join('')}</tr>`
+      }).join('')
+
+      const titulo = esCartas ? 'Reporte ejecutivo de cartas vencidas' : 'Reporte ejecutivo de pedidos de venta vencidos'
+      const referencia = esCartas ? 'Fecha de servicio' : 'Fecha del pedido'
+      const encabezados = esCartas
+        ? ['Carta', 'Cliente', 'Fecha de servicio', 'Estado', 'Asunto', 'Días transcurridos']
+        : ['N.º PV', 'Cliente', 'Fecha del pedido', 'Estado', 'Planner', 'Días transcurridos']
+
+      const container = document.createElement('div')
+      container.style.position = 'fixed'
+      container.style.left = '-10000px'
+      container.style.top = '0'
+      container.innerHTML = `
+        <div class="executive-report">
+          <style>
+            .executive-report{width:277mm;padding:10mm 11mm;color:#1e293b;background:#fff;font-family:Arial,sans-serif;font-size:10px;box-sizing:border-box}
+            .report-header{display:flex;align-items:center;gap:18px;border-bottom:3px solid #00558a;padding-bottom:12px}.report-logo{width:120px;max-height:48px;object-fit:contain}.report-title{flex:1}.report-title h1{margin:0;color:#00558a;font-size:22px}.report-title p{margin:5px 0 0;color:#64748b;font-size:10px}.report-date{text-align:right;color:#475569}
+            .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.summary-card{border:1px solid #dbe5eb;border-left:5px solid #e65100;border-radius:6px;padding:10px;background:#f8fafc}.summary-card span{display:block;color:#64748b;font-size:9px;text-transform:uppercase}.summary-card strong{display:block;margin-top:4px;color:#0f172a;font-size:22px}
+            .report-section{margin-top:14px}.report-section h2{margin:0 0 9px;color:#334155;font-size:13px}.chart{border:1px solid #e2e8f0;border-radius:6px;padding:10px}.chart-row{display:grid;grid-template-columns:135px 1fr 25px;align-items:center;gap:8px;margin:7px 0}.chart-label{font-weight:bold}.chart-track{height:14px;border-radius:7px;background:#e8eef2;overflow:hidden}.chart-bar{height:100%;border-radius:7px;background:#e65100}.chart-row strong{text-align:right;color:#00558a}
+            table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.5px}thead{display:table-header-group}tr{page-break-inside:avoid}th{padding:7px 6px;color:#fff;background:#00558a;text-align:left}td{padding:6px;border:1px solid #dbe5eb;vertical-align:top;word-break:break-word}tbody tr:nth-child(even){background:#f8fafc}th:last-child,td:last-child{text-align:center;width:72px}.report-note{margin-top:10px;color:#64748b;font-size:8.5px}.report-footer{margin-top:14px;border-top:1px solid #cbd5e1;padding-top:7px;color:#64748b;text-align:center;font-size:8px}
+          </style>
+          <header class="report-header">
+            <img class="report-logo" src="${logo}" alt="Kanay">
+            <div class="report-title"><h1>${titulo}</h1><p>Registros que requieren atención</p></div>
+            <div class="report-date"><strong>Generado</strong><br>${fechaGeneracion}</div>
+          </header>
+          <section class="summary">
+            <div class="summary-card"><span>Total vencidos</span><strong>${registros.length}</strong></div>
+            <div class="summary-card"><span>Promedio de días transcurridos</span><strong>${promedio}</strong></div>
+            <div class="summary-card"><span>Mayor antigüedad</span><strong>${maximo} días</strong></div>
+          </section>
+          <section class="report-section"><h2>Distribución por estado</h2><div class="chart">${barras}</div></section>
+          <section class="report-section"><h2>Detalle de registros vencidos</h2><table><thead><tr>${encabezados.map(texto => `<th>${texto}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table></section>
+          <p class="report-note">Criterio: estado activo y 10 días o más desde ${referencia.toLowerCase()}.</p>
+          <footer class="report-footer">KANAY S.A.C. · Ecocentro Chilca · Reporte de gestión</footer>
+        </div>
+      `
+      document.body.appendChild(container)
+
+      try {
+        const html2pdfModule = await import('html2pdf.js')
+        const html2pdf = html2pdfModule.default || html2pdfModule
+        await html2pdf().set({
+          margin: 0,
+          filename: `${esCartas ? 'Cartas' : 'Pedidos_Venta'}_Vencidos_${new Date().toISOString().slice(0, 10)}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.summary-card', '.chart-row'] }
+        }).from(container.querySelector('.executive-report')).save()
+      } catch (error) {
+        console.error('Error al generar el reporte PDF:', error)
+        alert('No se pudo generar el reporte PDF')
+      } finally {
+        document.body.removeChild(container)
+      }
+    },
+
+    escapePdfHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+    },
+
+    async getImageDataUrl(url) {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('No se pudo cargar la imagen')
+      const blob = await response.blob()
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
     },
 
     // ===== EXPORTAR EXCEL DE EXPEDIENTES VENCIDOS =====
@@ -880,6 +1065,27 @@ export default {
 
 .kpi-divider {
   border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.quick-link-card {
+  height: 100%;
+  border-color: rgba(0, 85, 138, 0.18) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
+}
+
+.quick-link-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(0, 85, 138, 0.09);
 }
 
 /* ===== DARK MODE ===== */

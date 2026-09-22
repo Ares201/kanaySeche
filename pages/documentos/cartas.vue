@@ -59,7 +59,7 @@
             </v-btn>
           </div>
           <div class="advanced-filters__grid">
-            <v-autocomplete v-model="estadoFiltro" :items="estados" label="Estado" dense hide-details outlined
+            <v-autocomplete v-model="estadoFiltro" :items="estadosFiltro" label="Estado" dense hide-details outlined
               clearable placeholder="Todos" />
             <v-select v-model="direccionFiltro" :items="direccionOptions" label="Dirección" dense hide-details
               outlined clearable placeholder="Todas" prepend-inner-icon="mdi-map-marker-outline" />
@@ -533,6 +533,7 @@ export default {
   data() {
     return {
       estados: CARTA_ESTADOS,
+      estadosFiltro: [...CARTA_ESTADOS, 'Vencido'],
       search: '',
       fechaFiltro: null,
       estadoFiltro: null,
@@ -598,9 +599,11 @@ export default {
           !fechaFiltro ||
           this.normalizeDateInput(carta.fecha) === fechaFiltro
 
-        const matchesEstado =
-          !estadoFiltro ||
-          carta.estadoProceso === estadoFiltro
+        const matchesEstado = !estadoFiltro || (
+          estadoFiltro === 'Vencido'
+            ? this.isCartaVencida(carta)
+            : carta.estadoProceso === estadoFiltro
+        )
 
         const matchesDireccion =
           !direccionFiltro ||
@@ -626,10 +629,42 @@ export default {
     }
   },
   mounted() {
+    this.applyRouteFilters()
     this.getAll()
     this.loadClientes()
   },
+  watch: {
+    '$route.query': {
+      handler() {
+        this.applyRouteFilters()
+      },
+      deep: true
+    }
+  },
   methods: {
+    applyRouteFilters() {
+      const { filter, estado } = this.$route.query
+      if (filter === 'vencidos') {
+        this.estadoFiltro = 'Vencido'
+        this.filtersOpen = true
+      } else if (CARTA_ESTADOS.includes(estado)) {
+        this.estadoFiltro = estado
+        this.filtersOpen = true
+      }
+    },
+    isCartaVencida(carta) {
+      const estadosActivos = ['Emitido', 'Enviado', 'Pendiente de Confirmación']
+      if (!estadosActivos.includes(carta.estadoProceso) || !carta.fechaServicio) return false
+
+      const fechaServicio = this.parseLocalDate(carta.fechaServicio)
+      if (Number.isNaN(fechaServicio.getTime())) return false
+
+      const limite = new Date()
+      limite.setHours(0, 0, 0, 0)
+      limite.setDate(limite.getDate() - 10)
+      fechaServicio.setHours(0, 0, 0, 0)
+      return fechaServicio <= limite
+    },
     clearFilters() {
       this.estadoFiltro = null
       this.direccionFiltro = null

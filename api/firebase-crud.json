@@ -73,6 +73,11 @@
       "orderBy": "fechaCreacion",
       "orderDirection": "desc"
     },
+    "tareas": {
+      "collection": "tareas",
+      "orderBy": "fechaCreacion",
+      "orderDirection": "desc"
+    },
     "movimientosUtiles": {
       "collection": "movimientosUtiles",
       "orderBy": "fechaCreacion",

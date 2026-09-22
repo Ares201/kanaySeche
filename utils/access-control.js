@@ -3,6 +3,8 @@ export const ADMIN_ROLE = 'Administrador'
 export const SYSTEM_PAGES = [
   { nombre: 'Historial', ruta: '/configuracion/historial', modulo: 'Configuración', soloAdministrador: true },
   { nombre: 'Inicio', ruta: '/', modulo: 'General', descripcion: 'Página de inicio' },
+  { nombre: 'Tareas', ruta: '/inicio/tareas', modulo: 'Inicio', descripcion: 'Tareas personales y compartidas' },
+  { nombre: 'Mis gráficos', ruta: '/inicio/graficos', modulo: 'Inicio', descripcion: 'Resumen de tareas del usuario' },
   { nombre: 'Agendamientos', ruta: '/planificacion/agendamientos', modulo: 'Planificación' },
   { nombre: 'Gráficos de operaciones', ruta: '/operaciones/graficos', modulo: 'Operaciones' },
   { nombre: 'Pedidos de venta', ruta: '/operaciones/pedidos-venta', modulo: 'Operaciones' },
