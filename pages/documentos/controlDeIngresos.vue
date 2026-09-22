@@ -316,7 +316,7 @@
             <v-col cols="12" md="6">
               <label>
                 Estado PV
-                <select v-model="form.estadoPV" required>
+                <select v-model="form.estadoPV" disabled>
                   <option value="" disabled>Selecciona</option>
                   <option v-for="est in estadosPV" :key="est" :value="est">{{ est }}</option>
                 </select>
@@ -409,6 +409,7 @@ import {
   toExpedientePayload,
   ESTADOS_EXPEDIENTE,
   ESTADOS_PV,
+  getEstadoPV,
   TIPOS_SERVICIO
 } from '~/models/expediente'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
@@ -721,16 +722,16 @@ export default {
 
     getEstadoTransitionPayload(expediente, estadoDestino) {
       const estadoActual = expediente.estado
-      const payload = { estado: estadoDestino }
+      const payload = {
+        estado: estadoDestino,
+        estadoPV: getEstadoPV(estadoDestino)
+      }
       if (estadoActual === 'Pendiente' && estadoDestino === 'Notificado') {
         const accionActual = String(expediente.accionInmediata || '').trim()
         const accionPorDefecto = 'Se envió correo'
         payload.accionInmediata = accionActual && !accionActual.toLowerCase().includes(accionPorDefecto.toLowerCase())
           ? `${accionActual}\n${accionPorDefecto}`
           : accionActual || accionPorDefecto
-      }
-      if (estadoActual === 'Notificado' && ['Regularizado', 'Cerrado'].includes(estadoDestino)) {
-        payload.estadoPV = 'Cerrado'
       }
       return payload
     },
@@ -756,7 +757,8 @@ export default {
       if (!confirm(`¿Retroceder estado de "${exp.estado}" a "${prev}"?`)) return
 
       try {
-        await this.$firebaseApi.update('expedientes', exp.id, { estado: prev })
+        const payload = this.getEstadoTransitionPayload(exp, prev)
+        await this.$firebaseApi.update('expedientes', exp.id, payload)
         await this.getAll()
       } catch (error) {
         alert('No se pudo retroceder el estado')
@@ -776,6 +778,7 @@ export default {
         const cartaCreada = await this.$firebaseApi.create('cartas', cartaPayload)
         await this.$firebaseApi.update('expedientes', exp.id, {
           estado: 'Cerrado',
+          estadoPV: getEstadoPV('Cerrado'),
           cartaId: cartaCreada.id
         })
         await this.getAll()
@@ -1119,7 +1122,7 @@ export default {
         try {
           const payload = this.getEstadoTransitionPayload(exp, estadoDestino)
           exp.estado = estadoDestino
-          if (payload.estadoPV) exp.estadoPV = payload.estadoPV
+          exp.estadoPV = payload.estadoPV
           await this.$firebaseApi.update('expedientes', exp.id, payload)
           await this.getAll()
         } catch (error) {

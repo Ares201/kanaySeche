@@ -4,6 +4,10 @@ const ESTADOS_EXPEDIENTE = ['Pendiente', 'Notificado', 'Regularizado', 'Cerrado'
 const ESTADOS_PV = ['Abierto', 'Cerrado']
 const TIPOS_SERVICIO = ['Notarial', 'Recurrente']
 
+function getEstadoPV(estado) {
+  return ['Regularizado', 'Cerrado'].includes(estado) ? 'Cerrado' : 'Abierto'
+}
+
 export function createEmptyExpedienteForm() {
   return {
     correlativo: '',
@@ -29,6 +33,7 @@ export function createEmptyExpedienteForm() {
 
 export function normalizeExpediente(data) {
   const cliente = data.cliente || {}
+  const estado = ESTADOS_EXPEDIENTE.includes(data.estado) ? data.estado : 'Pendiente'
   return {
     id: data.id || '',
     correlativo: data.correlativo || '',
@@ -46,8 +51,8 @@ export function normalizeExpediente(data) {
     observaciones: data.observaciones || '',
     accionInmediata: data.accionInmediata || '',
     planner: data.planner || '',
-    estado: ESTADOS_EXPEDIENTE.includes(data.estado) ? data.estado : 'Pendiente',
-    estadoPV: ESTADOS_PV.includes(data.estadoPV) ? data.estadoPV : 'Abierto',
+    estado,
+    estadoPV: getEstadoPV(estado),
     tipoServicio: TIPOS_SERVICIO.includes(data.tipoServicio) ? data.tipoServicio : 'Recurrente',
     fechaCreacion: normalizeDate(data.fechaCreacion),
     cartaId: data.cartaId || null
@@ -55,6 +60,7 @@ export function normalizeExpediente(data) {
 }
 
 export function toExpedientePayload(formulario) {
+  const estado = ESTADOS_EXPEDIENTE.includes(formulario.estado) ? formulario.estado : 'Pendiente'
   const payload = {
     correlativo: formulario.correlativo || '',
     sede: formulario.sede || 'Chilca',
@@ -74,8 +80,8 @@ export function toExpedientePayload(formulario) {
     observaciones: formulario.observaciones || '',
     accionInmediata: formulario.accionInmediata || '',
     planner: formulario.planner || '',
-    estado: ESTADOS_EXPEDIENTE.includes(formulario.estado) ? formulario.estado : 'Pendiente',
-    estadoPV: ESTADOS_PV.includes(formulario.estadoPV) ? formulario.estadoPV : 'Abierto',
+    estado,
+    estadoPV: getEstadoPV(estado),
     tipoServicio: TIPOS_SERVICIO.includes(formulario.tipoServicio) ? formulario.tipoServicio : 'Recurrente'
   }
   if (formulario.cartaId) payload.cartaId = formulario.cartaId
@@ -95,4 +101,4 @@ function normalizeDate(value) {
   return new Date(value)
 }
 
-export { ESTADOS_EXPEDIENTE, ESTADOS_PV, TIPOS_SERVICIO }
+export { ESTADOS_EXPEDIENTE, ESTADOS_PV, TIPOS_SERVICIO, getEstadoPV }
