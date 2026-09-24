@@ -4,8 +4,9 @@ const ESTADOS_EXPEDIENTE = ['Pendiente', 'Notificado', 'Regularizado', 'Cerrado'
 const ESTADOS_PV = ['Abierto', 'Cerrado']
 const TIPOS_SERVICIO = ['Notarial', 'Recurrente']
 
-function getEstadoPV(estado) {
-  return ['Regularizado', 'Cerrado'].includes(estado) ? 'Cerrado' : 'Abierto'
+function getEstadoPV(estado, estadoPV) {
+  if (['Regularizado', 'Cerrado'].includes(estado)) return 'Cerrado'
+  return ESTADOS_PV.includes(estadoPV) ? estadoPV : 'Abierto'
 }
 
 export function createEmptyExpedienteForm() {
@@ -52,7 +53,7 @@ export function normalizeExpediente(data) {
     accionInmediata: data.accionInmediata || '',
     planner: data.planner || '',
     estado,
-    estadoPV: getEstadoPV(estado),
+    estadoPV: getEstadoPV(estado, data.estadoPV),
     tipoServicio: TIPOS_SERVICIO.includes(data.tipoServicio) ? data.tipoServicio : 'Recurrente',
     fechaCreacion: normalizeDate(data.fechaCreacion),
     cartaId: data.cartaId || null
@@ -81,7 +82,7 @@ export function toExpedientePayload(formulario) {
     accionInmediata: formulario.accionInmediata || '',
     planner: formulario.planner || '',
     estado,
-    estadoPV: getEstadoPV(estado),
+    estadoPV: getEstadoPV(estado, formulario.estadoPV),
     tipoServicio: TIPOS_SERVICIO.includes(formulario.tipoServicio) ? formulario.tipoServicio : 'Recurrente'
   }
   if (formulario.cartaId) payload.cartaId = formulario.cartaId

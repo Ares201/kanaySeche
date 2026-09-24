@@ -21,7 +21,7 @@ export const SYSTEM_PAGES = [
   { nombre: 'Envases', ruta: '/configuracion/envases', modulo: 'Configuración' },
   { nombre: 'Residuos', ruta: '/configuracion/residuos', modulo: 'Configuración' },
   { nombre: 'Clientes', ruta: '/configuracion/clientes', modulo: 'Configuración' },
-  { nombre: 'Personal', ruta: '/configuracion/personal', modulo: 'Administración', soloAdministrador: true },
+  { nombre: 'Personal', ruta: '/configuracion/personal', modulo: 'Configuración' },
   { nombre: 'Roles y permisos', ruta: '/configuracion/roles', modulo: 'Administración', soloAdministrador: true },
   { nombre: 'Vehículos', ruta: '/configuracion/vehiculos', modulo: 'Configuración' },
   { nombre: 'Productos', ruta: '/configuracion/productos', modulo: 'Configuración' },

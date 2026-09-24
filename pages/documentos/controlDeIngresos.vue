@@ -316,7 +316,7 @@
             <v-col cols="12" md="6">
               <label>
                 Estado PV
-                <select v-model="form.estadoPV" disabled>
+                <select v-model="form.estadoPV" :disabled="['Regularizado', 'Cerrado'].includes(form.estado)">
                   <option value="" disabled>Selecciona</option>
                   <option v-for="est in estadosPV" :key="est" :value="est">{{ est }}</option>
                 </select>
@@ -760,7 +760,7 @@ export default {
       const estadoActual = expediente.estado
       const payload = {
         estado: estadoDestino,
-        estadoPV: getEstadoPV(estadoDestino)
+        estadoPV: getEstadoPV(estadoDestino, expediente.estadoPV)
       }
       if (estadoActual === 'Pendiente' && estadoDestino === 'Notificado') {
         const accionActual = String(expediente.accionInmediata || '').trim()

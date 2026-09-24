@@ -13,6 +13,7 @@
         </div>
       </NuxtLink>
       <div class="user-area">
+        <TaskNotifications />
         <div class="info-item status">
           <span class="status-indicator online" aria-label="Estado: Operativo"></span>
         </div>
@@ -118,12 +119,12 @@
         <!-- INICIO -->
         <button class="module-button module-button--spaced" type="button" @click="toggleInicio">
           <span>Inicio</span>
-          <span class="chevron" :class="{ 'chevron--open': inicioOpen }">â€º</span>
+          <span class="chevron" :class="{ 'chevron--open': inicioOpen }">›</span>
         </button>
         <div v-show="inicioOpen" class="submenu">
           <NuxtLink class="nav-link" to="/" @click.native="closeMenu">Panel principal</NuxtLink>
           <NuxtLink v-if="can('/inicio/tareas')" class="nav-link" to="/inicio/tareas" @click.native="closeMenu">Tareas</NuxtLink>
-          <NuxtLink v-if="can('/inicio/graficos')" class="nav-link" to="/inicio/graficos" @click.native="closeMenu">Mis grÃ¡ficos</NuxtLink>
+          <NuxtLink v-if="can('/inicio/graficos')" class="nav-link" to="/inicio/graficos" @click.native="closeMenu">Mis graficos</NuxtLink>
         </div>
 
         <!-- PLANIFICACION -->

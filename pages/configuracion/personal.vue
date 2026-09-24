@@ -18,14 +18,14 @@
         </div>
 
         <div class="personal-filters">
-          <v-select v-model="rolFiltro" :items="roles" item-text="nombre" item-value="id" label="Rol" dense outlined clearable hide-details />
+          <v-select v-if="isAdmin" v-model="rolFiltro" :items="roles" item-text="nombre" item-value="id" label="Rol" dense outlined clearable hide-details />
           <v-select v-model="estadoFiltro" :items="estadoOptions" label="Estado" dense outlined clearable hide-details />
           <label class="search-field"><span>Buscar</span><input v-model.trim="search" type="search" placeholder="Ej. Juan Perez"></label>
         </div>
       </div>
 
       <div class="table-wrapper">
-        <v-data-table :headers="tableHeaders" :items="filteredPersonal" :loading="loading" item-key="id"
+        <v-data-table :headers="visibleHeaders" :items="filteredPersonal" :loading="loading" item-key="id"
           loading-text="Cargando..." no-data-text="Sin registros"
           :footer-props="{ itemsPerPageText: 'Filas por página' }">
           <template #[`item.estado`]="{ item }">
@@ -54,6 +54,7 @@
         </div>
 
         <div class="form-grid">
+          <p v-if="!isAdmin && !editingId">El Administrador debe habilitar el acceso al sistema de este nuevo personal.</p>
           <label>
             Nombres completos
             <input v-model.trim="form.nombres" required />
@@ -69,7 +70,7 @@
             <input v-model.trim="form.correo" type="email" />
           </label>
 
-          <label>
+          <label v-if="isAdmin">
             Rol
             <select v-model="form.rolId" required @change="syncRoleName">
               <option value="" disabled>Selecciona un rol</option>
@@ -77,7 +78,7 @@
             </select>
           </label>
 
-          <label>
+          <label v-if="isAdmin">
             {{ editingId ? 'Nueva contraseña (opcional)' : 'Contraseña' }}
             <input v-model="form.password" type="password" autocomplete="new-password" :required="!editingId" />
             <small v-if="editingId">Déjala vacía para conservar la contraseña actual.</small>
@@ -137,13 +138,15 @@ export default {
   },
 
   computed: {
+    isAdmin() { return Boolean(this.$auth?.isAdmin) },
+    visibleHeaders() { return this.tableHeaders.filter(header => this.isAdmin || !['rolNombre', 'password'].includes(header.value)) },
     filteredPersonal() {
       const term = this.search.toLowerCase()
 
       return this.personal.filter(p => {
         const matchesTerm = !term || p.nombres.toLowerCase().includes(term) ||
           p.telefono.toLowerCase().includes(term) || p.correo.toLowerCase().includes(term)
-        const matchesRole = !this.rolFiltro || p.rolId === this.rolFiltro
+        const matchesRole = !this.isAdmin || !this.rolFiltro || p.rolId === this.rolFiltro
         const matchesState = this.estadoFiltro === null || p.estado === this.estadoFiltro
         return matchesTerm && matchesRole && matchesState
       })
@@ -162,13 +165,19 @@ export default {
       await Promise.all([this.loadPersonal(), this.loadRoles()])
     },
     async loadRoles() {
+      if (!this.isAdmin) { this.roles = []; return }
       this.roles = await this.$firebaseApi.list('roles')
     },
     async loadPersonal() {
       this.loading = true
       try {
         const data = await this.$firebaseApi.list('personal')
-        this.personal = data.map(normalizePersonal)
+        this.personal = data.map(item => {
+          const person = normalizePersonal(item)
+          delete person.password
+          if (!this.isAdmin) { delete person.rolId; delete person.rolNombre }
+          return person
+        })
       } catch (e) {
         console.error(e)
       } finally {
@@ -189,8 +198,8 @@ export default {
         telefono: item.telefono,
         correo: item.correo,
         password: '',
-        rolId: item.rolId,
-        rolNombre: item.rolNombre,
+        rolId: this.isAdmin ? item.rolId : '',
+        rolNombre: this.isAdmin ? item.rolNombre : '',
         estado: item.estado
       }
       this.isModalOpen = true
@@ -202,9 +211,9 @@ export default {
 
     async savePersonal() {
       try {
-        this.syncRoleName()
-        if (!this.editingId && !this.form.password) throw new Error('La contraseña es obligatoria.')
-        const payload = toPersonalPayload(this.form)
+        if (this.isAdmin) this.syncRoleName()
+        if (this.isAdmin && !this.editingId && !this.form.password) throw new Error('La contraseña es obligatoria.')
+        const payload = toPersonalPayload(this.form, { isAdmin: this.isAdmin })
 
         if (this.editingId) {
           await this.$firebaseApi.update(

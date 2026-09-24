@@ -30,16 +30,18 @@ export function normalizePersonal(data) {
   }
 }
 
-export function toPersonalPayload(form) {
+export function toPersonalPayload(form, { isAdmin = false } = {}) {
   const payload = {
     nombres: form.nombres,
     telefono: form.telefono,
     correo: form.correo,
-    rolId: form.rolId || '',
-    rolNombre: form.rolNombre || '',
     estado: Boolean(form.estado)
   }
-  if (form.password) payload.password = form.password
+  if (isAdmin) {
+    payload.rolId = form.rolId || ''
+    payload.rolNombre = form.rolNombre || ''
+    if (form.password) payload.password = form.password
+  }
   return payload
 }
 

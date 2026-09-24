@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import { normalizeTarea, ESTADOS_TAREA, PRIORIDADES_TAREA } from '~/models/tarea'
+import { normalizeTarea, ESTADOS_TAREA, PRIORIDADES_TAREA , canViewTarea } from '~/models/tarea'
 
 export default {
   name: 'MisGraficosPage',
@@ -25,9 +25,7 @@ export default {
   computed: {
     currentUser() { return this.$auth?.user || {} },
     tareas() {
-      const id = this.currentUser.id
-      const email = String(this.currentUser.correo || '').toLowerCase()
-      return this.allTasks.filter(task => task.creadorId === id || task.compartidoConId === id || (email && task.compartidoConCorreo.toLowerCase() === email))
+      return this.allTasks.filter(task => canViewTarea(task, this.currentUser))
     },
     estadosChart() { return this.chartItems(ESTADOS_TAREA.map(label => ({ label, value: this.countByState(label) }))) },
     prioridadesChart() { return this.chartItems(PRIORIDADES_TAREA.map(label => ({ label, value: this.tareas.filter(task => task.prioridad === label).length, className: label.toLowerCase() }))) },

@@ -23,7 +23,14 @@
             label="Buscar correlativo, transportista o placa" placeholder="Ej. CIS-001" />
         </v-col>
         <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
-          <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Filtrar por fecha" />
+          <v-text-field v-model="fechaInicio" dense hide-details outlined clearable type="date" label="Fecha de inicio"
+            :max="fechaFin || undefined" />
+        </v-col>
+        <v-col cols="12" sm="6" md="2" class="mb-2 mt-2">
+          <v-text-field v-model="fechaFin" dense outlined clearable type="date" label="Fecha final"
+            :min="fechaInicio || undefined"
+            :error-messages="fechaInicio && fechaFin && fechaInicio > fechaFin ? 'La fecha final debe ser igual o posterior a la inicial.' : ''"
+            hide-details="auto" />
         </v-col>
         <v-col cols="12" sm="6" md="1" class="mb-2 mt-2" mr-2>
           <v-menu offset-y>
@@ -56,35 +63,51 @@
           :footer-props="{ itemsPerPageText: 'Filas por página' }">
           <template #[`item.fechaIngreso`]="{ item: ingreso }">{{ formatDateOnly(ingreso.fechaIngreso) }}</template>
           <template #[`item.pesoNeto`]="{ item: ingreso }">{{ formatWeight(ingreso.pesoNeto) }} Kg</template>
+          <template #[`item.evidenciaLink`]="{ item: ingreso }">
+            <div class="evidence-status">
+              <v-chip v-if="getEvidenciaUrl(ingreso.evidenciaLink)" small color="success" outlined
+                @click="evidenceIngreso = ingreso">
+                <v-icon small left>mdi-paperclip</v-icon>
+                Ver adjunto
+              </v-chip>
+              <v-chip v-else small color="warning" outlined>
+                <v-icon small left>mdi-alert-outline</v-icon>
+                Pendiente
+              </v-chip>
+            </div>
+          </template>
+          <!-- <template #[`item.observacion`]="{ item }">
+            <div class="evidence-observation">{{ item.observacion || '—' }}</div>
+          </template> -->
           <template #[`item.actions`]="{ item: ingreso }">
-                <div class="actions">
-                  <!-- Botón Imprimir -->
-                  <button class="icon-button" type="button" title="Imprimir" @click="imprimirDirecto(ingreso)">
-                    <svg viewBox="0 0 24 24">
-                      <rect x="3" y="7" width="18" height="12" rx="2" />
-                      <rect x="5" y="10" width="14" height="5" rx="1" />
-                      <path d="M8 7V4h8v3" />
-                      <path d="M8 17v3h8v-3" />
-                      <path d="M7 12.5h10" />
-                    </svg>
-                  </button>
-                  <button class="icon-button" type="button" title="Editar" @click="openEditModal(ingreso)">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
-                      <path d="M13.5 6.5l4 4" />
-                    </svg>
-                  </button>
-                  <button class="icon-button icon-button--danger" type="button" title="Eliminar"
-                    @click="deleteIngreso(ingreso.id)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M5 7h14" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                      <path d="M8 7l1 13h6l1-13" />
-                      <path d="M9 7V4h6v3" />
-                    </svg>
-                  </button>
-                </div>
+            <div class="actions">
+              <!-- Botón Imprimir -->
+              <button class="icon-button" type="button" title="Imprimir" @click="imprimirDirecto(ingreso)">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="7" width="18" height="12" rx="2" />
+                  <rect x="5" y="10" width="14" height="5" rx="1" />
+                  <path d="M8 7V4h8v3" />
+                  <path d="M8 17v3h8v-3" />
+                  <path d="M7 12.5h10" />
+                </svg>
+              </button>
+              <button class="icon-button" type="button" title="Editar" @click="openEditModal(ingreso)">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
+                  <path d="M13.5 6.5l4 4" />
+                </svg>
+              </button>
+              <button class="icon-button icon-button--danger" type="button" title="Eliminar"
+                @click="deleteIngreso(ingreso.id)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 7h14" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M8 7l1 13h6l1-13" />
+                  <path d="M9 7V4h6v3" />
+                </svg>
+              </button>
+            </div>
           </template>
         </v-data-table>
       </div>
@@ -193,6 +216,14 @@
               <v-text-field v-model="form.pesoNeto" readonly outlined dense suffix="Kg" hide-details
                 class="input-neto-calculado" />
             </v-col>
+            <v-col cols="12">
+              <v-text-field v-model.trim="form.evidenciaLink" label="Enlace de foto o adjunto" outlined dense
+                placeholder="https://mega.nz/file/...#..." :error-messages="evidenceLinkError" persistent-hint />
+            </v-col>
+            <v-col cols="12">
+              <v-textarea v-model.trim="form.observacion" label="Observación" outlined dense rows="3" auto-grow
+                hide-details />
+            </v-col>
           </v-row>
         </div>
         <div class="modal-actions">
@@ -201,6 +232,30 @@
         </div>
       </form>
     </div>
+
+    <v-dialog :value="!!evidenceIngreso" max-width="1000" @input="!$event && (evidenceIngreso = null)">
+      <v-card v-if="evidenceIngreso">
+        <v-card-title>Adjunto · {{ evidenceIngreso.correlativo }}<v-spacer />
+          <v-btn icon aria-label="Cerrar adjunto" @click="evidenceIngreso = null"><v-icon>mdi-close</v-icon></v-btn>
+        </v-card-title>
+        <v-card-text>
+          <p class="evidence-observation">{{ evidenceIngreso.observacion || 'Sin observación.' }}</p>
+          <iframe v-if="getEvidenciaEmbedUrl(evidenceIngreso.evidenciaLink)"
+            :src="getEvidenciaEmbedUrl(evidenceIngreso.evidenciaLink)" title="Vista previa del adjunto del servicio"
+            class="evidence-frame"
+            sandbox="allow-scripts allow-same-origin allow-downloads allow-popups allow-popups-to-escape-sandbox"
+            referrerpolicy="no-referrer" allowfullscreen />
+          <p v-else>Abre la carpeta compartida para consultar o descargar sus archivos.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="primary" :href="getEvidenciaUrl(evidenceIngreso.evidenciaLink)" target="_blank"
+            rel="noopener noreferrer">
+            <v-icon left>mdi-open-in-new</v-icon>Abrir / descargar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- ===== IFRAME OCULTO PARA IMPRIMIR ===== -->
     <iframe ref="printIframe" style="position:absolute;width:0;height:0;border:0;"></iframe>
@@ -212,6 +267,7 @@
 // 1. IMPORTACIONES – MODELOS Y UTILIDADES
 // ============================================================
 import { normalizeCliente } from '~/models/cliente'
+import { getEvidenciaUrl, getEvidenciaEmbedUrl } from '~/utils/evidenciaCisterna'
 import { normalizeVehiculo } from '~/models/vehiculo'
 import {
   createEmptyIngresoCisternaForm,
@@ -220,15 +276,17 @@ import {
   getNextIngresoCisternaNumero,
   buildIngresoCisternaCodigo
 } from '~/models/ingresoCisterna'
+import { exportCisternaExcel } from '~/utils/exportCisternaExcel'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
-import { formatDate, formatDateOnly, formatWeight, escapeHtml, getNowDateTimeInput, getTodayDateInput } from '~/utils/formatters'
+import { formatDate, formatDateOnly, formatWeight, escapeHtml, getNowDateTimeInput } from '~/utils/formatters'
 
 export default {
   name: 'RecepcionCisternaPage',
   data() {
     return {
       search: '',
-      fechaFiltro: getTodayDateInput(),
+      fechaInicio: '',
+      fechaFin: '',
       loading: false,
       tableHeaders: [
         { text: 'Código', value: 'correlativo' },
@@ -236,11 +294,13 @@ export default {
         { text: 'Transportista', value: 'transportista' },
         { text: 'Placa', value: 'placa' },
         { text: 'Peso neto', value: 'pesoNeto' },
+        { text: 'Evidencia del servicio', value: 'evidenciaLink' },
         { text: 'Acciones', value: 'actions', sortable: false }
       ],
       clientesLoading: false,
       isModalOpen: false,
       editingId: null,
+      evidenceIngreso: null,
       clienteSearch: '',
       clienteOptionsOpen: false,
       placaOptionsOpen: false,
@@ -257,16 +317,24 @@ export default {
     }
   },
   computed: {
+    pendingEvidenceCount() {
+      return this.filteredIngresos.filter(i => !getEvidenciaUrl(i.evidenciaLink)).length
+    },
+    evidenceLinkError() {
+      return this.form.evidenciaLink && !getEvidenciaUrl(this.form.evidenciaLink)
+        ? 'Ingresa un enlace HTTPS válido. Para MEGA, copia el enlace compartido completo con su clave.' : ''
+    },
     filteredIngresos() {
       const term = this.search.toLowerCase()
-      const fechaFiltro = this.fechaFiltro
+      const { fechaInicio, fechaFin } = this
 
       return this.ingresos.filter(i =>
         (!term ||
           i.correlativo.toLowerCase().includes(term) ||
           i.transportista.toLowerCase().includes(term) ||
           i.placa.toLowerCase().includes(term)) &&
-        (!fechaFiltro || this.getDateInputValue(i.fechaIngreso) === fechaFiltro)
+        (!fechaInicio || this.getDateInputValue(i.fechaIngreso) >= fechaInicio) &&
+        (!fechaFin || (!!this.getDateInputValue(i.fechaIngreso) && this.getDateInputValue(i.fechaIngreso) <= fechaFin))
       )
     },
     filteredClientesOptions() {
@@ -306,6 +374,8 @@ export default {
     this.loadData()
   },
   methods: {
+    getEvidenciaUrl,
+    getEvidenciaEmbedUrl,
     // Para usar desde el template
     formatDateOnly,
     formatWeight,
@@ -477,6 +547,7 @@ export default {
         return
       }
 
+      if (this.evidenceLinkError) return
       const payload = toIngresoCisternaPayload(this.form)
       try {
         if (this.editingId) {
@@ -929,7 +1000,9 @@ export default {
           'Peso Tara': i.pesoTara,
           'Peso Neto': i.pesoNeto,
           Destino: i.destino,
-          'Prueba laboratorio': i.pruebaLaboratorio
+          'Prueba laboratorio': i.pruebaLaboratorio,
+          'Enlace adjunto': i.evidenciaLink,
+          'Observación': i.observacion
         }
       })
       const columns = [
@@ -943,14 +1016,16 @@ export default {
         { label: 'Peso Tara', value: row => row['Peso Tara'] },
         { label: 'Peso Neto', value: row => row['Peso Neto'] },
         { label: 'Destino', value: row => row.Destino },
-        { label: 'Prueba laboratorio', value: row => row['Prueba laboratorio'] }
+        { label: 'Prueba laboratorio', value: row => row['Prueba laboratorio'] },
+        { label: 'Enlace adjunto', value: row => row['Enlace adjunto'] },
+        { label: 'Observación', value: row => row['Observación'] }
       ]
-      await exportRowsToExcel({
-        filename: 'ingresos-cisterna',
-        sheetName: 'Ingresos',
-        columns,
-        rows
-      })
+      try {
+        await exportCisternaExcel({ columns, rows })
+      } catch (error) {
+        console.error('Error al exportar Excel:', error)
+        alert('No se pudo exportar el Excel. Intenta nuevamente.')
+      }
     },
 
     async downloadTemplate() {
@@ -965,7 +1040,9 @@ export default {
         'Peso Tara': 1500,
         'Peso Neto': 3500,
         Destino: 'Planta Central',
-        'Prueba laboratorio': 'Sí'
+        'Prueba laboratorio': 'Sí',
+        'Enlace adjunto': '',
+        'Observación': ''
       }]
       const columns = [
         { label: 'Correlativo', value: row => row.Correlativo },
@@ -978,7 +1055,9 @@ export default {
         { label: 'Peso Tara', value: row => row['Peso Tara'] },
         { label: 'Peso Neto', value: row => row['Peso Neto'] },
         { label: 'Destino', value: row => row.Destino },
-        { label: 'Prueba laboratorio', value: row => row['Prueba laboratorio'] }
+        { label: 'Prueba laboratorio', value: row => row['Prueba laboratorio'] },
+        { label: 'Enlace adjunto', value: row => row['Enlace adjunto'] },
+        { label: 'Observación', value: row => row['Observación'] }
       ]
       await exportRowsToExcel({
         filename: 'plantilla-ingresos-cisterna',
@@ -1006,12 +1085,18 @@ export default {
       ]
 
       try {
-        const result = await readRowsFromExcelFile(file, expectedHeaders)
+        let result = await readRowsFromExcelFile(file, [...expectedHeaders, 'Enlace adjunto', 'Observación'])
+        if (!result.matched) result = await readRowsFromExcelFile(file, expectedHeaders)
         if (!result.matched) {
           alert('El Excel no coincide con las columnas esperadas.')
           return
         }
 
+        const invalidRow = result.rows.findIndex(row => String(row['Enlace adjunto'] || '').trim() && !getEvidenciaUrl(row['Enlace adjunto']))
+        if (invalidRow !== -1) {
+          alert(`El enlace adjunto de la fila ${invalidRow + 2} no es válido. Revisa la URL HTTPS y la clave de MEGA.`)
+          return
+        }
         let created = 0
         for (const row of result.rows) {
           const form = createEmptyIngresoCisternaForm()
@@ -1028,6 +1113,8 @@ export default {
           form.pesoTara = Number(row['Peso Tara']) || 0
           form.pesoNeto = Number(row['Peso Neto']) || 0
           form.destino = row.Destino || ''
+          form.evidenciaLink = row['Enlace adjunto'] || ''
+          form.observacion = row['Observación'] || ''
 
           if (form.pesoNeto === 0) {
             form.pesoNeto = Math.max(0, form.pesoBruto - form.pesoTara)
@@ -1049,6 +1136,29 @@ export default {
 </script>
 
 <style scoped>
+.evidence-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.evidence-observation {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 160px;
+  max-width: 700px;
+}
+
+.evidence-frame {
+  width: 100%;
+  height: 60vh;
+  min-height: 300px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
 /* ===== VARIABLES DE MARCA ===== */
 .pv-page {
   width: 90%;
@@ -1067,7 +1177,7 @@ export default {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .eyebrow {

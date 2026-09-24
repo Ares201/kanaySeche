@@ -12,7 +12,9 @@ export function createEmptyIngresoCisternaForm() {
     pesoNeto: 0,
     pruebaLaboratorio: '',
     destino: '',
-    fechaSalida: ''
+    fechaSalida: '',
+    evidenciaLink: '',
+    observacion: ''
   }
 }
 
@@ -34,6 +36,8 @@ export function normalizeIngresoCisterna(data) {
     pruebaLaboratorio: data.pruebaLaboratorio || '',
     destino: data.destino || '',
     fechaSalida: data.fechaSalida || '',
+    evidenciaLink: String(data.evidenciaLink || '').trim(),
+    observacion: String(data.observacion || ''),
     fechaCreacion: normalizeDate(data.fechaCreacion)
   }
 }
@@ -41,6 +45,8 @@ export function normalizeIngresoCisterna(data) {
 export function toIngresoCisternaPayload(formularioIngreso) {
 
   return {
+    evidenciaLink: String(formularioIngreso.evidenciaLink || '').trim(),
+    observacion: String(formularioIngreso.observacion || '').trim(),
 
     correlativo: formularioIngreso.correlativo,
 
