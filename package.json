@@ -6,8 +6,7 @@
     "dev": "nuxt",
     "build": "nuxt build",
     "start": "nuxt start",
-    "generate": "nuxt generate",
-    "test:presence": "node --test tests/presence.test.cjs"
+    "generate": "nuxt generate"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^9.0.3",

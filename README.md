@@ -19,7 +19,3 @@ $ npm run generate
 #Deploy
 firebase deploy
 ```
-
-## Usuarios en línea
-
-La presencia usa Firestore y se publica con la web. Los detalles están en [docs/presencia.md](docs/presencia.md).
