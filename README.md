@@ -18,3 +18,8 @@ $ npm run generate
 
 #Deploy
 firebase deploy
+```
+
+## Usuarios en línea
+
+La configuración del servicio Socket.IO y los pasos para desarrollo y producción están en [docs/presencia.md](docs/presencia.md).

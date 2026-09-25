@@ -14,9 +14,7 @@
       </NuxtLink>
       <div class="user-area">
         <TaskNotifications />
-        <div class="info-item status">
-          <span class="status-indicator online" aria-label="Estado: Operativo"></span>
-        </div>
+        <OnlineUsers />
         <span class="company-name d-none d-sm-inline">{{ currentUserName }} · {{ currentRole }}</span>
         <v-menu v-model="userMenuOpen" bottom left offset-y origin="top right" transition="scale-transition">
           <template v-slot:activator="{ on, attrs }">
@@ -715,6 +713,12 @@ export default {
 }
 
 @media (max-width: 640px) {
+  .toolbar { padding: 0 10px; }
+  .user-area { gap: 6px; }
+  .menu-button { flex-shrink: 0; }
+  .brand { max-width: 120px; line-height: 1.15; }
+  .avatar-container { width: 36px; height: 36px; }
+
   .brand {
     font-size: 18px;
     margin-left: 8px;
