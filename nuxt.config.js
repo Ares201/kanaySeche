@@ -35,10 +35,6 @@ export default {
     { src: '~/plugins/presence.client.js', mode: 'client' }
   ],
 
-  publicRuntimeConfig: {
-    presenceUrl: process.env.PRESENCE_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001')
-  },
-
   router: {
     middleware: ['auth']
   },

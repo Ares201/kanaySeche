@@ -65,8 +65,7 @@
           <template #[`item.pesoNeto`]="{ item: ingreso }">{{ formatWeight(ingreso.pesoNeto) }} Kg</template>
           <template #[`item.evidenciaLink`]="{ item: ingreso }">
             <div class="evidence-status">
-              <v-chip v-if="getEvidenciaUrl(ingreso.evidenciaLink)" small color="success" outlined
-                @click="evidenceIngreso = ingreso">
+              <v-chip v-if="getEvidenciaUrl(ingreso.evidenciaLink)" small color="success" outlined target="_blank">
                 <v-icon small left>mdi-paperclip</v-icon>
                 Ver adjunto
               </v-chip>
@@ -233,32 +232,6 @@
       </form>
     </div>
 
-    <v-dialog :value="!!evidenceIngreso" max-width="1000" @input="!$event && (evidenceIngreso = null)">
-      <v-card v-if="evidenceIngreso">
-        <v-card-title>Adjunto · {{ evidenceIngreso.correlativo }}<v-spacer />
-          <v-btn icon aria-label="Cerrar adjunto" @click="evidenceIngreso = null"><v-icon>mdi-close</v-icon></v-btn>
-        </v-card-title>
-        <v-card-text>
-          <p class="evidence-observation">{{ evidenceIngreso.observacion || 'Sin observación.' }}</p>
-          <iframe v-if="getEvidenciaEmbedUrl(evidenceIngreso.evidenciaLink)"
-            :src="getEvidenciaEmbedUrl(evidenceIngreso.evidenciaLink)" title="Vista previa del adjunto del servicio"
-            class="evidence-frame"
-            sandbox="allow-scripts allow-same-origin allow-downloads allow-popups allow-popups-to-escape-sandbox"
-            referrerpolicy="no-referrer" allowfullscreen />
-          <p v-else>Abre la carpeta compartida para consultar o descargar sus archivos.</p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="primary" :href="getEvidenciaUrl(evidenceIngreso.evidenciaLink)" target="_blank"
-            rel="noopener noreferrer">
-            <v-icon left>mdi-open-in-new</v-icon>Abrir / descargar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- ===== IFRAME OCULTO PARA IMPRIMIR ===== -->
-    <iframe ref="printIframe" style="position:absolute;width:0;height:0;border:0;"></iframe>
   </section>
 </template>
 
@@ -300,7 +273,6 @@ export default {
       clientesLoading: false,
       isModalOpen: false,
       editingId: null,
-      evidenceIngreso: null,
       clienteSearch: '',
       clienteOptionsOpen: false,
       placaOptionsOpen: false,

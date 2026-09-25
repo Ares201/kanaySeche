@@ -249,13 +249,13 @@ export default {
       userMenuOpen: false, // Estado del menú de usuario
 
       // Modulos Open
-      inicioOpen: true,
+      inicioOpen: false,
       planificacionOpen: false,
       operacionesOpen: false,
       controlAceptacionOpen: false,
       configuracionOpen: false,
       inventarioOpen: false,
-      documentosOpen: true
+      documentosOpen: false
     }
   },
 

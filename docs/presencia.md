@@ -1,33 +1,23 @@
-# Usuarios en línea con Socket.IO
+﻿# Usuarios en línea con Firestore
 
-Todos los usuarios con sesión iniciada tienen el botón de usuarios en la barra superior. Muestra nombres, iniciales, punto verde y contador, incluido el propio usuario. No tiene chat. Estar en línea significa mantener una conexión al servicio (también con una pestaña en segundo plano), no estar usando el teclado.
+La presencia utiliza el Firebase existente y se publica con la web en Firebase Hosting. No requiere Socket.IO, Cloud Run, Blaze, credenciales de servidor ni una URL adicional.
 
-## Ejecutar en desarrollo
+Cada pestaña con sesión abierta escribe un documento independiente en `presencia`, con identificador de usuario, nombre y fecha del servidor. No se copian correos, contraseñas ni permisos. Los usuarios se agrupan por identificador para no aparecer duplicados.
 
-Requiere Node.js 22 o superior. Instalar las dependencias con `npm install`. Agregar a `.env`:
+Se envía una señal cada 60 segundos. La lista escucha cambios de Firestore y descarta señales de más de tres minutos, comprobándolo cada diez segundos. Al cerrar sesión se intenta eliminar el documento; al cerrar abruptamente el navegador o perder conexión, puede tardar aproximadamente tres minutos en desaparecer. Una pestaña suspendida por el navegador también puede desaparecer hasta que vuelva a activarse. Los relojes de los equipos deben estar sincronizados.
 
-```dotenv
-PRESENCE_URL=http://localhost:3001
-PRESENCE_ORIGINS=http://localhost:3000
-PRESENCE_SECRET=reemplazar-por-un-secreto-aleatorio-de-al-menos-32-caracteres
-FIREBASE_PROJECT_ID=kanaybd
-GOOGLE_APPLICATION_CREDENTIALS=C:/ruta/privada/cuenta-servicio.json
-```
+No es una prueba exacta de conectividad: Firestore no ofrece `onDisconnect`. La interfaz oculta resultados de caché y deja de mostrar la lista si no se confirma la propia conexión. Las sesiones existentes se restauran automáticamente sin volver a iniciar sesión.
 
-Generar un secreto con `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. La cuenta de servicio debe tener permiso de lectura sobre `personal` y `roles` en Firestore. Alternativamente, usar credenciales predeterminadas del entorno de Google Cloud. No publicar el archivo de credenciales ni el secreto en el frontend.
+## Publicación
 
-En dos terminales ejecutar `npm run presence` y `npm run dev`. Iniciar sesión nuevamente para obtener el token de presencia. Las sesiones anteriores a esta funcionalidad necesitan volver a iniciar sesión.
+Ejecutar `firebase deploy --only hosting --project kanaybd`; el predeploy genera la web. No hace falta ejecutar un proceso de presencia por separado. Las variables antiguas `PRESENCE_URL`, `PRESENCE_SECRET` y `PRESENCE_ORIGINS` ya no se utilizan.
 
-## Producción
+La colección `presencia` necesita permiso para consultar, crear y eliminar documentos. No se han modificado las reglas. Las reglas actuales del proyecto permiten acceso sin Firebase Auth hasta el 25 de diciembre de 2026; la sesión propia de la aplicación no es una identidad validable por reglas de Firebase. Por ello, esta presencia es informativa y no sirve para auditoría ni control de acceso. Antes de restringir las reglas será necesario integrar Firebase Authentication para verificar la identidad.
 
-El frontend actual se genera como archivos estáticos en Firebase Hosting; el proceso Socket.IO se despliega por separado en un servidor Node que admita conexiones persistentes. Usar una sola instancia del servicio: el registro de conexiones está en memoria. Para varias instancias se necesita un adaptador y agregación de presencia compartida antes de escalar.
+## Consumo
 
-Configurar `PRESENCE_URL=https://dominio-del-servicio` **antes** de `npm run generate`. En el servidor configurar `PRESENCE_ORIGINS` con los orígenes exactos del frontend separados por comas, `PRESENCE_SECRET`, las credenciales de Firestore y opcionalmente `PORT` (3001 por defecto). El proxy debe admitir WebSocket y un timeout superior a 20 segundos. Usar HTTPS para proteger credenciales y tokens. `/health` comprueba que el proceso responde; no comprueba Firestore.
+Cada pestaña abierta realiza aproximadamente 60 escrituras por hora y recibe las actualizaciones de las otras pestañas mediante lecturas. También hay lecturas al abrir la lista y al renovar la consulta cada diez minutos. El consumo cuenta dentro de la cuota actual; no implica uso ilimitado gratuito. Las sesiones abandonadas quedan almacenadas, pero no se consultan en nuevas conexiones una vez vencidas; no se ha activado TTL facturable ni limpieza automática del servidor.
 
-El servidor verifica el usuario y su contraseña contra el modelo de acceso existente y emite un token firmado de 24 horas guardado en `sessionStorage`. Las contraseñas no se guardan en el nuevo almacenamiento de presencia ni se incluyen en la lista emitida. Al reconectar se comprueban usuario, rol, contraseña vigente y expiración. Cambios de rol o desactivaciones de conexiones ya abiertas se aplican al reconectar o vencer el token. Al cerrar sesión se desconecta esa pestaña; otras sesiones del mismo usuario siguen en línea. Al perder la red, la baja puede tardar aproximadamente 20 segundos por detección del heartbeat. Al recuperar conexión se envía una lista completa.
+Pruebas: `npm run test:presence`.
 
-Si el servicio no responde, el acceso existente sigue funcionando y el panel indica que la lista no está disponible. No presenta una lista antigua como si estuviera actualizada. No se han cambiado las reglas de Firestore ni el sistema de contraseñas existente.
-
-Validación local: `npm run test:presence` (servidor real con usuarios de prueba, sin acceder a Firestore).
-
-Referencias: [autenticación en Socket.IO](https://socket.io/docs/v4/middlewares/), [servidor independiente](https://socket.io/docs/v4/server-initialization/).
+Referencias: [escuchas de Firestore](https://firebase.google.com/docs/firestore/query-data/listen), [limitaciones de presencia](https://firebase.google.com/docs/firestore/solutions/presence).

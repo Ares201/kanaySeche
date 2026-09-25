@@ -87,7 +87,7 @@ export default ({ app, $firebaseApi }, inject) => {
 
       state.session = { id: user.id, nombres: user.nombres, correo: user.correo, rolId: user.rolId || null, rolNombre, rutasPermitidas }
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(state.session))
-      app.$presence?.login(user.id, password)
+      app.$presence?.login(state.session)
       return state.session
     },
 
