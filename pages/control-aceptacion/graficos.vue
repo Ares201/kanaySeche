@@ -91,7 +91,7 @@
 </template>
 
 <script>
-import Chart from 'chart.js/auto'
+import Chart from '~/utils/theme-chart'
 
 const emptyFilters = () => ({
   fecha_ingreso: null,
@@ -298,8 +298,8 @@ export default {
 .dashboard {
   min-height: 100vh;
   padding: 28px 24px;
-  color: #172033;
-  background: #f3f6f8
+  color: var(--ui-text-172033, #172033);
+  background: var(--ui-surface-f3f6f8, #f3f6f8)
 }
 
 .header {
@@ -311,7 +311,7 @@ export default {
 }
 
 .header span {
-  color: #087f8c;
+  color: var(--ui-text-087f8c, #087f8c);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: .08em;
@@ -333,7 +333,7 @@ h1 {
 .chart-card p,
 .table-card p {
   margin-top: 5px;
-  color: #64748b
+  color: var(--ui-text-64748b, #64748b)
 }
 
 .header button {
@@ -358,9 +358,9 @@ h1 {
 .chart-card,
 .table-card,
 .summary article {
-  border: 1px solid #e1e7ec;
+  border: 1px solid var(--ui-border-e1e7ec, #e1e7ec);
   border-radius: 9px;
-  background: #fff
+  background: var(--ui-surface-ffffff, #fff)
 }
 
 .filters-card {
@@ -386,7 +386,7 @@ h1 {
 }
 
 .summary small {
-  color: #64748b;
+  color: var(--ui-text-64748b, #64748b);
   font-weight: 700;
   text-transform: uppercase
 }
@@ -400,7 +400,7 @@ h1 {
   position: absolute;
   right: 15px;
   top: 16px;
-  color: #087f8c;
+  color: var(--ui-text-087f8c, #087f8c);
   opacity: .3
 }
 
@@ -434,7 +434,7 @@ h1 {
   place-items: center;
   align-content: center;
   gap: 10px;
-  color: #64748b
+  color: var(--ui-text-64748b, #64748b)
 }
 
 .error {
@@ -442,10 +442,10 @@ h1 {
   gap: 10px;
   margin-bottom: 18px;
   padding: 14px;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--ui-border-fecaca, #fecaca);
   border-radius: 8px;
-  color: #991b1b;
-  background: #fef2f2
+  color: var(--ui-text-991b1b, #991b1b);
+  background: var(--ui-surface-fef2f2, #fef2f2)
 }
 
 .error small {

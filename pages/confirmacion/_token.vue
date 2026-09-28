@@ -67,6 +67,6 @@ export default {
 
 <style scoped>
 .confirmacion-title {
-  color: #6eb49c;
+  color: var(--ui-text-6eb49c, #6eb49c);
 }
 </style>

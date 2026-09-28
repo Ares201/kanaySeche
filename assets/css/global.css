@@ -25,7 +25,7 @@
 
 .unified-list-page .registros-count {
   display: block;
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;

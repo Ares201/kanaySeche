@@ -194,6 +194,8 @@
           <NuxtLink v-if="can('/documentos/boletas')" class="nav-link" to="/documentos/boletas"
             @click.native="closeMenu">
             Boletas</NuxtLink>
+          <NuxtLink v-if="can('/documentos/certificados')" class="nav-link" to="/documentos/certificados"
+            @click.native="closeMenu">Certificados</NuxtLink>
           <NuxtLink v-if="can('/documentos/validaciones')" class="nav-link" to="/documentos/validaciones"
             @click.native="closeMenu">Validaciones</NuxtLink>
         </div>
@@ -271,7 +273,7 @@ export default {
     inicioRoutes() { return ['/', '/inicio/tareas', '/inicio/graficos'] },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
     controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/ingresos-cisterna'] },
-    documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/validaciones'] },
+    documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/certificados', '/documentos/validaciones'] },
     inventarioRoutes() { return ['/inventario', '/inventario/requerimientos', '/inventario/productos'] },
     configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos', '/configuracion/historial'] }
   },
@@ -547,7 +549,7 @@ export default {
   width: 20px;
   height: 2px;
   border-radius: 99px;
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
 }
 
 /* =========================
@@ -561,7 +563,7 @@ export default {
   width: min(300px, 85vw);
   height: 100vh;
   color: var(--color-text);
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
   box-shadow: 18px 0 40px rgba(15, 23, 42, 0.2);
   transform: translateX(-105%);
   transition: transform 0.25s ease-out;
@@ -600,8 +602,8 @@ export default {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  color: var(--color-primary);
-  background: #ffffff;
+  color: var(--color-link, var(--color-primary));
+  background: var(--ui-surface-ffffff, #ffffff);
   transition: all 0.2s ease;
 }
 
@@ -634,10 +636,10 @@ export default {
   justify-content: space-between;
   border: 0;
   padding: 0 10px;
-  color: var(--color-primary);
+  color: var(--color-link, var(--color-primary));
   font-weight: 600;
   font-size: 14px;
-  background: #f1f6f9;
+  background: var(--ui-surface-f1f6f9, #f1f6f9);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -678,8 +680,8 @@ export default {
 }
 
 .nav-link:hover {
-  color: var(--color-primary);
-  background: #f0f6fa;
+  color: var(--color-link, var(--color-primary));
+  background: var(--ui-surface-f0f6fa, #f0f6fa);
 }
 
 .nav-icon {
@@ -698,9 +700,9 @@ export default {
 }
 
 .nav-link.nuxt-link-active {
-  color: var(--color-primary);
+  color: var(--color-link, var(--color-primary));
   font-weight: 600;
-  background: #EAF3F8;
+  background: var(--ui-surface-eaf3f8, #EAF3F8);
   border-left: 3px solid var(--color-secondary);
 }
 

@@ -146,7 +146,7 @@ export default {
 .cargo-preview {
   width: 100%;
   min-height: 460px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-border-e2e8f0, #e2e8f0);
   border-radius: 4px;
 }
 </style>

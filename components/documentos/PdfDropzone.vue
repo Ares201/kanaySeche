@@ -72,13 +72,13 @@ export default {
   border-radius: 8px;
   padding: 28px;
   text-align: center;
-  background: #f4fbf8;
+  background: var(--ui-surface-f4fbf8, #f4fbf8);
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .pdf-dropzone--dragging {
   border-color: #0f766e;
-  background: #e7f7f1;
+  background: var(--ui-surface-e7f7f1, #e7f7f1);
 }
 
 .pdf-dropzone__input {
@@ -86,7 +86,7 @@ export default {
 }
 
 .pdf-dropzone__icon {
-  color: #0f766e;
+  color: var(--ui-text-0f766e, #0f766e);
 }
 
 .pdf-dropzone h2 {
@@ -96,6 +96,6 @@ export default {
 
 .pdf-dropzone p {
   margin: 0 0 18px;
-  color: #64748b;
+  color: var(--ui-text-64748b, #64748b);
 }
 </style>

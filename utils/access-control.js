@@ -17,6 +17,7 @@ export const SYSTEM_PAGES = [
   { nombre: 'Cartas', ruta: '/documentos/cartas', modulo: 'Documentos' },
   { nombre: 'Firmar PDF', ruta: '/documentos/firmar-pdf', modulo: 'Documentos' },
   { nombre: 'Boletas', ruta: '/documentos/boletas', modulo: 'Documentos' },
+  { nombre: 'Certificados', ruta: '/documentos/certificados', modulo: 'Documentos' },
   { nombre: 'Validaciones', ruta: '/documentos/validaciones', modulo: 'Documentos' },
   { nombre: 'Envases', ruta: '/configuracion/envases', modulo: 'Configuración' },
   { nombre: 'Residuos', ruta: '/configuracion/residuos', modulo: 'Configuración' },

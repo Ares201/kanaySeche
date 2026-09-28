@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import Chart from 'chart.js/auto'
+import Chart from '~/utils/theme-chart'
 import { normalizeIngresoCisterna } from '~/models/ingresoCisterna'
 
 export default {
@@ -103,11 +103,11 @@ export default {
 </script>
 
 <style scoped>
-.charts-page { min-height: 100vh; padding: 24px 16px; background: #f1f5f9; font-family: Inter, sans-serif; }
-.page-header { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 20px; } h1, h2, p { margin: 0; } h1 { color: #0f172a; font-size: 28px; } .page-header p { margin-top: 5px; color: #64748b; }
-.filters { display: flex; align-items: end; gap: 8px; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }.filters label { display: grid; gap: 3px; color: #475569; font-size: 12px; font-weight: 600; }.filters input { height: 34px; border: 1px solid #d1d9e6; border-radius: 6px; padding: 0 8px; }.filters button { width: 34px; height: 34px; border: 0; border-radius: 6px; background: #f1f5f9; color: #0f766e; cursor: pointer; }
-.chart-card { height: 100%; padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }.chart-card h2 { display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 18px; }.chart-card h2 .v-icon { color: #0f766e; }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }.stats div { padding: 12px; border-left: 4px solid #0f766e; background: #fafbfc; }.stats.pedidos div { border-left-color: #f54927; }.stats span, .stats strong { display: block; }.stats span { color: #64748b; font-size: 11px; text-transform: uppercase; }.stats strong { margin-top: 4px; color: #0f172a; font-size: 23px; }
-.chart-area { position: relative; height: 240px; padding: 6px; background: #fafbfc; }.chart-area > span { display: grid; height: 100%; place-items: center; color: #64748b; }.chart-area canvas { width: 100% !important; height: 100% !important; }
+.charts-page { min-height: 100vh; padding: 24px 16px; background: var(--ui-surface-f1f5f9, #f1f5f9); font-family: Inter, sans-serif; }
+.page-header { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 20px; } h1, h2, p { margin: 0; } h1 { color: var(--ui-text-0f172a, #0f172a); font-size: 28px; } .page-header p { margin-top: 5px; color: var(--ui-text-64748b, #64748b); }
+.filters { display: flex; align-items: end; gap: 8px; padding: 12px; background: var(--ui-surface-ffffff, #fff); border: 1px solid var(--ui-border-e2e8f0, #e2e8f0); border-radius: 8px; }.filters label { display: grid; gap: 3px; color: var(--ui-text-475569, #475569); font-size: 12px; font-weight: 600; }.filters input { height: 34px; border: 1px solid var(--ui-border-d1d9e6, #d1d9e6); border-radius: 6px; padding: 0 8px; }.filters button { width: 34px; height: 34px; border: 0; border-radius: 6px; background: var(--ui-surface-f1f5f9, #f1f5f9); color: var(--ui-text-0f766e, #0f766e); cursor: pointer; }
+.chart-card { height: 100%; padding: 20px; background: var(--ui-surface-ffffff, #fff); border: 1px solid var(--ui-border-e2e8f0, #e2e8f0); border-radius: 8px; }.chart-card h2 { display: flex; align-items: center; gap: 8px; color: var(--ui-text-0f172a, #0f172a); font-size: 18px; }.chart-card h2 .v-icon { color: var(--ui-text-0f766e, #0f766e); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }.stats div { padding: 12px; border-left: 4px solid #0f766e; background: var(--ui-surface-fafbfc, #fafbfc); }.stats.pedidos div { border-left-color: #f54927; }.stats span, .stats strong { display: block; }.stats span { color: var(--ui-text-64748b, #64748b); font-size: 11px; text-transform: uppercase; }.stats strong { margin-top: 4px; color: var(--ui-text-0f172a, #0f172a); font-size: 23px; }
+.chart-area { position: relative; height: 240px; padding: 6px; background: var(--ui-surface-fafbfc, #fafbfc); }.chart-area > span { display: grid; height: 100%; place-items: center; color: var(--ui-text-64748b, #64748b); }.chart-area canvas { width: 100% !important; height: 100% !important; }
 @media (max-width: 960px) { .page-header { align-items: stretch; flex-direction: column; } .filters { align-self: stretch; } } @media (max-width: 600px) { .charts-page { padding: 12px 10px; }.filters { flex-wrap: wrap; }.filters label { flex: 1 1 135px; }.stats { gap: 8px; }.stats div { padding: 10px 8px; }.stats strong { font-size: 20px; }.chart-area { height: 190px; } }
 </style>

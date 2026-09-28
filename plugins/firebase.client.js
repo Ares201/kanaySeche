@@ -38,6 +38,7 @@ const firebaseApi = createFirebaseApi({
     const user = isPublicConfirmation ? null : appContext?.$auth?.user
     return {
       usuarioId: user?.id || '',
+      usuarioCorreo: user?.correo || '',
       usuario: isPublicConfirmation ? 'Confirmaci\u00f3n externa' : user?.nombres || user?.correo || 'Sin sesi\u00f3n',
       ruta: isPublicConfirmation ? '/confirmacion' : ruta,
       pagina: isPublicConfirmation ? 'Confirmaci\u00f3n de carta' : page?.nombre || (ruta === '/login' ? 'Acceso al sistema' : ruta),

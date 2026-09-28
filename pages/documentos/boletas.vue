@@ -119,7 +119,7 @@ export default {
 }
 .card {
   padding: 20px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--ui-border-e0e0e0, #e0e0e0);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -134,15 +134,15 @@ button {
   cursor: pointer;
 }
 button:disabled {
-  background-color: #ccc;
+  background-color: var(--ui-surface-cccccc, #ccc);
   cursor: not-allowed;
 }
 .error {
-  color: #d32f2f;
+  color: var(--ui-text-d32f2f, #d32f2f);
   font-size: 14px;
 }
 .exito {
-  color: #2e7d32;
+  color: var(--ui-text-2e7d32, #2e7d32);
   font-size: 14px;
 }
 </style>

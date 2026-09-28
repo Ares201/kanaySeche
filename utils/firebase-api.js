@@ -28,6 +28,31 @@ export function createFirebaseApi({ db, config, timestamp, getContext, canReadHi
 
   return {
     config,
+    async commentTask(id, texto) {
+      const context = { ...getContext() }
+      const text = String(texto || '').trim()
+      if (!context.usuarioId) throw new Error('Inicia sesión para comentar.')
+      if (!text || text.length > 2000) throw new Error('Escribe un comentario de entre 1 y 2000 caracteres.')
+      const { collection } = apiConfig('tareas')
+      const ref = db.collection(collection).doc(id)
+      const comment = { id: db.collection(collection).doc().id, texto: text, autorId: context.usuarioId, autorNombre: context.usuario || 'Usuario', fecha: new Date() }
+      await db.runTransaction(async transaction => {
+        const doc = await transaction.get(ref)
+        if (!doc.exists || isAnulado(doc.data())) throw new Error('La tarea ya no está disponible.')
+        const task = doc.data()
+        const recipients = Array.isArray(task.compartidos) ? task.compartidos : [{ id: task.compartidoConId, correo: task.compartidoConCorreo }]
+        const email = String(context.usuarioCorreo || '').trim().toLowerCase()
+        const allowed = task.creadorId === context.usuarioId || recipients.some(person => person && (
+          person.id === context.usuarioId || (email && String(person.correo || '').trim().toLowerCase() === email)
+        ))
+        if (!allowed) throw new Error('Ya no tienes acceso a esta tarea.')
+        const comments = Array.isArray(task.comentarios) ? task.comentarios : []
+        if (comments.length >= 100) throw new Error('La tarea alcanzó el límite de 100 comentarios.')
+        transaction.update(ref, { comentarios: [...comments, comment], fechaActualizacion: timestamp() })
+        appendHistory(transaction, context, 'Comentar', collection, id)
+      })
+      return comment
+    },
     async list(name, options = {}) {
       const settings = apiConfig(name)
       let query = db.collection(settings.collection)

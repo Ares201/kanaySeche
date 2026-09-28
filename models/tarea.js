@@ -8,6 +8,9 @@ export function createEmptyTareaForm() {
 export function normalizeTarea(data = {}) {
   return {
     compartidos: getTareaRecipients(data),
+    comentarios: (Array.isArray(data.comentarios) ? data.comentarios : []).map(comment => ({
+      ...comment, fecha: normalizeDate(comment.fecha)
+    })),
     id: data.id || '', titulo: data.titulo || '', descripcion: data.descripcion || '',
     prioridad: PRIORIDADES_TAREA.includes(data.prioridad) ? data.prioridad : 'Media',
     fechaLimite: normalizeDateInput(data.fechaLimite),

@@ -243,7 +243,7 @@ export default {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #087f8c;
+  color: var(--ui-text-087f8c, #087f8c);
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
@@ -259,7 +259,7 @@ h1 {
 }
 
 .registros-count {
-  color: #64748b;
+  color: var(--ui-text-64748b, #64748b);
   font-size: 14px;
 }
 
@@ -267,7 +267,7 @@ h1 {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 9px;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   box-shadow: 0 16px 32px rgba(15, 23, 42, .08);
 }
 
@@ -305,8 +305,8 @@ h1 {
 
 .secondary-button {
   border: 1px solid var(--color-primary);
-  color: var(--color-primary);
-  background: #fff;
+  color: var(--color-link, var(--color-primary));
+  background: var(--ui-surface-ffffff, #fff);
 }
 
 .icon-button {
@@ -317,8 +317,8 @@ h1 {
   height: 34px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: var(--color-primary);
-  background: #fff;
+  color: var(--color-link, var(--color-primary));
+  background: var(--ui-surface-ffffff, #fff);
   cursor: pointer;
 }
 
@@ -329,7 +329,7 @@ h1 {
 }
 
 .icon-button--danger {
-  color: #dc2626;
+  color: var(--ui-text-dc2626, #dc2626);
 }
 
 .modal-backdrop {
@@ -348,7 +348,7 @@ h1 {
   max-height: calc(100vh - 32px);
   overflow-y: auto;
   border-radius: 9px;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   box-shadow: 0 24px 60px rgba(15, 23, 42, .24);
 }
 
@@ -366,7 +366,7 @@ h1 {
 }
 
 .modal-header small {
-  color: #64748b;
+  color: var(--ui-text-64748b, #64748b);
 }
 
 .modal-actions {
@@ -380,7 +380,7 @@ h1 {
   border: 0;
   border-radius: 8px;
   font-size: 20px;
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
   cursor: pointer;
 }
 
@@ -392,7 +392,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  color: #334155;
+  color: var(--ui-text-334155, #334155);
   font-size: 14px;
   font-weight: 700;
 }
@@ -402,7 +402,7 @@ h1 {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
-  color: #0f172a;
+  color: var(--ui-text-0f172a, #0f172a);
   font: inherit;
   outline: none;
 }
@@ -413,8 +413,8 @@ h1 {
 }
 
 .form-grid input:disabled {
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--ui-text-64748b, #64748b);
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
   cursor: not-allowed;
 }
 

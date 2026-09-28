@@ -27,8 +27,8 @@ export default {
 <style>
 html {
   font-family: Arial, Helvetica, sans-serif;
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--ui-text-0f172a, #0f172a);
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 body {

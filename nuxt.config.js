@@ -5,6 +5,14 @@ const apiBaseURL = process.env.API_URL || (
 )
 
 export default {
+  publicRuntimeConfig: {
+    certificadosApiBaseURL: process.env.CERTIFICADOS_API_URL || (
+      process.env.NODE_ENV === 'production'
+        ? 'https://api-query-control-pesaje.vercel.app'
+        : 'http://localhost:8000'
+    ),
+    certificadosMaxTotalBytes: process.env.CERTIFICADOS_MAX_TOTAL_BYTES || 4000000
+  },
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: 'kanaySeche',
@@ -25,11 +33,13 @@ export default {
   // Global CSS: https://go.nuxtjs.dev/config-css
     css: [
       '~/assets/css/global.css',
-      '~/assets/css/inventory-pages.css'
+      '~/assets/css/inventory-pages.css',
+      '~/assets/css/theme.css'
     ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    { src: '~/plugins/theme.client.js', mode: 'client' },
     { src: '~/plugins/firebase.client.js', mode: 'client' },
     { src: '~/plugins/auth.client.js', mode: 'client' }
   ],

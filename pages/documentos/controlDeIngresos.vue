@@ -76,13 +76,13 @@
           </div>
           <div class="advanced-filters__grid">
             <v-autocomplete v-model="plannerFiltro" :items="plannersEnRegistros" label="Planner" dense hide-details
-              outlined clearable placeholder="Todos" prepend-inner-icon="mdi-account-outline" />
+              outlined multiple small-chips deletable-chips clearable placeholder="Todos" prepend-inner-icon="mdi-account-outline" />
             <v-autocomplete v-model="estadoPVFiltro" :items="estadosPVFiltroOptions" label="Estado PV" dense
               hide-details outlined clearable placeholder="Todos" />
             <v-autocomplete v-model="tipoServicioFiltro" :items="tiposServicio" label="Tipo de servicio" dense
               hide-details outlined clearable placeholder="Todos" />
             <v-autocomplete v-model="estadoFiltro" :items="estadosFiltro" label="Estado" dense hide-details outlined
-              clearable placeholder="Todos" />
+              multiple small-chips deletable-chips clearable placeholder="Todos" />
             <v-text-field v-model="fechaFiltro" dense hide-details outlined type="date" label="Fecha" clearable />
           </div>
         </div>
@@ -438,7 +438,7 @@ export default {
     return {
       estadoPVFiltro: null,
       tipoServicioFiltro: null,
-      plannerFiltro: null,
+      plannerFiltro: [],
       filtersOpen: false,
       viewMode: 'kanban',
       estados: ESTADOS_EXPEDIENTE,
@@ -456,7 +456,7 @@ export default {
       ],
       search: '',
       fechaFiltro: null,
-      estadoFiltro: null,
+      estadoFiltro: [],
       loading: false,
       isModalOpen: false,
       editingId: null,
@@ -496,15 +496,15 @@ export default {
     },
     activeFilterCount() {
       return [this.plannerFiltro, this.estadoPVFiltro, this.tipoServicioFiltro, this.estadoFiltro, this.fechaFiltro]
-        .filter(Boolean).length
+        .filter(value => Array.isArray(value) ? value.length > 0 : Boolean(value)).length
     },
     filteredExpedientes() {
       const term = this.search.toLowerCase().trim()
       const fechaFiltro = this.fechaFiltro
-      const estadoFiltro = this.estadoFiltro
+      const estadosSeleccionados = this.estadoFiltro || []
       const estadoPVFiltro = this.estadoPVFiltro // <--- NUEVO
       const tipoServicioFiltro = this.tipoServicioFiltro
-      const plannerFiltro = this.plannerFiltro
+      const plannersSeleccionados = this.plannerFiltro || []
 
       return this.expedientes.filter(exp => {
         const matchesSearch =
@@ -517,16 +517,16 @@ export default {
 
         const fechaStr = this.formatDateInput(exp.fecha)
         const matchesDate = !fechaFiltro || fechaStr === fechaFiltro
-        const matchesEstado = !estadoFiltro || (
-          estadoFiltro === 'Vencido'
+        const matchesEstado = !estadosSeleccionados.length || estadosSeleccionados.some(estado => (
+          estado === 'Vencido'
             ? this.isExpedienteVencido(exp)
-            : exp.estado === estadoFiltro
-        )
+            : exp.estado === estado
+        ))
 
         // NUEVO: Filtrar por estado PV
         const matchesEstadoPV = !estadoPVFiltro || exp.estadoPV === estadoPVFiltro
         const matchesTipoServicio = !tipoServicioFiltro || exp.tipoServicio === tipoServicioFiltro
-        const matchesPlanner = !plannerFiltro || exp.planner === plannerFiltro
+        const matchesPlanner = !plannersSeleccionados.length || plannersSeleccionados.includes(String(exp.planner || '').trim())
 
         return matchesSearch && matchesDate && matchesEstado && matchesEstadoPV && matchesTipoServicio && matchesPlanner
       })
@@ -609,10 +609,10 @@ export default {
     applyRouteFilters() {
       const { filter, estado } = this.$route.query
       if (filter === 'vencidos') {
-        this.estadoFiltro = 'Vencido'
+        this.estadoFiltro = ['Vencido']
         this.filtersOpen = true
       } else if (ESTADOS_EXPEDIENTE.includes(estado)) {
-        this.estadoFiltro = estado
+        this.estadoFiltro = [estado]
         this.filtersOpen = true
       }
     },
@@ -631,10 +631,10 @@ export default {
     },
 
     clearFilters() {
-      this.plannerFiltro = null
+      this.plannerFiltro = []
       this.estadoPVFiltro = null
       this.tipoServicioFiltro = null
-      this.estadoFiltro = null
+      this.estadoFiltro = []
       this.fechaFiltro = null
     },
 
@@ -1281,7 +1281,7 @@ h1 {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
 }
 
@@ -1292,7 +1292,7 @@ h1 {
   gap: 12px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-border);
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
 }
 
 .search-field {
@@ -1327,7 +1327,7 @@ h1 {
 .advanced-filters {
   padding: 16px 20px 20px;
   border-bottom: 1px solid var(--color-border);
-  background: linear-gradient(180deg, #f8fafc 0%, #f3f7f8 100%);
+  background: linear-gradient(180deg, var(--ui-surface-f8fafc, #f8fafc) 0%, var(--ui-surface-f3f7f8, #f3f7f8) 100%);
 }
 
 .advanced-filters__header {
@@ -1344,13 +1344,13 @@ h1 {
 }
 
 .advanced-filters__header strong {
-  color: #1e293b;
+  color: var(--ui-text-1e293b, #1e293b);
   font-size: 14px;
 }
 
 .advanced-filters__header span {
   margin-top: 2px;
-  color: #64748b;
+  color: var(--ui-text-64748b, #64748b);
   font-size: 12px;
 }
 
@@ -1368,7 +1368,7 @@ h1 {
   gap: 12px;
   padding: 12px 20px;
   border-bottom: 1px solid var(--color-border);
-  background: #fafcfc;
+  background: var(--ui-surface-fafcfc, #fafcfc);
 }
 
 .filter-bar__left {
@@ -1392,7 +1392,7 @@ h1 {
 }
 
 .registros-count {
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
@@ -1427,10 +1427,10 @@ td {
 }
 
 th {
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 12px;
   text-transform: uppercase;
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 td {
@@ -1449,33 +1449,33 @@ td {
 }
 
 .status-icon-button--back {
-  color: #475569 !important;
+  color: var(--ui-text-475569, #475569) !important;
   border-color: var(--color-border);
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
 }
 
 .status-icon-button--pendiente {
   color: var(--color-secondary) !important;
   border-color: #fde68a;
-  background: #fef3c7;
+  background: var(--ui-surface-fef3c7, #fef3c7);
 }
 
 .status-icon-button--notificado {
-  color: var(--color-primary) !important;
-  border-color: #bfdbfe;
-  background: #dbeafe;
+  color: var(--color-link, var(--color-primary)) !important;
+  border-color: var(--ui-border-bfdbfe, #bfdbfe);
+  background: var(--ui-surface-dbeafe, #dbeafe);
 }
 
 .status-icon-button--regularizado {
-  color: #16a34a !important;
-  border-color: #bbf7d0;
-  background: #dcfce7;
+  color: var(--ui-text-16a34a, #16a34a) !important;
+  border-color: var(--ui-border-bbf7d0, #bbf7d0);
+  background: var(--ui-surface-dcfce7, #dcfce7);
 }
 
 .status-icon-button--cerrado {
-  color: #475569 !important;
+  color: var(--ui-text-475569, #475569) !important;
   border-color: var(--color-border);
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
   cursor: not-allowed;
 }
 
@@ -1492,14 +1492,14 @@ td {
   height: 34px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: var(--color-primary);
-  background: #fff;
+  color: var(--color-link, var(--color-primary));
+  background: var(--ui-surface-ffffff, #fff);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .icon-button:hover {
-  background: #f0f6fa;
+  background: var(--ui-surface-f0f6fa, #f0f6fa);
   border-color: var(--color-primary);
 }
 
@@ -1514,11 +1514,11 @@ td {
 }
 
 .icon-button--danger {
-  color: #dc2626;
+  color: var(--ui-text-dc2626, #dc2626);
 }
 
 .icon-button--danger:hover {
-  background: #fee2e2;
+  background: var(--ui-surface-fee2e2, #fee2e2);
   border-color: #dc2626;
 }
 
@@ -1541,7 +1541,7 @@ td {
 .kanban-column {
   flex: 1 1 240px;
   min-width: 220px;
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
   border-radius: 8px;
   padding: 12px;
   border: 1px solid var(--color-border);
@@ -1608,7 +1608,7 @@ td {
 
 .kanban-loading {
   border-bottom: 1px solid var(--color-border);
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 /* ===== MODAL ===== */
@@ -1625,7 +1625,7 @@ td {
 
 .modal {
   border-radius: 8px;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
 }
 
@@ -1658,14 +1658,14 @@ td {
   height: 34px;
   border: 0;
   border-radius: 8px;
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 18px;
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
   cursor: pointer;
 }
 
 .modal-close:hover {
-  background: #e2e8f0;
+  background: var(--ui-surface-e2e8f0, #e2e8f0);
 }
 
 .form-grid {
@@ -1676,7 +1676,7 @@ td {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: #334155;
+  color: var(--ui-text-334155, #334155);
   font-size: 14px;
   font-weight: 700;
 }
@@ -1688,7 +1688,7 @@ td {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
-  color: #0f172a;
+  color: var(--ui-text-0f172a, #0f172a);
   font: inherit;
   outline: none;
 }
@@ -1701,7 +1701,7 @@ td {
 }
 
 .form-grid select {
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   appearance: auto;
 }
 
@@ -1718,7 +1718,7 @@ td {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
 }
 
@@ -1733,12 +1733,12 @@ td {
   color: var(--color-text);
   font: inherit;
   text-align: left;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   cursor: pointer;
 }
 
 .autocomplete-option:hover {
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 .autocomplete-option span,
@@ -1757,7 +1757,7 @@ td {
   border: 1px solid var(--color-primary);
   border-radius: 8px;
   padding: 0 16px;
-  color: var(--color-primary);
+  color: var(--color-link, var(--color-primary));
   font-weight: 700;
   background: transparent;
   cursor: pointer;

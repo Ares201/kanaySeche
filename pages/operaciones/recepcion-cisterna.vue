@@ -44,12 +44,12 @@
               <v-list-item @click="exportIngresos">
                 <v-list-item-title>Exportar</v-list-item-title>
               </v-list-item>
-              <v-list-item @click="downloadTemplate">
+              <!-- <v-list-item @click="downloadTemplate">
                 <v-list-item-title>Descargar plantilla</v-list-item-title>
               </v-list-item>
               <v-list-item @click="openImportIngresos">
                 <v-list-item-title>Importar</v-list-item-title>
-              </v-list-item>
+              </v-list-item> -->
             </v-list>
           </v-menu>
         </v-col>
@@ -65,7 +65,8 @@
           <template #[`item.pesoNeto`]="{ item: ingreso }">{{ formatWeight(ingreso.pesoNeto) }} Kg</template>
           <template #[`item.evidenciaLink`]="{ item: ingreso }">
             <div class="evidence-status">
-              <v-chip v-if="getEvidenciaUrl(ingreso.evidenciaLink)" small color="success" outlined target="_blank">
+              <v-chip v-if="getEvidenciaUrl(ingreso.evidenciaLink)" small color="success" outlined
+                :href="getEvidenciaUrl(ingreso.evidenciaLink)" target="_blank" rel="noopener noreferrer">
                 <v-icon small left>mdi-paperclip</v-icon>
                 Ver adjunto
               </v-chip>
@@ -1127,7 +1128,7 @@ export default {
   width: 100%;
   height: 60vh;
   min-height: 300px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ui-border-cbd5e1, #cbd5e1);
   border-radius: 8px;
 }
 
@@ -1199,7 +1200,7 @@ h3 {
   border: 1px solid var(--color-primary);
   border-radius: 8px;
   padding: 0 16px;
-  color: var(--color-primary);
+  color: var(--color-link, var(--color-primary));
   font-weight: 700;
   background: transparent;
   cursor: pointer;
@@ -1214,12 +1215,12 @@ h3 {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
 }
 
 .registros-count {
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
@@ -1253,10 +1254,10 @@ td {
 }
 
 th {
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 12px;
   text-transform: uppercase;
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 td {
@@ -1276,14 +1277,14 @@ td {
   height: 34px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: var(--color-primary);
-  background: #ffffff;
+  color: var(--color-link, var(--color-primary));
+  background: var(--ui-surface-ffffff, #ffffff);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .icon-button:hover {
-  background: #f0f6fa;
+  background: var(--ui-surface-f0f6fa, #f0f6fa);
   border-color: var(--color-primary);
 }
 
@@ -1298,11 +1299,11 @@ td {
 }
 
 .icon-button--danger {
-  color: #dc2626;
+  color: var(--ui-text-dc2626, #dc2626);
 }
 
 .icon-button--danger:hover {
-  background: #fee2e2;
+  background: var(--ui-surface-fee2e2, #fee2e2);
   border-color: #dc2626;
 }
 
@@ -1326,7 +1327,7 @@ td {
 .modal {
   width: min(800px, 100%);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
 }
 
@@ -1348,14 +1349,14 @@ td {
   height: 34px;
   border: 0;
   border-radius: 8px;
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 18px;
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
   cursor: pointer;
 }
 
 .modal-close:hover {
-  background: #e2e8f0;
+  background: var(--ui-surface-e2e8f0, #e2e8f0);
 }
 
 .modal-actions {
@@ -1371,7 +1372,7 @@ td {
   display: block;
   font-weight: 700;
   font-size: 14px;
-  color: #334155;
+  color: var(--ui-text-334155, #334155);
   margin-bottom: 4px;
 }
 
@@ -1382,7 +1383,7 @@ td {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 14px;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -1393,8 +1394,8 @@ td {
 }
 
 .custom-input:disabled {
-  background: #f1f5f9;
-  color: #94a3b8;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
+  color: var(--ui-text-94a3b8, #94a3b8);
   cursor: not-allowed;
 }
 
@@ -1410,7 +1411,7 @@ td {
   z-index: 10;
   max-height: 200px;
   overflow-y: auto;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
@@ -1422,13 +1423,13 @@ td {
   width: 100%;
   padding: 8px 12px;
   border: 0;
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
   text-align: left;
   cursor: pointer;
 }
 
 .autocomplete-list button:hover {
-  background: #f0f6fa;
+  background: var(--ui-surface-f0f6fa, #f0f6fa);
 }
 
 .autocomplete-list button strong {
@@ -1447,7 +1448,7 @@ td {
 }
 
 .bg-form-disabled input {
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
 }
 
 .input-neto-calculado input {

@@ -48,3 +48,33 @@ test('notifications persist one receipt per user/task and exclude own/read tasks
   ctx.generation++; ctx.tasks=[]
   assert.equal(component.computed.notifications.call(ctx).length,0)
 })
+
+test('crear tarea guarda el comentario inicial y publicar respuesta no actualiza campos', async () => {
+  const m = await loadModel()
+  const source = fs.readFileSync(path.join(__dirname, '../pages/inicio/tareas.vue'), 'utf8').split('<script>')[1].split('</script>')[0]
+    .replace(/^import .*$/gm, '').replace('export default', 'result =')
+  const sandbox = { ...m, draggable: {}, result: null, alert: () => {}, console }
+  vm.createContext(sandbox); vm.runInContext(source, sandbox)
+  const component = sandbox.result
+  const writes = []
+  const ctx = { ...component.data(), currentUser: { id: 'owner', nombres: 'Creador' },
+    $db: { collection: () => ({ doc: () => ({ id: 'comment-1' }) }) },
+    $firebaseApi: { config: { tareas: { collection: 'tareas' } },
+      create: async (name, payload) => writes.push({ name, payload }),
+      update: async () => { throw new Error('No debe actualizar el contenido') },
+      commentTask: async (id, text) => writes.push({ id, text }) },
+    loadData: async () => {} }
+  ctx.form.titulo = 'Entrega'
+  ctx.form.compartidos = [{ id: 'recipient', nombres: 'Ana' }]
+  ctx.commentDraft = 'Por favor confirmar la fecha.'
+  await component.methods.saveTask.call(ctx)
+  assert.equal(writes[0].payload.comentarios[0].texto, ctx.commentDraft)
+  assert.equal(writes[0].payload.comentarios[0].autorId, 'owner')
+  assert.equal(m.normalizeTarea(writes[0].payload).comentarios.length, 1)
+  assert.equal(Object.hasOwn(m.toTareaPayload({ ...ctx.form, comentarios: [{ texto: 'old' }] }, ctx.currentUser), 'comentarios'), false)
+  ctx.readOnly = true; ctx.editingId = 'task-1'; ctx.commentDraft = 'Tengo una duda.'
+  await component.methods.sendComment.call(ctx)
+  assert.equal(writes[1].id, 'task-1')
+  assert.equal(writes[1].text, 'Tengo una duda.')
+  assert.equal(ctx.commentDraft, '')
+})

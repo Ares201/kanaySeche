@@ -946,7 +946,7 @@ export default {
 }
 
 .home-brand {
-  color: var(--color-primary);
+  color: var(--color-link, var(--color-primary));
   letter-spacing: 1.5px;
 }
 
@@ -1043,7 +1043,7 @@ export default {
 
 /* Tipografía */
 .kpi-label {
-  color: #616161;
+  color: var(--ui-text-616161, #616161);
   letter-spacing: 0.3px;
   text-transform: uppercase;
   font-size: 11px !important;
@@ -1052,15 +1052,15 @@ export default {
 .kpi-number {
   line-height: 1.1;
   letter-spacing: -0.5px;
-  color: #212121 !important;
+  color: var(--ui-text-212121, #212121) !important;
 }
 
 .kpi-sublabel {
-  color: #424242 !important;
+  color: var(--ui-text-424242, #424242) !important;
 }
 
 .kpi-hint {
-  color: #9E9E9E;
+  color: var(--ui-text-9e9e9e, #9E9E9E);
 }
 
 .kpi-divider {
@@ -1141,7 +1141,7 @@ export default {
 }
 
 .theme--dark .kpi-label {
-  color: #BDBDBD;
+  color: var(--ui-text-bdbdbd, #BDBDBD);
 }
 
 .theme--dark .kpi-divider {

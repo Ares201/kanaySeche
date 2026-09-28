@@ -6,7 +6,8 @@
         <h1>Cartas</h1>
         <span class="registros-count">{{ filteredCartas.length }} registros</span>
       </div>
-      <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nueva carta</button></div>
+      <div class="header-actions"><button class="primary-button" type="button" @click="openCreateModal">Nueva
+          carta</button></div>
     </div>
     <div class="content">
       <div class="toolbar-filters">
@@ -61,8 +62,8 @@
           <div class="advanced-filters__grid">
             <v-autocomplete v-model="estadoFiltro" :items="estadosFiltro" label="Estado" dense hide-details outlined
               clearable placeholder="Todos" />
-            <v-select v-model="direccionFiltro" :items="direccionOptions" label="Dirección" dense hide-details
-              outlined clearable placeholder="Todas" prepend-inner-icon="mdi-map-marker-outline" />
+            <v-select v-model="direccionFiltro" :items="direccionOptions" label="Dirección" dense hide-details outlined
+              clearable placeholder="Todas" prepend-inner-icon="mdi-map-marker-outline" />
             <v-text-field v-model="fechaFiltro" dense hide-details outlined clearable type="date" label="Fecha" />
           </div>
         </div>
@@ -74,48 +75,48 @@
           :footer-props="{ itemsPerPageText: 'Filas por página' }">
           <template #[`item.fecha`]="{ item: carta }">{{ formatShortDate(carta.fecha) }}</template>
           <template #[`item.actions`]="{ item: carta }">
-                <div class="actions">
-                  <v-btn icon small class="status-icon-button"
-                    :class="`status-icon-button--${getEstadoClass(carta.estadoProceso)}`" :title="getEstadoTitle(carta)"
-                    :aria-label="getEstadoTitle(carta)" :disabled="carta.estadoProceso === 'Entregado'"
-                    @click="advanceCartaEstado(carta)">
-                    <v-icon small>
-                      {{ getEstadoIcon(carta.estadoProceso) }}
-                    </v-icon>
-                  </v-btn>
-                  <v-btn icon small class="status-icon-button" title="Ver o editar cargo digital"
-                    aria-label="Ver o editar cargo digital" @click="openCargoDialog(carta)">
-                    <v-icon small>mdi-file-sign</v-icon>
-                  </v-btn>
-                  <button class="icon-button" type="button" title="Ver" aria-label="Ver carta"
-                    @click="openPreviewModal(carta)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
-                  <button class="icon-button" type="button" title="Editar" aria-label="Editar carta"
-                    @click="openEditModal(carta)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
-                      <path d="M13.5 6.5l4 4" />
-                    </svg>
-                  </button>
-                  <button style="color: red;" class="icon-button" type="button" title="Anular" aria-label="Anular carta"
-                    @click="anularCarta(carta.id)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M8 16l8-8" />
-                    </svg>
-                  </button>
-                  <!-- Botón para retroceder estado -->
-                  <v-btn icon small class="status-icon-button status-icon-button--back"
-                    :title="canRegress(carta.estadoProceso) ? 'Retroceder a ' + getPreviousEstado(carta.estadoProceso) : 'No se puede retroceder'"
-                    :aria-label="'Retroceder estado de la carta'" :disabled="!canRegress(carta.estadoProceso)"
-                    @click="regressCartaEstado(carta)">
-                    <v-icon small>mdi-arrow-left</v-icon>
-                  </v-btn>
-                </div>
+            <div class="actions">
+              <v-btn icon small class="status-icon-button"
+                :class="`status-icon-button--${getEstadoClass(carta.estadoProceso)}`" :title="getEstadoTitle(carta)"
+                :aria-label="getEstadoTitle(carta)" :disabled="carta.estadoProceso === 'Entregado'"
+                @click="advanceCartaEstado(carta)">
+                <v-icon small>
+                  {{ getEstadoIcon(carta.estadoProceso) }}
+                </v-icon>
+              </v-btn>
+              <v-btn icon small class="status-icon-button" title="Ver o editar cargo digital"
+                aria-label="Ver o editar cargo digital" @click="openCargoDialog(carta)">
+                <v-icon small>mdi-file-sign</v-icon>
+              </v-btn>
+              <button class="icon-button" type="button" title="Ver" aria-label="Ver carta"
+                @click="openPreviewModal(carta)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+              <button class="icon-button" type="button" title="Editar" aria-label="Editar carta"
+                @click="openEditModal(carta)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 20h4l10.5-10.5-4-4L4 16v4z" />
+                  <path d="M13.5 6.5l4 4" />
+                </svg>
+              </button>
+              <button style="color: red;" class="icon-button" type="button" title="Anular" aria-label="Anular carta"
+                @click="anularCarta(carta.id)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M8 16l8-8" />
+                </svg>
+              </button>
+              <!-- Botón para retroceder estado -->
+              <v-btn icon small class="status-icon-button status-icon-button--back"
+                :title="canRegress(carta.estadoProceso) ? 'Retroceder a ' + getPreviousEstado(carta.estadoProceso) : 'No se puede retroceder'"
+                :aria-label="'Retroceder estado de la carta'" :disabled="!canRegress(carta.estadoProceso)"
+                @click="regressCartaEstado(carta)">
+                <v-icon small>mdi-arrow-left</v-icon>
+              </v-btn>
+            </div>
           </template>
         </v-data-table>
       </div>
@@ -1773,7 +1774,7 @@ h2 {
 }
 
 h3 {
-  color: #334155;
+  color: var(--ui-text-334155, #334155);
   font-size: 15px;
 }
 
@@ -1797,7 +1798,7 @@ h3 {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
 }
 
@@ -1825,7 +1826,7 @@ h3 {
   gap: 12px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-border);
-  background: #fff;
+  background: var(--ui-surface-ffffff, #fff);
 }
 
 .search-field {
@@ -1860,7 +1861,7 @@ h3 {
 .advanced-filters {
   padding: 16px 20px 20px;
   border-bottom: 1px solid var(--color-border);
-  background: linear-gradient(180deg, #f8fafc 0%, #f3f7f8 100%);
+  background: linear-gradient(180deg, var(--ui-surface-f8fafc, #f8fafc) 0%, var(--ui-surface-f3f7f8, #f3f7f8) 100%);
 }
 
 .advanced-filters__header {
@@ -1877,13 +1878,13 @@ h3 {
 }
 
 .advanced-filters__header strong {
-  color: #1e293b;
+  color: var(--ui-text-1e293b, #1e293b);
   font-size: 14px;
 }
 
 .advanced-filters__header span {
   margin-top: 2px;
-  color: #64748b;
+  color: var(--ui-text-64748b, #64748b);
   font-size: 12px;
 }
 
@@ -1929,7 +1930,7 @@ h3 {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
-  color: #0f172a;
+  color: var(--ui-text-0f172a, #0f172a);
   font: inherit;
   outline: none;
 }
@@ -1958,10 +1959,10 @@ td {
 }
 
 th {
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 12px;
   text-transform: uppercase;
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 td {
@@ -1980,34 +1981,34 @@ td {
 }
 
 .status-icon-button--emitido {
-  color: var(--color-primary) !important;
-  border-color: #bae6fd;
-  background: #e0f2fe;
+  color: var(--color-link, var(--color-primary)) !important;
+  border-color: var(--ui-border-bae6fd, #bae6fd);
+  background: var(--ui-surface-e0f2fe, #e0f2fe);
 }
 
 .status-icon-button--enviado {
-  color: #854d0e !important;
+  color: var(--ui-text-854d0e, #854d0e) !important;
   border-color: #fde68a;
-  background: #fef3c7;
+  background: var(--ui-surface-fef3c7, #fef3c7);
 }
 
 .status-icon-button--entregado {
-  color: #166534 !important;
-  border-color: #bbf7d0;
-  background: #dcfce7;
+  color: var(--ui-text-166534, #166534) !important;
+  border-color: var(--ui-border-bbf7d0, #bbf7d0);
+  background: var(--ui-surface-dcfce7, #dcfce7);
   cursor: not-allowed;
 }
 
 .status-icon-button--anulado {
-  color: #dc2626 !important;
-  border-color: #fecaca;
-  background: #fee2e2;
+  color: var(--ui-text-dc2626, #dc2626) !important;
+  border-color: var(--ui-border-fecaca, #fecaca);
+  background: var(--ui-surface-fee2e2, #fee2e2);
 }
 
 .status-icon-button--back {
-  color: #475569 !important;
+  color: var(--ui-text-475569, #475569) !important;
   border-color: var(--color-border);
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
 }
 
 .icon-button {
@@ -2018,20 +2019,20 @@ td {
   height: 34px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: var(--color-primary);
-  background: #ffffff;
+  color: var(--color-link, var(--color-primary));
+  background: var(--ui-surface-ffffff, #ffffff);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .icon-button:hover {
-  background: #f0f6fa;
+  background: var(--ui-surface-f0f6fa, #f0f6fa);
   border-color: var(--color-primary);
 }
 
 .icon-button:disabled {
-  color: #94a3b8;
-  background: #f8fafc;
+  color: var(--ui-text-94a3b8, #94a3b8);
+  background: var(--ui-surface-f8fafc, #f8fafc);
   cursor: not-allowed;
 }
 
@@ -2046,11 +2047,11 @@ td {
 }
 
 .icon-button--danger {
-  color: #dc2626;
+  color: var(--ui-text-dc2626, #dc2626);
 }
 
 .icon-button--danger:hover {
-  background: #fee2e2;
+  background: var(--ui-surface-fee2e2, #fee2e2);
   border-color: #dc2626;
 }
 
@@ -2077,19 +2078,19 @@ td {
 
 .modal {
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
 }
 
 .modal--form {
   width: min(920px, 100%);
-  max-height: calc(100vh - 32px);
+  max-height: calc(90vh - 32px);
   overflow-y: auto;
 }
 
 .modal--preview {
   width: min(760px, 100%);
-  max-height: calc(100vh - 32px);
+  max-height: calc(90vh - 32px);
   overflow: hidden;
 }
 
@@ -2111,14 +2112,14 @@ td {
   height: 34px;
   border: 0;
   border-radius: 8px;
-  color: #475569;
+  color: var(--ui-text-475569, #475569);
   font-size: 18px;
-  background: #f1f5f9;
+  background: var(--ui-surface-f1f5f9, #f1f5f9);
   cursor: pointer;
 }
 
 .modal-close:hover {
-  background: #e2e8f0;
+  background: var(--ui-surface-e2e8f0, #e2e8f0);
 }
 
 .modal-header-actions {
@@ -2131,7 +2132,7 @@ td {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #334155;
+  color: var(--ui-text-334155, #334155);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -2153,7 +2154,7 @@ td {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: #334155;
+  color: var(--ui-text-334155, #334155);
   font-size: 14px;
   font-weight: 700;
 }
@@ -2171,7 +2172,7 @@ td {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
 }
 
@@ -2186,12 +2187,12 @@ td {
   color: var(--color-text);
   font: inherit;
   text-align: left;
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
   cursor: pointer;
 }
 
 .autocomplete-option:hover {
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 .autocomplete-option span,
@@ -2236,7 +2237,7 @@ td {
   border: 1px solid var(--color-primary);
   border-radius: 8px;
   padding: 0 16px;
-  color: var(--color-primary);
+  color: var(--color-link, var(--color-primary));
   font-weight: 700;
   background: transparent;
   cursor: pointer;
@@ -2254,7 +2255,7 @@ td {
 
 .preview-header,
 .preview-toolbar {
-  background: #ffffff;
+  background: var(--ui-surface-ffffff, #ffffff);
 }
 
 .preview-toolbar {
@@ -2272,7 +2273,7 @@ td {
   max-height: calc(100vh - 174px);
   overflow: auto;
   padding: 16px;
-  background: #f8fafc;
+  background: var(--ui-surface-f8fafc, #f8fafc);
 }
 
 .preview-sheet {

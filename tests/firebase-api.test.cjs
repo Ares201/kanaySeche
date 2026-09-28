@@ -52,7 +52,7 @@ async function setup() {
     }
   }
   const api = createFirebaseApi({
-    db, config: { cartas: { collection: 'cartas' } }, timestamp: () => 'SERVER_TIMESTAMP',
+    db, config: { cartas: { collection: 'cartas' }, tareas: { collection: 'tareas' } }, timestamp: () => 'SERVER_TIMESTAMP',
     getContext: () => context, canReadHistory: () => allowed
   })
   return {
@@ -139,4 +139,47 @@ test('la ruta de historial queda restringida al administrador', async () => {
   assert.equal(canAccessRoute(null, route), false)
   assert.equal(canAccessRoute({ rolNombre: 'Operaciones', rutasPermitidas: [route] }, route), false)
   assert.equal(canAccessRoute({ rolNombre: 'Administrador' }, route), true)
+})
+
+test('el destinatario comenta sin modificar campos y la edición conserva los comentarios', async () => {
+  const fixture = await setup()
+  const record = await fixture.api.create('tareas', { titulo: 'Revisar entrega', creadorId: 'owner', estado: 'Pendiente', compartidos: [{ id: 'u1' }] })
+  const first = await fixture.api.commentTask(record.id, '  Falta el documento de respaldo.  ')
+  assert.equal(first.texto, 'Falta el documento de respaldo.')
+  assert.equal(first.autorId, 'u1')
+  assert.equal(first.autorNombre, 'Ana')
+  assert.ok(first.fecha instanceof Date)
+  fixture.setContext({ usuarioId: 'owner', usuario: 'Creador' })
+  await fixture.api.commentTask(record.id, 'Lo adjunto por correo.')
+  await fixture.api.update('tareas', record.id, { titulo: 'Revisar entrega hoy' })
+  const task = fixture.records.get('tareas/' + record.id)
+  assert.equal(task.estado, 'Pendiente')
+  assert.equal(task.creadorId, 'owner')
+  assert.equal(task.comentarios.length, 2)
+  assert.notEqual(task.comentarios[0].id, task.comentarios[1].id)
+  assert.deepEqual(fixture.history().map(entry => entry.accion), ['Registrar', 'Comentar', 'Comentar', 'Editar'])
+})
+
+test('comentarios rechazan accesos retirados, tareas eliminadas y textos inválidos', async () => {
+  const fixture = await setup()
+  const record = await fixture.api.create('tareas', { creadorId: 'owner', compartidos: [] })
+  await assert.rejects(fixture.api.commentTask(record.id, 'No autorizado'), /acceso/)
+  await assert.rejects(fixture.api.commentTask(record.id, '  '), /caracteres/)
+  await assert.rejects(fixture.api.commentTask(record.id, 'a'.repeat(2001)), /caracteres/)
+  await assert.rejects(fixture.api.commentTask('missing', 'Hola'), /disponible/)
+  fixture.setContext({ usuarioId: 'owner', usuario: 'Creador' })
+  await fixture.api.remove('tareas', record.id)
+  await assert.rejects(fixture.api.commentTask(record.id, 'Hola'), /disponible/)
+  assert.equal(fixture.records.get('tareas/' + record.id).comentarios, undefined)
+})
+
+test('admite destinatarios antiguos por correo y no deja comentarios parciales al fallar', async () => {
+  const fixture = await setup()
+  const record = await fixture.api.create('tareas', { creadorId: 'owner', compartidoConCorreo: 'ANA@EXAMPLE.COM' })
+  fixture.setContext({ usuarioId: 'ana', usuario: 'Ana', usuarioCorreo: 'ana@example.com' })
+  await fixture.api.commentTask(record.id, 'Recibido')
+  fixture.fail()
+  await assert.rejects(fixture.api.commentTask(record.id, 'No debe guardarse'))
+  assert.equal(fixture.records.get('tareas/' + record.id).comentarios.length, 1)
+  assert.equal(fixture.history().length, 2)
 })

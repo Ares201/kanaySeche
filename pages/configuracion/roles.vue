@@ -131,5 +131,5 @@ export default {
 </script>
 
 <style scoped>
-.admin-page{width:92%;margin:0 auto;padding:32px 0}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.eyebrow{margin:0;color:#0f766e;font-weight:700;text-transform:uppercase;font-size:13px}h1{margin:4px 0 0}.page-actions{display:flex;gap:10px;padding:16px;background:white}.permission-list{max-height:430px;overflow:auto}
+.admin-page{width:92%;margin:0 auto;padding:32px 0}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.eyebrow{margin:0;color:var(--ui-text-0f766e, #0f766e);font-weight:700;text-transform:uppercase;font-size:13px}h1{margin:4px 0 0}.page-actions{display:flex;gap:10px;padding:16px;background:var(--ui-surface-ffffff, white)}.permission-list{max-height:430px;overflow:auto}
 </style>

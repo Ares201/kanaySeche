@@ -179,6 +179,11 @@
         "delete": "remove"
       }
     },
+    "procesarCertificados": {
+      "collection": "procesarCertificados",
+      "orderBy": "fecha",
+      "orderDirection": "desc"
+    },
     "procesarBoletas": {
       "collection": "procesarBoletas",
       "orderBy": "fecha",

@@ -38,17 +38,38 @@
       </v-data-table>
     </v-card>
 
-    <v-dialog v-model="dialog" max-width="680" persistent>
-      <v-card>
-        <v-card-title>{{ editingId ? (readOnly ? 'Detalle de tarea' : 'Editar tarea') : 'Nueva tarea' }}</v-card-title>
-        <v-card-text>
-          <v-alert v-if="readOnly" type="info" dense text>Esta tarea fue compartida contigo. Puedes verla y moverla entre estados, pero solo su creador puede editar su contenido.</v-alert>
-          <v-text-field v-model.trim="form.titulo" :readonly="readOnly" label="Título" outlined required />
-          <v-textarea v-model.trim="form.descripcion" :readonly="readOnly" label="Descripción" outlined rows="3" />
-          <v-row><v-col cols="12" sm="6"><v-select v-model="form.prioridad" :readonly="readOnly" :items="prioridades" label="Prioridad" outlined /></v-col><v-col cols="12" sm="6"><v-text-field v-model="form.fechaLimite" :readonly="readOnly" label="Fecha límite" type="date" outlined /></v-col></v-row>
-          <v-autocomplete v-model="form.compartidos" multiple chips deletable-chips return-object :readonly="readOnly" :items="personalDisponible" item-text="nombres" item-value="id" label="Compartir con" outlined clearable hint="Las personas seleccionadas podrán visualizar y mover la tarea" persistent-hint />
+    <v-dialog v-model="dialog" max-width="620" persistent scrollable content-class="task-dialog">
+      <v-card class="task-form-card">
+        <v-card-title class="task-form-header">
+          <span class="task-form-icon"><v-icon color="primary" size="21">mdi-clipboard-text-outline</v-icon></span>
+          <div><h2>{{ editingId ? (readOnly ? 'Detalle de tarea' : 'Editar tarea') : 'Nueva tarea' }}</h2><span>{{ readOnly ? 'Revisa los detalles y comparte tus avances' : 'Detalles y participantes' }}</span></div>
+        </v-card-title>
+        <v-card-text class="task-form-body">
+          <div v-if="readOnly" class="task-shared-note"><v-icon small color="primary">mdi-account-multiple-outline</v-icon>Compartida contigo · Puedes cambiar el estado y comentar.</div>
+          <div class="task-fields">
+            <v-text-field v-model.trim="form.titulo" :readonly="readOnly" label="Título" outlined dense hide-details required />
+            <v-textarea v-model.trim="form.descripcion" :readonly="readOnly" label="Descripción" outlined dense hide-details rows="2" />
+            <div class="task-fields-row">
+              <v-select v-model="form.prioridad" :readonly="readOnly" :items="prioridades" label="Prioridad" outlined dense hide-details />
+              <v-text-field v-model="form.fechaLimite" :readonly="readOnly" label="Fecha límite" type="date" outlined dense hide-details />
+            </div>
+            <v-autocomplete v-model="form.compartidos" multiple small-chips :deletable-chips="!readOnly" return-object :readonly="readOnly" :items="personalDisponible" item-text="nombres" item-value="id" label="Compartir con" outlined dense hide-details :clearable="!readOnly" />
+          </div>
+          <section class="task-comments" aria-label="Comentarios de la tarea">
+            <div class="comments-heading"><h3>Comentarios <span v-if="comments.length" class="comments-count">{{ comments.length }}</span></h3><span>{{ editingId ? 'Visibles para todos los participantes' : 'Opcional' }}</span></div>
+            <v-progress-linear v-if="commentsLoading" indeterminate aria-label="Cargando comentarios" />
+            <v-alert v-if="commentError" type="error" dense text role="alert">{{ commentError }}</v-alert>
+            <div v-if="comments.length" class="comments-list" aria-live="polite">
+              <article v-for="comment in comments" :key="comment.id" class="task-comment">
+                <div class="comment-meta"><strong>{{ comment.autorNombre }}</strong><time>{{ formatCommentDate(comment.fecha) }}</time></div>
+                <p>{{ comment.texto }}</p>
+              </article>
+            </div>
+            <v-textarea v-model="commentDraft" :disabled="commentSaving || saving || !commentAllowed" :label="editingId ? 'Escribir comentario' : 'Comentario inicial'" outlined dense hide-details rows="2" maxlength="2000" />
+            <div class="comment-compose-footer"><span>{{ commentDraft.length }}/2000</span><v-btn v-if="editingId" color="primary" small text :loading="commentSaving" :disabled="!commentDraft.trim() || !commentAllowed || saving" @click="sendComment"><v-icon left small>mdi-send-outline</v-icon>Publicar comentario</v-btn></div>
+          </section>
         </v-card-text>
-        <v-card-actions><v-spacer /><v-btn text @click="dialog=false">{{ readOnly ? 'Cerrar' : 'Cancelar' }}</v-btn><v-btn v-if="!readOnly" color="primary" :loading="saving" @click="saveTask">Guardar</v-btn></v-card-actions>
+        <v-card-actions class="task-form-actions"><v-spacer /><v-btn small text :disabled="saving || commentSaving" @click="dialog=false">{{ readOnly ? 'Cerrar' : 'Cancelar' }}</v-btn><v-btn v-if="!readOnly" small color="primary" depressed :loading="saving" :disabled="commentSaving" @click="saveTask">Guardar tarea</v-btn></v-card-actions>
       </v-card>
     </v-dialog>
   </section>
@@ -68,6 +89,7 @@ export default {
       origenes: [{ text: 'Creadas por mí', value: 'propias' }, { text: 'Compartidas conmigo', value: 'compartidas' }],
       search: '', prioridadFiltro: null, origenFiltro: null, viewMode: 'kanban', loading: false, saving: false,
       openedNotificationId: null, kanbanColumns: {}, dialog: false, editingId: null, readOnly: false, form: createEmptyTareaForm(),
+      comments: [], commentDraft: '', commentSaving: false, commentsLoading: false, commentError: '', commentAllowed: true, commentGeneration: 0,
       headers: [
         { text: 'Tarea', value: 'titulo' }, { text: 'Prioridad', value: 'prioridad' }, { text: 'Fecha límite', value: 'fechaLimite' },
         { text: 'Estado', value: 'estado' }, { text: 'Origen', value: 'origen', sortable: false }, { text: 'Acciones', value: 'actions', sortable: false }
@@ -90,7 +112,8 @@ export default {
     },
     personalDisponible() { return this.personal.filter(persona => persona.estado && persona.id !== this.currentUser.id) }
   },
-  watch: { '$route.query.tarea'() { this.loadData() }, tareasFiltradas: { handler() { this.syncColumns() }, immediate: true } },
+  watch: { dialog(value) { if (!value) this.stopComments() }, '$route.query.tarea'() { this.loadData() }, tareasFiltradas: { handler() { this.syncColumns() }, immediate: true } },
+  beforeDestroy() { this.stopComments() },
   mounted() { this.loadData() },
   methods: {
     openRequestedTask() {
@@ -115,14 +138,54 @@ export default {
       this.kanbanColumns = columns
     },
     canEdit(tarea) { return tarea.creadorId === this.currentUser.id },
-    openCreate() { this.editingId = null; this.readOnly = false; this.form = createEmptyTareaForm(); this.dialog = true },
-    openTask(tarea) { this.editingId = tarea.id; this.readOnly = !this.canEdit(tarea); this.form = { ...tarea, compartidos: tarea.compartidos.map(person => ({ ...person })) }; this.dialog = true },
+    stopComments() {
+      this.commentGeneration++
+      if (this.unsubscribeComments) this.unsubscribeComments()
+      this.unsubscribeComments = null
+    },
+    resetComments() { this.stopComments(); this.comments = []; this.commentDraft = ''; this.commentError = ''; this.commentSaving = false; this.commentsLoading = false; this.commentAllowed = true },
+    openCreate() { this.resetComments(); this.editingId = null; this.readOnly = false; this.form = createEmptyTareaForm(); this.dialog = true },
+    openTask(tarea) {
+      this.resetComments()
+      this.editingId = tarea.id; this.readOnly = !this.canEdit(tarea); this.form = { ...tarea, compartidos: tarea.compartidos.map(person => ({ ...person })) }; this.dialog = true
+      this.commentsLoading = true
+      this.commentAllowed = false
+      const generation = this.commentGeneration
+      this.unsubscribeComments = this.$db.collection(this.$firebaseApi.config.tareas.collection).doc(tarea.id).onSnapshot(doc => {
+        if (generation !== this.commentGeneration) return
+        const data = doc.exists ? doc.data() : null
+        this.commentsLoading = false
+        this.commentAllowed = Boolean(data && !data.anulado && canViewTarea(data, this.currentUser))
+        this.comments = this.commentAllowed ? normalizeTarea(data).comentarios : []
+        this.commentError = this.commentAllowed ? '' : 'Esta tarea ya no está disponible para ti.'
+      }, () => {
+        if (generation !== this.commentGeneration) return
+        this.commentsLoading = false; this.commentAllowed = false; this.comments = []; this.commentError = 'No se pudieron cargar los comentarios. Cierra y vuelve a abrir la tarea.'
+      })
+    },
+    async sendComment() {
+      if (this.commentSaving || !this.commentAllowed || !this.editingId || !this.commentDraft.trim()) return
+      const generation = this.commentGeneration
+      this.commentSaving = true; this.commentError = ''
+      try {
+        await this.$firebaseApi.commentTask(this.editingId, this.commentDraft)
+        if (generation === this.commentGeneration) this.commentDraft = ''
+      } catch (error) { if (generation === this.commentGeneration) this.commentError = error.message || 'No se pudo publicar el comentario.' }
+      finally { if (generation === this.commentGeneration) this.commentSaving = false }
+    },
+    formatCommentDate(value) { return value ? new Date(value).toLocaleString('es-PE') : '' },
     async saveTask() {
       if (this.readOnly) return
+      if (this.saving || this.commentSaving) return
+      if (this.editingId && this.commentDraft.trim()) { this.commentError = 'Publica el comentario antes de guardar los cambios de la tarea.'; return }
       if (!this.form.titulo.trim()) return alert('Ingresa el título de la tarea')
       this.saving = true
       try {
         const payload = toTareaPayload(this.form, this.currentUser)
+        if (!this.editingId && this.commentDraft.trim()) {
+          if (this.commentDraft.trim().length > 2000) throw new Error('El comentario admite hasta 2000 caracteres.')
+          payload.comentarios = [{ id: this.$db.collection(this.$firebaseApi.config.tareas.collection).doc().id, texto: this.commentDraft.trim(), autorId: this.currentUser.id, autorNombre: this.currentUser.nombres || 'Usuario', fecha: new Date() }]
+        }
         if (this.editingId) await this.$firebaseApi.update('tareas', this.editingId, payload)
         else await this.$firebaseApi.create('tareas', payload)
         this.dialog = false
@@ -146,5 +209,39 @@ export default {
 </script>
 
 <style scoped>
-.tasks-page{width:92%;margin:0 auto;padding:32px 0}.page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.page-header h1{margin:3px 0}.page-header span{color:#64748b}.eyebrow{margin:0;color:#0f766e;font-size:13px;font-weight:700;text-transform:uppercase}.header-actions,.filters{display:flex;align-items:center;gap:12px}.filters{margin-bottom:18px;padding:14px}.filters>*{max-width:320px}.kanban-board{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:16px}.kanban-column{height:clamp(320px,65vh,760px);overflow:hidden;display:flex;flex-direction:column;min-height:440px;padding:12px;border:1px solid #dbe5eb;border-radius:10px;background:#f8fafc}.column-header{display:flex;justify-content:space-between;padding:5px 4px 12px;border-bottom:2px solid #dbe5eb}.column-header span{min-width:25px;padding:2px 7px;border-radius:20px;background:#e2e8f0;text-align:center}.kanban-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:10px 4px 0 0}.column-header{flex-shrink:0}.task-card{overflow-wrap:anywhere}.task-card{margin-bottom:10px;padding:13px;border:1px solid #dbe5eb;border-left:4px solid #00558a;border-radius:8px;background:white;box-shadow:0 2px 5px rgba(15,23,42,.06);cursor:grab}.task-top,.task-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}.task-card h3{margin:10px 0 5px;font-size:15px}.task-card p{min-height:32px;margin:0 0 10px;color:#64748b;font-size:12px}.task-meta{align-items:flex-start;flex-direction:column;color:#64748b;font-size:11px}.task-meta span{display:flex;align-items:center;gap:4px}.empty-column{padding:30px 8px;color:#94a3b8;text-align:center}@media(max-width:850px){.page-header,.filters{align-items:stretch;flex-direction:column}.header-actions{justify-content:space-between}.filters>*{max-width:none}.kanban-board{grid-template-columns:1fr}.kanban-column{min-height:260px}}
+.task-form-card.v-card { border-radius: 14px; }
+.task-form-card.v-card .task-form-header { word-break: normal; padding: 16px 20px; gap: 12px; flex-wrap: nowrap; border-bottom: 1px solid rgba(100,116,139,.16); }
+.task-form-icon { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; background: rgba(0,75,122,.07); border-radius: 10px; }
+.task-form-header h2 { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600; }
+.task-form-header span:not(.task-form-icon) { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; opacity: .65; }
+.task-form-card.v-card .task-form-body.v-card__text { padding: 18px 20px 8px; }
+.task-fields { display: grid; gap: 14px; }
+.task-fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.task-fields ::v-deep .v-input, .task-comments ::v-deep .v-input { font-size: 13px; }
+.task-fields ::v-deep .v-label, .task-comments ::v-deep .v-label { font-size: 13px; }
+.task-shared-note { display: flex; gap: 6px; align-items: center; margin-bottom: 16px; font-size: 12px; color: var(--ui-text-006b8f, #006b8f); }
+.task-comments { margin-top: 18px; border-top: 1px solid rgba(100,116,139,.16); padding-top: 12px; }
+.comments-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.comments-heading h3 { font-size: 13px; margin: 0; }
+.comments-heading > span { font-size: 11px; opacity: .65; }
+.comments-count { display: inline-block; padding: 0 6px; margin-left: 4px; background: rgba(0,75,122,.08); border-radius: 8px; font-size: 11px; }
+.comments-list { max-height: 150px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px; }
+.task-comment { padding: 9px 11px; margin-bottom: 6px; border-radius: 8px; background: rgba(100,116,139,.06); }
+.comment-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.comment-meta strong { font-size: 12px; }
+.comment-meta time { font-size: 10px; opacity: .65; }
+.task-comment p { margin: 4px 0 0; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment-compose-footer { display: flex; align-items: center; justify-content: space-between; min-height: 30px; }
+.comment-compose-footer > span { font-size: 10px; opacity: .6; }
+.task-form-card.v-card .task-form-actions { padding: 10px 20px; border-top: 1px solid rgba(100,116,139,.16); }
+@media(max-width: 480px) {
+  .task-form-card.v-card .task-form-header { word-break: normal; padding: 14px; }
+  .task-form-card.v-card .task-form-body.v-card__text { padding: 16px 14px 6px; }
+  .task-form-card.v-card .task-form-actions { padding: 10px 14px; }
+  .task-form-header h2 { font-size: 16px; }
+  .task-fields-row { gap: 8px; }
+  .comments-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
+}
+
+.tasks-page{width:92%;margin:0 auto;padding:32px 0}.page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.page-header h1{margin:3px 0}.page-header span{color:var(--ui-text-64748b, #64748b)}.eyebrow{margin:0;color:var(--ui-text-0f766e, #0f766e);font-size:13px;font-weight:700;text-transform:uppercase}.header-actions,.filters{display:flex;align-items:center;gap:12px}.filters{margin-bottom:18px;padding:14px}.filters>*{max-width:320px}.kanban-board{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:16px}.kanban-column{height:clamp(320px,65vh,760px);overflow:hidden;display:flex;flex-direction:column;min-height:440px;padding:12px;border:1px solid var(--ui-border-dbe5eb, #dbe5eb);border-radius:10px;background:var(--ui-surface-f8fafc, #f8fafc)}.column-header{display:flex;justify-content:space-between;padding:5px 4px 12px;border-bottom:2px solid var(--ui-border-dbe5eb, #dbe5eb)}.column-header span{min-width:25px;padding:2px 7px;border-radius:20px;background:var(--ui-surface-e2e8f0, #e2e8f0);text-align:center}.kanban-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:10px 4px 0 0}.column-header{flex-shrink:0}.task-card{overflow-wrap:anywhere}.task-card{margin-bottom:10px;padding:13px;border:1px solid var(--ui-border-dbe5eb, #dbe5eb);border-left:4px solid #00558a;border-radius:8px;background:var(--ui-surface-ffffff, white);box-shadow:0 2px 5px rgba(15,23,42,.06);cursor:grab}.task-top,.task-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}.task-card h3{margin:10px 0 5px;font-size:15px}.task-card p{min-height:32px;margin:0 0 10px;color:var(--ui-text-64748b, #64748b);font-size:12px}.task-meta{align-items:flex-start;flex-direction:column;color:var(--ui-text-64748b, #64748b);font-size:11px}.task-meta span{display:flex;align-items:center;gap:4px}.empty-column{padding:30px 8px;color:var(--ui-text-94a3b8, #94a3b8);text-align:center}@media(max-width:850px){.page-header,.filters{align-items:stretch;flex-direction:column}.header-actions{justify-content:space-between}.filters>*{max-width:none}.kanban-board{grid-template-columns:1fr}.kanban-column{min-height:260px}}
 </style>

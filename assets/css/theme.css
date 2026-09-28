@@ -1,0 +1,97 @@
+/* Theme tokens keep their original light values as fallbacks in each component. */
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-background: #101827;
+    --color-border: #3b4c63;
+    --color-text: #e2e8f0;
+    --color-muted: #aebed0;
+    --color-link: #8bc9ed;
+    --ui-border-bae6fd: #3b4c63;
+    --ui-border-bbf7d0: #3b4c63;
+    --ui-border-bdbdbd: #3b4c63;
+    --ui-border-bfdbfe: #3b4c63;
+    --ui-border-cbd5e1: #3b4c63;
+    --ui-border-cbd7dc: #3b4c63;
+    --ui-border-d1d9e6: #3b4c63;
+    --ui-border-dbe4ec: #3b4c63;
+    --ui-border-dbe5eb: #3b4c63;
+    --ui-border-e0e0e0: #3b4c63;
+    --ui-border-e1e7ec: #3b4c63;
+    --ui-border-e2e8f0: #3b4c63;
+    --ui-border-edf2f7: #3b4c63;
+    --ui-border-fecaca: #3b4c63;
+    --ui-surface-cccccc: #162233;
+    --ui-surface-dbeafe: #203044;
+    --ui-surface-dcfce7: #203044;
+    --ui-surface-e0f2fe: #203044;
+    --ui-surface-e2e8f0: #162233;
+    --ui-surface-e3f2fd: #203044;
+    --ui-surface-e7f7f1: #162233;
+    --ui-surface-e8eef2: #162233;
+    --ui-surface-eaf3f8: #162233;
+    --ui-surface-ecfdf3: #162233;
+    --ui-surface-eeeeee: #162233;
+    --ui-surface-f0f6fa: #162233;
+    --ui-surface-f1f5f9: #162233;
+    --ui-surface-f1f6f9: #162233;
+    --ui-surface-f3f6f8: #162233;
+    --ui-surface-f3f7f8: #162233;
+    --ui-surface-f4fbf8: #162233;
+    --ui-surface-f5f5f5: #162233;
+    --ui-surface-f8fafc: #162233;
+    --ui-surface-fafbfc: #1e293b;
+    --ui-surface-fafcfc: #1e293b;
+    --ui-surface-fee2e2: #203044;
+    --ui-surface-fef2f2: #162233;
+    --ui-surface-fef3c7: #203044;
+    --ui-surface-ffffff: #1e293b;
+    --ui-text-00558a: #99bbd0;
+    --ui-text-006b8f: #99c4d2;
+    --ui-text-04747b: #9bc7ca;
+    --ui-text-087f8c: #9cccd1;
+    --ui-text-0f172a: #e2e8f0;
+    --ui-text-0f766e: #9fc8c5;
+    --ui-text-107c41: #9fcbb3;
+    --ui-text-123e55: #a0b2bb;
+    --ui-text-166534: #a2c1ae;
+    --ui-text-16a34a: #a2dab7;
+    --ui-text-172033: #e2e8f0;
+    --ui-text-183b4c: #a3b1b7;
+    --ui-text-1e293b: #e2e8f0;
+    --ui-text-212121: #e2e8f0;
+    --ui-text-2e7d32: #abcbad;
+    --ui-text-324d5b: #aebed0;
+    --ui-text-334155: #aebed0;
+    --ui-text-424242: #e2e8f0;
+    --ui-text-475569: #aebed0;
+    --ui-text-616161: #aebed0;
+    --ui-text-64748b: #aebed0;
+    --ui-text-6b7d88: #aebed0;
+    --ui-text-6eb49c: #c5e1d7;
+    --ui-text-72828d: #aebed0;
+    --ui-text-757575: #aebed0;
+    --ui-text-854d0e: #ceb89f;
+    --ui-text-8a989f: #aebed0;
+    --ui-text-94a3b8: #aebed0;
+    --ui-text-991b1b: #d6a4a4;
+    --ui-text-9e9e9e: #aebed0;
+    --ui-text-bdbdbd: #aebed0;
+    --ui-text-d32f2f: #edacac;
+    --ui-text-dc2626: #f1a8a8;
+  }
+  html[data-theme="dark"] .date-chip { background: #203044 !important; }
+  :root[data-theme="light"] { color-scheme: light; }
+  html[data-theme="dark"], html[data-theme="dark"] body,
+  html[data-theme="dark"] .v-application { background-color: #101827; color: #e2e8f0; }
+  html[data-theme="dark"] .theme--dark.v-card,
+  html[data-theme="dark"] .theme--dark.v-data-table,
+  html[data-theme="dark"] .theme--dark.v-list,
+  html[data-theme="dark"] .theme--dark.v-sheet { background-color: #1e293b; }
+  html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+  html[data-theme="dark"] select, html[data-theme="dark"] textarea { color-scheme: dark; }
+  html[data-theme="dark"] input::placeholder, html[data-theme="dark"] textarea::placeholder { color: #94a3b8; opacity: 1; }
+  html[data-theme="dark"] .login-panel { background: rgba(22,34,51,.96); }
+  html[data-theme="dark"] .login-card input { background: #101827; }
+  html[data-theme="dark"] .carta-preview { color-scheme: light; color: #111827; background-color: white; }
+}

@@ -861,7 +861,7 @@ export default {
 /* PÁGINA */
 /* ========================================================= */
 .firmar-pdf-page {
-  background: #f5f5f5;
+  background: var(--ui-surface-f5f5f5, #f5f5f5);
   min-height: 100vh;
   padding-bottom: 30px;
 }
@@ -913,12 +913,12 @@ export default {
 }
 
 .thumbnail-wrapper:hover {
-  border-color: #bdbdbd;
+  border-color: var(--ui-border-bdbdbd, #bdbdbd);
 }
 
 .thumbnail-active {
   border-color: #1976d2;
-  background: #e3f2fd;
+  background: var(--ui-surface-e3f2fd, #e3f2fd);
 }
 
 .thumbnail-canvas {
@@ -949,7 +949,7 @@ export default {
   width: 100%;
   overflow: auto;
   padding: 30px;
-  background: #eeeeee;
+  background: var(--ui-surface-eeeeee, #eeeeee);
   min-height: 650px;
 }
 
@@ -989,7 +989,7 @@ export default {
 .empty-description {
   max-width: 500px;
   margin-top: 8px;
-  color: #757575;
+  color: var(--ui-text-757575, #757575);
 }
 
 /* ========================================================= */
@@ -1063,7 +1063,7 @@ export default {
 .color-label {
   display: block;
   font-size: 12px;
-  color: #757575;
+  color: var(--ui-text-757575, #757575);
   margin-bottom: 4px;
 }
 
@@ -1077,15 +1077,15 @@ export default {
   width: 42px;
   height: 36px;
   padding: 2px;
-  border: 1px solid #bdbdbd;
+  border: 1px solid var(--ui-border-bdbdbd, #bdbdbd);
   border-radius: 4px;
   cursor: pointer;
-  background: white;
+  background: var(--ui-surface-ffffff, white);
 }
 
 .color-value {
   font-size: 12px;
-  color: #616161;
+  color: var(--ui-text-616161, #616161);
   font-family: monospace;
 }
 
