@@ -2,16 +2,18 @@ export const ESTADOS_TAREA = ['Pendiente', 'En progreso', 'Completada']
 export const PRIORIDADES_TAREA = ['Baja', 'Media', 'Alta']
 
 export function createEmptyTareaForm() {
-  return { titulo: '', descripcion: '', prioridad: 'Media', fechaLimite: '', estado: 'Pendiente', compartidos: [], compartidoConId: '', compartidoConNombre: '', compartidoConCorreo: '' }
+  return { titulo: '', descripcion: '', descripcionFormato: 'parrafo', subtareas: [], prioridad: 'Media', fechaLimite: '', estado: 'Pendiente', compartidos: [], compartidoConId: '', compartidoConNombre: '', compartidoConCorreo: '' }
 }
 
 export function normalizeTarea(data = {}) {
   return {
     compartidos: getTareaRecipients(data),
+    subtareas: getTareaSubtasks(data),
     comentarios: (Array.isArray(data.comentarios) ? data.comentarios : []).map(comment => ({
       ...comment, fecha: normalizeDate(comment.fecha)
     })),
     id: data.id || '', titulo: data.titulo || '', descripcion: data.descripcion || '',
+    descripcionFormato: data.descripcionFormato === 'lista' ? 'lista' : 'parrafo',
     prioridad: PRIORIDADES_TAREA.includes(data.prioridad) ? data.prioridad : 'Media',
     fechaLimite: normalizeDateInput(data.fechaLimite),
     estado: ESTADOS_TAREA.includes(data.estado) ? data.estado : 'Pendiente',
@@ -22,14 +24,23 @@ export function normalizeTarea(data = {}) {
 }
 
 export function toTareaPayload(form, user) {
-  const compartidos = getTareaRecipients(form).filter(person => person.id !== user.id)
   return {
-    compartidos,
-    titulo: String(form.titulo || '').trim(), descripcion: String(form.descripcion || '').trim(),
+    ...toTareaSharingPayload(form, user.id),
+    titulo: String(form.titulo || '').trim(),
+    descripcion: form.descripcionFormato === 'lista' ? getTareaSubtasks(form).map((item, index) => `${index + 1}. ${item.texto}`).join('\n') : String(form.descripcion || '').trim(),
+    subtareas: form.descripcionFormato === 'lista' ? getTareaSubtasks(form) : [],
+    descripcionFormato: form.descripcionFormato === 'lista' ? 'lista' : 'parrafo',
     prioridad: PRIORIDADES_TAREA.includes(form.prioridad) ? form.prioridad : 'Media',
     fechaLimite: form.fechaLimite ? parseLocalDate(form.fechaLimite) : null,
     estado: ESTADOS_TAREA.includes(form.estado) ? form.estado : 'Pendiente',
-    creadorId: user.id, creadorNombre: user.nombres || '', creadorCorreo: user.correo || '',
+    creadorId: user.id, creadorNombre: user.nombres || '', creadorCorreo: user.correo || ''
+  }
+}
+
+export function toTareaSharingPayload(form, creadorId = form.creadorId) {
+  const compartidos = getTareaRecipients(form).filter(person => !creadorId || person.id !== creadorId)
+  return {
+    compartidos,
     compartidoConId: compartidos[0]?.id || '', compartidoConNombre: compartidos.map(person => person.nombres).join(', '), compartidoConCorreo: compartidos[0]?.correo || ''
   }
 }
@@ -70,4 +81,13 @@ export function isTareaSharedWith(task, user = {}) {
 
 export function canViewTarea(task, user = {}) {
   return Boolean((user.id && task.creadorId === user.id) || isTareaSharedWith(task, user))
+}
+
+export function getTareaSubtasks(task) {
+  if (task.descripcionFormato !== 'lista') return []
+  if (Array.isArray(task.subtareas)) return task.subtareas
+    .filter(item => item && String(item.texto || '').trim())
+    .map((item, index) => ({ id: item.id || `item-${index}`, texto: String(item.texto).trim(), completada: item.completada === true }))
+  return String(task.descripcion || '').split('\n').map(line => line.replace(/^\d+\.\s?/, '').trim())
+    .filter(Boolean).map((texto, index) => ({ id: `item-${index}`, texto, completada: false }))
 }

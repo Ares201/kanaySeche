@@ -5,6 +5,43 @@ const path = require('node:path')
 const vm = require('node:vm')
 const loadModel = () => import('data:text/javascript;base64,' + Buffer.from(fs.readFileSync(path.join(__dirname, '../models/tarea.js'),'utf8')).toString('base64'))
 
+test('subtareas conservan checks al insertar, guardar y reabrir', async () => {
+  const m = await loadModel()
+  const legacy = m.normalizeTarea({ descripcionFormato: 'lista', descripcion: '1. Uno\n2. Dos' })
+  legacy.subtareas[1].completada = true
+  const source = fs.readFileSync(path.join(__dirname, '../pages/inicio/tareas.vue'), 'utf8').split('<script>')[1].split('</script>')[0]
+    .replace(/^import .*$/gm, '').replace('export default', 'result =')
+  const sandbox = { ...m, draggable: {}, result: null, console, alert: message => { throw new Error(message) } }
+  vm.createContext(sandbox); vm.runInContext(source, sandbox)
+  const component = sandbox.result
+  const writes = []
+  const ctx = { ...component.data(), form: { ...legacy, titulo: 'Entrega' }, currentUser: { id: 'owner' },
+    $db: { collection: () => ({ doc: () => ({ id: 'new-item' }) }) },
+    $firebaseApi: { config: { tareas: { collection: 'tareas' } }, update: async (name, id, payload) => writes.push(payload) },
+    $nextTick: callback => callback(), $refs: {}, loadData: async () => {} }
+  ctx.addSubtask = index => component.methods.addSubtask.call(ctx, index)
+  let prevented = false
+  component.methods.onSubtaskEnter.call(ctx, { preventDefault: () => { prevented = true } }, 0)
+  assert.equal(prevented, true)
+  ctx.form.subtareas[1].texto = 'Nuevo'
+  const saved = m.normalizeTarea(m.toTareaPayload(ctx.form, ctx.currentUser))
+  assert.equal(saved.descripcion, '1. Uno\n2. Nuevo\n3. Dos')
+  assert.equal(saved.subtareas[2].completada, true)
+  assert.equal(saved.subtareas[1].completada, false)
+  saved.subtareas[2].completada = false
+  assert.equal(ctx.form.subtareas[2].completada, true)
+  ctx.readOnly = true; ctx.editingId = 'task-1'
+  await component.methods.saveTask.call(ctx)
+  assert.equal(writes[0].subtareas[2].completada, true)
+  assert.equal(Object.hasOwn(writes[0], 'creadorId'), false)
+  assert.equal(Object.hasOwn(writes[0], 'descripcion'), false)
+  component.methods.onSubtaskEnter.call(ctx, { preventDefault: () => { throw new Error('Solo lectura') } }, 0)
+  ctx.readOnly = false
+  component.methods.changeDescriptionFormat.call(ctx, 'parrafo')
+  assert.equal(ctx.form.descripcion, 'Uno\nNuevo\nDos')
+  assert.equal(m.toTareaPayload(ctx.form, ctx.currentUser).subtareas.length, 0)
+})
+
 test('multiple recipients, legacy sharing, removal and visibility', async () => {
   const m = await loadModel()
   const user = { id: 'owner', nombres: 'Owner' }
@@ -77,4 +114,33 @@ test('crear tarea guarda el comentario inicial y publicar respuesta no actualiza
   assert.equal(writes[1].id, 'task-1')
   assert.equal(writes[1].text, 'Tengo una duda.')
   assert.equal(ctx.commentDraft, '')
+})
+
+test('un destinatario guarda participantes sin sobrescribir el creador ni el contenido', async () => {
+  const m = await loadModel()
+  const source = fs.readFileSync(path.join(__dirname, '../pages/inicio/tareas.vue'), 'utf8').split('<script>')[1].split('</script>')[0]
+    .replace(/^import .*$/gm, '').replace('export default', 'result =')
+  const sandbox = { ...m, draggable: {}, result: null, alert: () => {}, console }
+  vm.createContext(sandbox); vm.runInContext(source, sandbox)
+  const component = sandbox.result
+  const writes = []
+  const ctx = { ...component.data(), readOnly: true, editingId: 'task-1', currentUser: { id: 'a' },
+    form: m.normalizeTarea({ titulo: 'Entrega', creadorId: 'owner', compartidos: [{ id: 'a', nombres: 'Ana' }, { id: 'b', nombres: 'Bea' }] }),
+    personal: [{ id: 'owner', estado: true }, { id: 'a', estado: true }, { id: 'b', estado: true }],
+    $firebaseApi: { update: async (name, id, payload) => writes.push({ name, id, payload }) },
+    loadData: async () => {} }
+  assert.deepEqual(component.computed.personalDisponible.call(ctx).map(person => person.id), ['a', 'b'])
+  await component.methods.saveTask.call(ctx)
+  assert.equal(writes.length, 1)
+  assert.equal(writes[0].id, 'task-1')
+  assert.deepEqual(writes[0].payload.compartidos.map(person => person.id), ['a', 'b'])
+  assert.equal(writes[0].payload.compartidoConNombre, 'Ana, Bea')
+  assert.deepEqual(Object.keys(writes[0].payload).sort(), ['compartidoConCorreo', 'compartidoConId', 'compartidoConNombre', 'compartidos'])
+  ctx.form.compartidos = []
+  await component.methods.saveTask.call(ctx)
+  assert.equal(writes[1].payload.compartidoConId, '')
+  assert.equal(writes[1].payload.compartidos.length, 0)
+  ctx.commentAllowed = false
+  await component.methods.saveTask.call(ctx)
+  assert.equal(writes.length, 2)
 })

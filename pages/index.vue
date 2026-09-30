@@ -3,19 +3,27 @@
     <!-- ===== HERO HEADER ===== -->
     <v-card class="hero-card mb-6" rounded="xl" flat>
       <div class="hero-gradient"></div>
+      <div class="hero-blob hero-blob--1"></div>
+      <div class="hero-blob hero-blob--2"></div>
       <v-card-text class="hero-content pa-6 pa-md-8">
         <v-row align="center" no-gutters>
           <v-col cols="12" md="8">
-            <p class="text-overline home-brand mb-2">Ecocentro Chilca</p>
-            <h1 class="text-h5 text-md-h4 font-weight-bold mb-1">
-              Bienvenido, {{ userName }} 👋
+            <div class="d-flex align-center mb-3">
+              <div class="brand-dot mr-3"></div>
+              <p class="text-overline home-brand mb-0">Ecocentro Chilca</p>
+            </div>
+            <h1 class="hero-title mb-2">
+              Bienvenido, <span class="hero-name">{{ userName }}</span>
+              <span class="wave">👋</span>
             </h1>
-            <p class="text-body-2 text--secondary mb-0">
-              Panel de control · <span class="font-weight-medium">{{ userRole }}</span>
+            <p class="hero-subtitle mb-0">
+              Panel de control
+              <span class="dot-sep">·</span>
+              <span class="role-badge">{{ userRole }}</span>
             </p>
           </v-col>
           <v-col cols="12" md="4" class="text-md-right mt-3 mt-md-0">
-            <v-chip small class="date-chip" label rounded="lg">
+            <v-chip class="date-chip" label rounded="lg">
               <v-icon small left>mdi-calendar-blank-outline</v-icon>
               {{ currentDate }}
             </v-chip>
@@ -24,159 +32,149 @@
       </v-card-text>
     </v-card>
 
-    <v-row v-if="canTasks || canTaskCharts" dense class="mb-6">
-      <v-col v-if="canTasks" cols="12" md="6">
-        <v-card to="/inicio/tareas" rounded="xl" class="quick-link-card pa-5" outlined>
-          <div class="d-flex align-center"><div class="quick-link-icon mr-4"><v-icon color="#00558a">mdi-view-dashboard-outline</v-icon></div><div><h2 class="text-h6 mb-1">Mis tareas</h2><p class="text-body-2 text--secondary mb-0">Crea, comparte y organiza tus tareas por estado.</p></div><v-spacer/><v-icon>mdi-arrow-right</v-icon></div>
-        </v-card>
-      </v-col>
-      <v-col v-if="canTaskCharts" cols="12" md="6">
-        <v-card to="/inicio/graficos" rounded="xl" class="quick-link-card pa-5" outlined>
-          <div class="d-flex align-center"><div class="quick-link-icon mr-4"><v-icon color="#0f766e">mdi-chart-bar</v-icon></div><div><h2 class="text-h6 mb-1">Mis gráficos</h2><p class="text-body-2 text--secondary mb-0">Consulta el avance, prioridad y fechas de tus tareas.</p></div><v-spacer/><v-icon>mdi-arrow-right</v-icon></div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- ===== ALERTA TAREAS VENCIDAS ===== -->
+    <v-alert v-if="canTasks && tasksError" type="error" dense text class="rounded-xl mb-4">
+      {{ tasksError }}
+    </v-alert>
 
-    <!-- ===== SECCIONES ===== -->
-    <section
-      v-for="section in dashboardSections"
-      :key="section.id"
-      :aria-labelledby="section.id + '-title'"
-      class="mb-8"
+    <v-card
+      v-if="canTasks && tareasVencidas.length"
+      rounded="xl"
+      class="overdue-card mb-6"
+      flat
     >
-      <!-- Section header -->
-      <div class="section-header d-flex align-center mb-4">
-        <div class="section-icon mr-3">
-          <v-icon color="var(--color-primary)">{{ section.icon }}</v-icon>
+      <div class="overdue-accent"></div>
+      <v-card-title class="d-flex align-center pa-5 pb-2">
+        <div class="overdue-icon-wrap mr-3">
+          <v-icon color="#fff">mdi-calendar-alert</v-icon>
         </div>
         <div class="flex-grow-1">
-          <h2 :id="section.id + '-title'" class="text-h6 font-weight-bold mb-0">
-            {{ section.title }}
-          </h2>
-          <p class="text-caption text--secondary mb-0">
-            {{ section.total }} registros en total
+          <div class="d-flex align-center">
+            <span class="overdue-title">Tareas vencidas</span>
+            <v-chip small class="overdue-chip ml-3">{{ tareasVencidas.length }}</v-chip>
+          </div>
+          <p class="overdue-subtitle mb-0">
+            Requieren tu atención: tareas propias y compartidas sin completar
           </p>
         </div>
-        <v-chip small outlined rounded="lg" class="section-total">
-          Total: {{ section.total }}
-        </v-chip>
-      </div>
-
-      <!-- Cards grid -->
-      <v-row dense>
-        <!-- Card: Requieren atención -->
-        <v-col cols="12" sm="6" lg="3">
-          <v-card
-            rounded="xl"
-            class="kpi-card kpi-card--alert d-flex flex-column fill-height"
-          >
-            <v-card-text class="flex-grow-1 pa-5">
-              <div class="kpi-icon-wrap kpi-icon-wrap--alert mb-3">
-                <v-icon color="#E65100">mdi-alert-circle-outline</v-icon>
-              </div>
-              <p class="text-caption font-weight-medium kpi-label mb-1">
-                Requieren atención
-              </p>
-              <p class="text-h3 font-weight-bold kpi-number mb-1">
-                {{ section.overdue }}
-              </p>
-              <p class="text-subtitle-2 font-weight-medium kpi-sublabel mb-0">
-                {{ section.overdueLabel }}
-              </p>
-              <p class="text-caption kpi-hint mb-0">Sin actualizar</p>
-            </v-card-text>
-            <v-divider class="kpi-divider" />
-            <v-card-actions class="px-3 py-2">
-              <v-btn
-                text
-                small
-                color="#E65100"
-                class="text-none font-weight-medium"
-                @click="section.review()"
-              >
-                <v-icon left small>mdi-eye-outline</v-icon>
-                Revisar ahora
-              </v-btn>
-              <v-spacer />
-              <v-btn
-                text
-                small
-                color="green darken-2"
-                class="text-none"
-                :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a Excel'"
-                @click="section.exportExcel()"
-              >
-                <v-icon left small>mdi-microsoft-excel</v-icon>
-                Excel
-              </v-btn>
-              <v-btn
-                text
-                small
-                color="red darken-2"
-                class="text-none"
-                :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a PDF'"
-                @click="section.exportPdf()"
-              >
-                <v-icon left small>mdi-file-pdf-box</v-icon>
-                PDF
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-
-        <!-- Cards: Estados -->
-        <v-col
-          v-for="status in section.statuses"
-          :key="status.name"
-          cols="12"
-          sm="6"
-          lg="3"
+      </v-card-title>
+      <v-list class="overdue-tasks-list" color="transparent">
+        <v-list-item
+          v-for="tarea in tareasVencidas"
+          :key="tarea.id"
+          :to="{ path: '/inicio/tareas', query: { tarea: tarea.id } }"
+          class="overdue-item"
         >
-          <v-card
-            rounded="xl"
-            class="kpi-card kpi-card--info d-flex flex-column fill-height"
-          >
-            <v-card-text class="flex-grow-1 pa-5">
-              <div class="kpi-icon-wrap kpi-icon-wrap--info mb-3">
-                <v-icon color="#1565C0">{{ status.icon }}</v-icon>
-              </div>
-              <p class="text-caption font-weight-medium kpi-label mb-1">
-                {{ status.name }}
-              </p>
-              <p class="text-h3 font-weight-bold kpi-number mb-1">
-                {{ status.count }}
-              </p>
-              <p class="text-subtitle-2 font-weight-medium kpi-sublabel mb-0">
-                {{ status.label }}
-              </p>
-            </v-card-text>
-            <v-divider class="kpi-divider" />
-            <v-card-actions class="px-3 py-2">
-              <v-btn
-                text
-                small
-                color="#1565C0"
-                class="text-none font-weight-medium"
-                :aria-label="'Ver ' + status.label.toLowerCase()"
-                @click="section.filter(status.name)"
-              >
-                Ver todos
-                <v-icon right small>mdi-arrow-right</v-icon>
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-    </section>
+          <v-list-item-content>
+            <v-list-item-title class="font-weight-medium">
+              {{ tarea.titulo }}
+            </v-list-item-title>
+            <v-list-item-subtitle class="text-caption">
+              {{ tarea.creadorId === currentUser.id ? 'Creada por mí' : `Compartida por ${tarea.creadorNombre}` }}
+              <span class="dot-sep">·</span> {{ tarea.estado }}
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-chip small outlined class="overdue-date-chip">
+              {{ tarea.fechaLimite.split('-').reverse().join('/') }}
+            </v-chip>
+          </v-list-item-action>
+          <v-list-item-action>
+            <v-icon small class="overdue-arrow">mdi-chevron-right</v-icon>
+          </v-list-item-action>
+        </v-list-item>
+      </v-list>
+    </v-card>
+
+    <!-- ===== SECCIONES ===== -->
+    <div class="attention-grid">
+      <section
+        v-for="section in dashboardSections"
+        :key="section.id"
+        :aria-labelledby="section.id + '-title'"
+        class="mb-2"
+      >
+        <!-- Section header -->
+        <div class="section-header d-flex align-center mb-4">
+          <div class="section-icon mr-3" :class="'section-icon--' + section.id">
+            <v-icon color="#fff">{{ section.icon }}</v-icon>
+          </div>
+          <div class="flex-grow-1">
+            <h2 :id="section.id + '-title'" class="section-title mb-0">
+              {{ section.title }}
+            </h2>
+            <p class="section-subtitle mb-0">
+              {{ section.total }} registros en total
+            </p>
+          </div>
+          <div class="section-total-badge">
+            <span class="section-total-number">{{ section.total }}</span>
+          </div>
+        </div>
+
+        <!-- Card: Requieren atención -->
+        <v-card rounded="xl" class="kpi-card kpi-card--alert d-flex flex-column" flat>
+          <div class="kpi-glow"></div>
+          <v-card-text class="flex-grow-1 pa-5 position-relative">
+            <div class="kpi-icon-wrap kpi-icon-wrap--alert mb-4">
+              <v-icon color="#fff" large>mdi-alert-circle-outline</v-icon>
+            </div>
+            <p class="kpi-label mb-1">Requieren atención</p>
+            <div class="d-flex align-end mb-2">
+              <p class="kpi-number mb-0">{{ section.overdue }}</p>
+              <span class="kpi-unit ml-2">registros</span>
+            </div>
+            <p class="kpi-sublabel mb-1">{{ section.overdueLabel }}</p>
+            <div class="kpi-hint-wrap">
+              <v-icon small color="#E65100">mdi-clock-outline</v-icon>
+              <span class="kpi-hint">Sin actualizar</span>
+            </div>
+          </v-card-text>
+
+          <v-divider class="kpi-divider" />
+
+          <v-card-actions class="px-3 py-2 kpi-actions">
+            <v-btn
+              text
+              small
+              class="text-none font-weight-medium kpi-btn-primary"
+              @click="section.review()"
+            >
+              <v-icon left small>mdi-eye-outline</v-icon>
+              Revisar ahora
+            </v-btn>
+            <v-spacer />
+            <v-btn
+              icon
+              small
+              class="kpi-btn-icon kpi-btn-icon--excel"
+              :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a Excel'"
+              @click="section.exportExcel()"
+            >
+              <v-icon small>mdi-microsoft-excel</v-icon>
+            </v-btn>
+            <v-btn
+              icon
+              small
+              class="kpi-btn-icon kpi-btn-icon--pdf"
+              :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a PDF'"
+              @click="section.exportPdf()"
+            >
+              <v-icon small>mdi-file-pdf-box</v-icon>
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </section>
+    </div>
   </v-container>
 </template>
 
 <script>
 import {
   normalizeExpediente,
-  ESTADOS_EXPEDIENTE,
 } from '~/models/expediente'
 import ExcelJS from 'exceljs'
+import { normalizeTarea, canViewTarea } from '~/models/tarea'
 
 // ===== FUNCIONES DE CARTA (COPIADAS DIRECTAMENTE DE TU PÁGINA DE CARTAS) =====
 // NO MODIFICAR NADA, SOLO COPIAR Y PEGAR
@@ -217,6 +215,8 @@ export default {
   data: () => ({
     expedientes: [],
     cartas: [],
+    tasks: [],
+    tasksError: '',
     loading: false
   }),
   computed: {
@@ -235,7 +235,13 @@ export default {
       })
     },
     canTasks() { return Boolean(this.$auth?.can('/inicio/tareas')) },
-    canTaskCharts() { return Boolean(this.$auth?.can('/inicio/graficos')) },
+    currentUser() { return this.$auth?.user || {} },
+    tareasVencidas() {
+      const now = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      return this.tasks.filter(task => canViewTarea(task, this.currentUser) && task.estado !== 'Completada' && task.fechaLimite && task.fechaLimite < today)
+        .sort((a, b) => a.fechaLimite.localeCompare(b.fechaLimite))
+    },
     dashboardSections() {
       return [
         {
@@ -248,12 +254,6 @@ export default {
           review: this.goToVencidos,
           exportExcel: this.exportVencidosExcel,
           exportPdf: () => this.exportVencidosPdf(),
-          filter: this.goToFilter,
-          statuses: [
-            { name: 'Pendiente', label: 'Pedidos pendientes', icon: 'mdi-clock-outline' },
-            { name: 'Notificado', label: 'Pedidos notificados', icon: 'mdi-email-outline' },
-            { name: 'Regularizado', label: 'Pedidos regularizados', icon: 'mdi-check-circle-outline' }
-          ].map(status => ({ ...status, count: this.expedientesPorEstado[status.name] || 0 }))
         },
         {
           id: 'cartas',
@@ -265,12 +265,6 @@ export default {
           review: this.goToCartasVencidas,
           exportExcel: this.exportCartasVencidasExcel,
           exportPdf: () => this.exportCartasVencidasPdf(),
-          filter: this.goToCartasFilter,
-          statuses: [
-            { name: 'Emitido', label: 'Cartas emitidas', icon: 'mdi-file-outline' },
-            { name: 'Enviado', label: 'Cartas enviadas', icon: 'mdi-email-outline' },
-            { name: 'Entregado', label: 'Cartas entregadas', icon: 'mdi-check-circle-outline' }
-          ].map(status => ({ ...status, count: this.cartasPorEstado[status.name] || 0 }))
         }
       ]
     },
@@ -291,20 +285,6 @@ export default {
         return fecha <= tenDaysAgo
       })
     },
-    expedientesPorEstado() {
-      const grouped = {}
-      ESTADOS_EXPEDIENTE.forEach(estado => {
-        grouped[estado] = 0
-      })
-      this.expedientes.forEach(exp => {
-        const estado = exp.estado || 'Pendiente'
-        if (grouped[estado] !== undefined) {
-          grouped[estado]++
-        }
-      })
-      return grouped
-    },
-
     // ===== COMPUTED DE CARTAS =====
     cartasVencidas() {
       const today = new Date()
@@ -327,30 +307,23 @@ export default {
         return fecha <= tenDaysAgo
       })
     },
-    cartasPorEstado() {
-      const grouped = {
-        Emitido: 0,
-        Enviado: 0,
-        Entregado: 0,
-        'Pendiente de Confirmación': 0,
-        Anulado: 0
-      }
 
-      this.cartas.forEach(carta => {
-        const estado = carta.estadoProceso || 'Emitido'
-        if (grouped[estado] !== undefined) {
-          grouped[estado]++
-        }
-      })
-
-      return grouped
-    }
   },
   mounted() {
     this.getAllExpedientes()
     this.getAllCartas()
+    if (this.canTasks) this.loadOverdueTasks()
   },
   methods: {
+    async loadOverdueTasks() {
+      this.tasksError = ''
+      try {
+        this.tasks = (await this.$firebaseApi.list('tareas')).map(normalizeTarea)
+      } catch (error) {
+        console.error(error)
+        this.tasksError = 'No se pudieron cargar las tareas vencidas.'
+      }
+    },
     extraerFecha(timestamp) {
       if (!timestamp) return null
 
@@ -683,7 +656,6 @@ export default {
     },
 
     // ===== EXPORTAR EXCEL DE CARTAS VENCIDAS =====
-    // ===== EXPORTAR EXCEL DE CARTAS VENCIDAS =====
     async exportCartasVencidasExcel() {
       if (this.cartasVencidas.length === 0) {
         alert('No hay cartas vencidas para exportar')
@@ -835,7 +807,6 @@ export default {
     },
 
     // ===== FORMATO DE FECHA =====
-    // ===== FORMATO DE FECHA =====
     formatDateExcel(fecha) {
       if (!fecha) return ''
 
@@ -910,247 +881,546 @@ export default {
 </script>
 
 <style scoped>
+/* ===== RESET Y BASE ===== */
 .home-page {
   min-height: calc(100vh - 64px);
   background: var(--color-background);
+  position: relative;
 }
 
 /* ===== HERO ===== */
 .hero-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(31, 78, 121, 0.12);
-  border-radius: 24px !important;
-  background: linear-gradient(
-    135deg,
-    rgba(31, 78, 121, 0.10) 0%,
-    rgba(31, 78, 121, 0.04) 45%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  border-radius: 28px !important;
+  background: linear-gradient(135deg, #1F4E79 0%, #2E6BA8 50%, #1565C0 100%);
+  border: none;
+  box-shadow: 0 12px 40px -12px rgba(31, 78, 121, 0.45);
 }
 
 .hero-gradient {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at top right,
-    rgba(31, 78, 121, 0.15),
-    transparent 60%
-  );
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 55%);
   pointer-events: none;
+}
+
+.hero-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.hero-blob--1 {
+  width: 320px;
+  height: 320px;
+  background: #4FC3F7;
+  top: -120px;
+  right: -80px;
+  animation: float 8s ease-in-out infinite;
+}
+
+.hero-blob--2 {
+  width: 240px;
+  height: 240px;
+  background: #FFB74D;
+  bottom: -100px;
+  left: -60px;
+  opacity: 0.35;
+  animation: float 10s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.08); }
 }
 
 .hero-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+}
+
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4FC3F7;
+  box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.25);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.25); }
+  50% { box-shadow: 0 0 0 8px rgba(79, 195, 247, 0.1); }
 }
 
 .home-brand {
-  color: var(--color-link, var(--color-primary));
-  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 2px;
+  font-size: 11px !important;
+  font-weight: 600;
+}
+
+.hero-title {
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.hero-name {
+  background: linear-gradient(135deg, #4FC3F7, #81D4FA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.wave {
+  display: inline-block;
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10%, 30% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dot-sep {
+  margin: 0 8px;
+  opacity: 0.5;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 0.78rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .date-chip {
-  background: rgba(255, 255, 255, 0.7) !important;
-  border: 1px solid rgba(31, 78, 121, 0.18);
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(10px);
+  color: #FFFFFF !important;
   font-weight: 500;
+  padding: 0 14px;
+  height: 36px !important;
 }
 
-/* ===== SECTION HEADER ===== */
-.section-icon {
-  width: 42px;
-  height: 42px;
+.date-chip >>> .v-icon {
+  color: #FFFFFF !important;
+}
+
+/* ===== ALERTA TAREAS VENCIDAS ===== */
+.overdue-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #FFF8F0 0%, #FFFFFF 100%);
+  border: 1px solid rgba(230, 81, 0, 0.15);
+  box-shadow: 0 4px 20px -8px rgba(230, 81, 0, 0.15);
+}
+
+.overdue-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #E65100, #FF9800);
+}
+
+.overdue-icon-wrap {
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    rgba(31, 78, 121, 0.14),
-    rgba(31, 78, 121, 0.06)
-  );
+  background: linear-gradient(135deg, #E65100, #FF9800);
+  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3);
+  flex-shrink: 0;
 }
 
-.section-total {
-  font-weight: 500;
+.overdue-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #BF360C;
+}
+
+.overdue-chip {
+  background: #E65100 !important;
+  color: #fff !important;
+  font-weight: 600;
+  min-width: 26px;
+  justify-content: center;
+}
+
+.overdue-subtitle {
+  color: #8D6E63;
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.overdue-tasks-list {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+
+.overdue-item {
   border-radius: 12px !important;
+  margin-bottom: 4px;
+  transition: background 0.2s ease;
 }
 
-/* ===== KPI CARDS ===== */
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px !important;
-  border: 1px solid transparent;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+.overdue-item:hover {
+  background: rgba(230, 81, 0, 0.06) !important;
 }
 
-.kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10);
+.overdue-date-chip {
+  border-color: #E65100 !important;
+  color: #E65100 !important;
+  font-weight: 600;
 }
 
-/* Card con alerta (ámbar/rojo suave) */
-.kpi-card--alert {
-  background: linear-gradient(
-    160deg,
-    rgba(255, 152, 0, 0.10) 0%,
-    rgba(255, 255, 255, 0) 55%
-  );
-  border-color: rgba(230, 81, 0, 0.25);
-  border-top: 4px solid #E65100;
+.overdue-arrow {
+  color: #E65100;
+  transition: transform 0.2s ease;
 }
 
-.kpi-card--alert:hover {
-  border-color: rgba(230, 81, 0, 0.45);
-  box-shadow: 0 10px 24px rgba(230, 81, 0, 0.18);
+.overdue-item:hover .overdue-arrow {
+  transform: translateX(3px);
 }
 
-/* Card info (azul suave) */
-.kpi-card--info {
-  background: linear-gradient(
-    160deg,
-    rgba(21, 101, 192, 0.08) 0%,
-    rgba(255, 255, 255, 0) 55%
-  );
-  border-color: rgba(21, 101, 192, 0.20);
-  border-top: 4px solid #1565C0;
+/* ===== SECTION HEADER ===== */
+.section-header {
+  padding: 0 4px;
 }
 
-.kpi-card--info:hover {
-  border-color: rgba(21, 101, 192, 0.40);
-  box-shadow: 0 10px 24px rgba(21, 101, 192, 0.15);
-}
-
-/* Icon wrap */
-.kpi-icon-wrap {
-  width: 46px;
-  height: 46px;
+.section-icon {
+  width: 48px;
+  height: 48px;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.section-header:hover .section-icon {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+.section-icon--pedidos {
+  background: linear-gradient(135deg, #1565C0, #42A5F5);
+}
+
+.section-icon--cartas {
+  background: linear-gradient(135deg, #6A1B9A, #AB47BC);
+}
+
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ui-text-212121, #212121);
+  letter-spacing: -0.3px;
+}
+
+.section-subtitle {
+  color: var(--ui-text-757575, #757575);
+  font-size: 0.8rem;
+}
+
+.section-total-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(31, 78, 121, 0.08), rgba(31, 78, 121, 0.04));
+  border: 1px solid rgba(31, 78, 121, 0.12);
+}
+
+.section-total-number {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.5px;
+}
+
+/* ===== KPI CARDS ===== */
+.attention-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 959px) {
+  .attention-grid { grid-template-columns: 1fr; }
+}
+
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+}
+
+.kpi-card--alert {
+  background: linear-gradient(160deg, #FFFFFF 0%, #FFF8F2 100%);
+  border: 1px solid rgba(230, 81, 0, 0.15);
+  box-shadow: 0 4px 20px -8px rgba(230, 81, 0, 0.12);
+}
+
+.kpi-card--alert:hover {
+  box-shadow: 0 16px 40px -12px rgba(230, 81, 0, 0.3);
+}
+
+.kpi-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 81, 0, 0.15), transparent 70%);
+  pointer-events: none;
+  transition: transform 0.5s ease;
+}
+
+.kpi-card:hover .kpi-glow {
+  transform: scale(1.3);
+}
+
+.kpi-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
 }
 
 .kpi-icon-wrap--alert {
-  background: rgba(230, 81, 0, 0.14);
+  background: linear-gradient(135deg, #E65100, #FF9800);
+  box-shadow: 0 8px 20px -6px rgba(230, 81, 0, 0.5);
 }
 
-.kpi-icon-wrap--info {
-  background: rgba(21, 101, 192, 0.14);
-}
-
-/* Tipografía */
 .kpi-label {
-  color: var(--ui-text-616161, #616161);
-  letter-spacing: 0.3px;
+  color: #8D6E63;
+  letter-spacing: 1px;
   text-transform: uppercase;
   font-size: 11px !important;
+  font-weight: 700;
 }
 
 .kpi-number {
-  line-height: 1.1;
-  letter-spacing: -0.5px;
-  color: var(--ui-text-212121, #212121) !important;
+  font-size: 3.2rem !important;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2px;
+  background: linear-gradient(135deg, #E65100, #FF9800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.kpi-unit {
+  color: #A1887F;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding-bottom: 8px;
 }
 
 .kpi-sublabel {
-  color: var(--ui-text-424242, #424242) !important;
+  color: #5D4037 !important;
+  font-size: 0.82rem !important;
+  font-weight: 500;
+}
+
+.kpi-hint-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(230, 81, 0, 0.08);
+  margin-top: 8px;
 }
 
 .kpi-hint {
-  color: var(--ui-text-9e9e9e, #9E9E9E);
+  color: #E65100;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .kpi-divider {
   border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
-.quick-link-card {
-  height: 100%;
-  border-color: rgba(0, 85, 138, 0.18) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.kpi-actions {
+  gap: 4px;
 }
 
-.quick-link-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
+.kpi-btn-primary {
+  color: #E65100 !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  transition: background 0.2s ease;
 }
 
-.quick-link-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: rgba(0, 85, 138, 0.09);
+.kpi-btn-primary:hover {
+  background: rgba(230, 81, 0, 0.08) !important;
+}
+
+.kpi-btn-icon {
+  border-radius: 10px !important;
+  transition: all 0.2s ease;
+}
+
+.kpi-btn-icon--excel {
+  color: #2E7D32 !important;
+}
+
+.kpi-btn-icon--excel:hover {
+  background: rgba(46, 125, 50, 0.1) !important;
+}
+
+.kpi-btn-icon--pdf {
+  color: #C62828 !important;
+}
+
+.kpi-btn-icon--pdf:hover {
+  background: rgba(198, 40, 40, 0.1) !important;
+}
+
+/* ===== FOCUS VISIBLE (Accesibilidad) ===== */
+.kpi-card:focus-within,
+.overdue-card:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* ===== DARK MODE ===== */
-.theme--dark .home-page {
-  background: inherit;
-}
-
 .theme--dark .hero-card {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.02) 45%,
-    transparent 100%
-  );
-  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, #0D1B2A 0%, #1B3A5C 50%, #1F4E79 100%);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.6);
 }
 
-.theme--dark .date-chip {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.15);
+.theme--dark .overdue-card {
+  background: linear-gradient(135deg, #2A1810 0%, #1E1410 100%);
+  border-color: rgba(230, 81, 0, 0.3);
 }
 
-.theme--dark .section-icon {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.12),
-    rgba(255, 255, 255, 0.04)
-  );
+.theme--dark .overdue-title {
+  color: #FFB74D;
+}
+
+.theme--dark .overdue-subtitle {
+  color: #BCAAA4;
+}
+
+.theme--dark .section-title {
+  color: #FFFFFF;
+}
+
+.theme--dark .section-subtitle {
+  color: #B0BEC5;
+}
+
+.theme--dark .section-total-badge {
+  background: linear-gradient(135deg, rgba(79, 195, 247, 0.12), rgba(79, 195, 247, 0.06));
+  border-color: rgba(79, 195, 247, 0.2);
+}
+
+.theme--dark .section-total-number {
+  color: #4FC3F7;
 }
 
 .theme--dark .kpi-card--alert {
-  background: linear-gradient(
-    160deg,
-    rgba(230, 81, 0, 0.18) 0%,
-    rgba(255, 255, 255, 0.02) 55%
-  );
-}
-
-.theme--dark .kpi-card--info {
-  background: linear-gradient(
-    160deg,
-    rgba(21, 101, 192, 0.20) 0%,
-    rgba(255, 255, 255, 0.02) 55%
-  );
-}
-
-.theme--dark .kpi-number {
-  color: #FFFFFF !important;
-}
-
-.theme--dark .kpi-sublabel {
-  color: #E0E0E0 !important;
+  background: linear-gradient(160deg, #2A1810 0%, #1E1410 100%);
+  border-color: rgba(230, 81, 0, 0.3);
 }
 
 .theme--dark .kpi-label {
-  color: var(--ui-text-bdbdbd, #BDBDBD);
+  color: #BCAAA4;
+}
+
+.theme--dark .kpi-sublabel {
+  color: #D7CCC8 !important;
+}
+
+.theme--dark .kpi-hint-wrap {
+  background: rgba(230, 81, 0, 0.15);
 }
 
 .theme--dark .kpi-divider {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* ===== FOCUS VISIBLE ===== */
-.kpi-card:focus-within {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+/* ===== SCROLLBAR PERSONALIZADA ===== */
+.overdue-tasks-list::-webkit-scrollbar {
+  width: 6px;
 }
-</style>  
+
+.overdue-tasks-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overdue-tasks-list::-webkit-scrollbar-thumb {
+  background: rgba(230, 81, 0, 0.25);
+  border-radius: 3px;
+}
+
+.overdue-tasks-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(230, 81, 0, 0.4);
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob,
+  .wave,
+  .brand-dot {
+    animation: none;
+  }
+  .kpi-card,
+  .overdue-arrow,
+  .section-icon {
+    transition: none;
+  }
+}
+</style>

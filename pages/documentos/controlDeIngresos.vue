@@ -326,7 +326,9 @@
             <v-col cols="12" md="8">
               <label>
                 Observaciones
-                <textarea v-model.trim="form.observaciones" rows="3" placeholder="Detalle de la observación..." />
+                <v-autocomplete v-model="form.observaciones" :items="observacionesDisponibles"
+                  label="Observaciones" placeholder="Busca y selecciona una observación"
+                  outlined dense hide-details clearable no-data-text="No se encontraron observaciones" />
               </label>
             </v-col>
 
@@ -431,6 +433,34 @@ const EXCEL_COLUMNS = [
   'Tipo de Servicio'
 ]
 
+const OBSERVACIONES_EXPEDIENTE = [
+  'Pendiente de distribución de pesos.',
+  'Pendiente de confirmación de peso.',
+  'Diferencia entre el peso registrado y el peso declarado.',
+  'Pendiente de tratamiento y confirmación de peso.',
+  'Pendiente de entrega de manifiestos.',
+  'Pendiente de firmas en los manifiestos.',
+  'Pendiente de sellos en los manifiestos.',
+  'Pendiente de regularización de manifiestos por errores en los datos del representante técnico.',
+  'Pendiente de regularización de manifiestos por errores en los datos del representante legal.',
+  'Pendiente de corrección de manifiestos por cambios de peso.',
+  'Pendiente de corrección de manifiestos por cambios en los residuos declarados.',
+  'Pendiente de incorporación de manifiestos adicionales.',
+  'Pendiente de entrega de la guía de remisión.',
+  'Pendiente de entrega de la guía del transportista.',
+  'Pendiente de entrega de las guías de remisión y del transportista.',
+  'Pendiente de registro o código en SIGERSOL.',
+  'Pendiente de tratamiento de los residuos.',
+  'Pendiente de análisis de laboratorio.',
+  'Pendiente de confirmación del nombre del residuo.',
+  'Pendiente de confirmación del tratamiento aplicable.',
+  'Pendiente de confirmación o corrección de los datos del cliente o generador.',
+  'Pendiente de documentación para el archivo del expediente.',
+  'Pendiente de registro en Navision.',
+  'Pendiente de revisión y confirmación de cierre del expediente.',
+  'Servicio de carácter notarial.'
+]
+
 export default {
   name: 'ControlDeIngresosPage',
   components: { draggable },
@@ -445,6 +475,7 @@ export default {
       estadosFiltro: [...ESTADOS_EXPEDIENTE, 'Vencido'],
       estadosPV: ESTADOS_PV,
       tiposServicio: TIPOS_SERVICIO,
+      observaciones: OBSERVACIONES_EXPEDIENTE,
       tableHeaders: [
         { text: '# PV', value: 'correlativo' },
         { text: 'Estado PV', value: 'estadoPV' },
@@ -487,6 +518,12 @@ export default {
     }
   },
   computed: {
+    observacionesDisponibles() {
+      const actual = this.form.observaciones
+      return actual && !this.observaciones.includes(actual)
+        ? [actual, ...this.observaciones]
+        : this.observaciones
+    },
     estadosPVFiltroOptions() {
       return ['Abierto', 'Cerrado']
     },

@@ -24,7 +24,7 @@
 
       <v-tab-item>
         <div class="page-actions"><v-btn outlined color="primary" @click="openPage()">Registrar página</v-btn><v-btn text @click="seedPages">Sincronizar páginas del sistema</v-btn></div>
-        <v-data-table :headers="pageHeaders" :items="pages" :loading="loading" item-key="id"
+        <v-data-table :headers="pageHeaders" :items="pagesWithModule" :loading="loading" item-key="id" group-by="modulo" sort-by="nombre"
           no-data-text="No hay páginas registradas" :footer-props="{ itemsPerPageText: 'Filas por página' }">
           <template #[`item.estado`]="{ item }"><v-chip small :color="item.estado !== false ? 'success' : 'error'" dark>{{ item.estado !== false ? 'Activa' : 'Inactiva' }}</v-chip></template>
           <template #[`item.actions`]="{ item }"><v-btn icon @click="openPage(item)"><v-icon>mdi-pencil</v-icon></v-btn></template>
@@ -43,8 +43,14 @@
       <v-card><v-card-title>Permisos: {{ selectedRole?.nombre }}</v-card-title><v-card-text>
         <v-alert v-if="selectedRole?.nombre === adminRole" type="info" dense>El Administrador siempre tiene acceso completo.</v-alert>
         <div v-else class="permission-list">
-          <v-checkbox v-for="page in activePages" :key="page.id" v-model="selectedPageIds" :value="page.id"
-            :label="`${page.modulo || 'General'} · ${page.nombre} (${page.ruta})`" hide-details />
+          <section v-for="group in permissionModules" :key="group.nombre" class="permission-module">
+            <h3>{{ group.nombre }}</h3>
+            <div class="permission-pages">
+              <v-checkbox v-for="page in group.pages" :key="page.id" v-model="selectedPageIds" :value="page.id"
+                :label="page.nombre" hide-details class="mt-2" />
+            </div>
+          </section>
+          <p v-if="!permissionModules.length">No hay páginas activas para asignar.</p>
         </div>
       </v-card-text><v-card-actions><v-spacer/><v-btn text @click="permissionDialog=false">Cancelar</v-btn><v-btn v-if="selectedRole?.nombre !== adminRole" color="primary" @click="savePermissions">Guardar permisos</v-btn></v-card-actions></v-card>
     </v-dialog>
@@ -79,7 +85,23 @@ export default {
       { text: 'Estado', value: 'estado' }, { text: 'Acciones', value: 'actions', sortable: false }
     ]
   }),
-  computed: { activePages() { return this.pages.filter(page => page.estado !== false) } },
+  computed: {
+    pagesWithModule() {
+      return this.pages.map(page => ({ ...page, modulo: String(page.modulo || '').trim() || 'General' }))
+    },
+    activePages() { return this.pagesWithModule.filter(page => page.estado !== false) },
+    permissionModules() {
+      const groups = new Map()
+      this.activePages.forEach(page => {
+        if (!groups.has(page.modulo)) groups.set(page.modulo, [])
+        groups.get(page.modulo).push(page)
+      })
+      return Array.from(groups, ([nombre, pages]) => ({
+        nombre,
+        pages: pages.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }))
+      })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }))
+    }
+  },
   mounted() { this.loadData() },
   methods: {
     async loadData() {
@@ -131,5 +153,8 @@ export default {
 </script>
 
 <style scoped>
+.permission-module { margin-bottom: 16px; border: 1px solid var(--ui-border-dbe5eb, #dbe5eb); border-radius: 8px; overflow: hidden; }
+.permission-module h3 { margin: 0; padding: 10px 14px; font-size: 15px; background: var(--ui-surface-f8fafc, #f8fafc); }
+.permission-pages { padding: 0 16px 14px; }
 .admin-page{width:92%;margin:0 auto;padding:32px 0}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.eyebrow{margin:0;color:var(--ui-text-0f766e, #0f766e);font-weight:700;text-transform:uppercase;font-size:13px}h1{margin:4px 0 0}.page-actions{display:flex;gap:10px;padding:16px;background:var(--ui-surface-ffffff, white)}.permission-list{max-height:430px;overflow:auto}
 </style>

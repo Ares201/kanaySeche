@@ -45,15 +45,31 @@
           <div><h2>{{ editingId ? (readOnly ? 'Detalle de tarea' : 'Editar tarea') : 'Nueva tarea' }}</h2><span>{{ readOnly ? 'Revisa los detalles y comparte tus avances' : 'Detalles y participantes' }}</span></div>
         </v-card-title>
         <v-card-text class="task-form-body">
-          <div v-if="readOnly" class="task-shared-note"><v-icon small color="primary">mdi-account-multiple-outline</v-icon>Compartida contigo · Puedes cambiar el estado y comentar.</div>
+          <div v-if="readOnly" class="task-shared-note"><v-icon small color="primary">mdi-account-multiple-outline</v-icon>Compartida contigo · Puedes editar los participantes, completar subtareas, cambiar el estado y comentar.</div>
           <div class="task-fields">
             <v-text-field v-model.trim="form.titulo" :readonly="readOnly" label="Título" outlined dense hide-details required />
-            <v-textarea v-model.trim="form.descripcion" :readonly="readOnly" label="Descripción" outlined dense hide-details rows="2" />
+            <div class="description-editor">
+              <v-btn-toggle :value="form.descripcionFormato" mandatory dense aria-label="Formato de descripción" @change="changeDescriptionFormat">
+                <v-btn small value="parrafo" :disabled="readOnly"><v-icon small left>mdi-format-paragraph</v-icon>Párrafo</v-btn>
+                <v-btn small value="lista" :disabled="readOnly"><v-icon small left>mdi-format-list-numbered</v-icon>Lista numerada</v-btn>
+              </v-btn-toggle>
+              <v-textarea v-if="form.descripcionFormato !== 'lista'" v-model="form.descripcion" :readonly="readOnly" label="Descripción" outlined dense hide-details rows="3" auto-grow />
+              <div v-else class="subtasks-list">
+                <div class="subtasks-progress">{{ form.subtareas.filter(item => item.completada && item.texto.trim()).length }} / {{ form.subtareas.filter(item => item.texto.trim()).length }} completadas</div>
+                <div v-for="(item, index) in form.subtareas" :key="item.id" class="subtask-row">
+                  <v-checkbox v-model="item.completada" :disabled="!commentAllowed || saving || !item.texto.trim()" :aria-label="`Completar subtarea ${index + 1}: ${item.texto}`" hide-details class="mt-0 pt-0" />
+                  <span>{{ index + 1 }}.</span>
+                  <v-text-field :ref="`subtask-${item.id}`" v-model="item.texto" :readonly="readOnly" :class="{ 'subtask-completed': item.completada }" :aria-label="`Subtarea ${index + 1}`" placeholder="Escribe una subtarea" dense hide-details @keydown.enter="onSubtaskEnter($event, index)" />
+                  <v-btn v-if="!readOnly" icon small :aria-label="`Eliminar subtarea ${index + 1}`" @click="form.subtareas.splice(index, 1)"><v-icon small>mdi-close</v-icon></v-btn>
+                </div>
+                <v-btn v-if="!readOnly" small text color="primary" @click="addSubtask(form.subtareas.length - 1)"><v-icon small left>mdi-plus</v-icon>Agregar subtarea</v-btn>
+              </div>
+            </div>
             <div class="task-fields-row">
               <v-select v-model="form.prioridad" :readonly="readOnly" :items="prioridades" label="Prioridad" outlined dense hide-details />
               <v-text-field v-model="form.fechaLimite" :readonly="readOnly" label="Fecha límite" type="date" outlined dense hide-details />
             </div>
-            <v-autocomplete v-model="form.compartidos" multiple small-chips :deletable-chips="!readOnly" return-object :readonly="readOnly" :items="personalDisponible" item-text="nombres" item-value="id" label="Compartir con" outlined dense hide-details :clearable="!readOnly" />
+            <v-autocomplete v-model="form.compartidos" multiple small-chips deletable-chips return-object :readonly="!commentAllowed" :items="personalDisponible" item-text="nombres" item-value="id" label="Compartir con" outlined dense hide-details clearable />
           </div>
           <section class="task-comments" aria-label="Comentarios de la tarea">
             <div class="comments-heading"><h3>Comentarios <span v-if="comments.length" class="comments-count">{{ comments.length }}</span></h3><span>{{ editingId ? 'Visibles para todos los participantes' : 'Opcional' }}</span></div>
@@ -69,7 +85,7 @@
             <div class="comment-compose-footer"><span>{{ commentDraft.length }}/2000</span><v-btn v-if="editingId" color="primary" small text :loading="commentSaving" :disabled="!commentDraft.trim() || !commentAllowed || saving" @click="sendComment"><v-icon left small>mdi-send-outline</v-icon>Publicar comentario</v-btn></div>
           </section>
         </v-card-text>
-        <v-card-actions class="task-form-actions"><v-spacer /><v-btn small text :disabled="saving || commentSaving" @click="dialog=false">{{ readOnly ? 'Cerrar' : 'Cancelar' }}</v-btn><v-btn v-if="!readOnly" small color="primary" depressed :loading="saving" :disabled="commentSaving" @click="saveTask">Guardar tarea</v-btn></v-card-actions>
+        <v-card-actions class="task-form-actions"><v-spacer /><v-btn small text :disabled="saving || commentSaving" @click="dialog=false">{{ readOnly ? 'Cerrar' : 'Cancelar' }}</v-btn><v-btn small color="primary" depressed :loading="saving" :disabled="commentSaving || !commentAllowed" @click="saveTask">{{ readOnly ? 'Guardar cambios' : 'Guardar tarea' }}</v-btn></v-card-actions>
       </v-card>
     </v-dialog>
   </section>
@@ -78,7 +94,7 @@
 <script>
 import draggable from 'vuedraggable'
 import { normalizePersonal } from '~/models/personal'
-import { createEmptyTareaForm, normalizeTarea, toTareaPayload, ESTADOS_TAREA, PRIORIDADES_TAREA, canViewTarea } from '~/models/tarea'
+import { createEmptyTareaForm, normalizeTarea, toTareaPayload, toTareaSharingPayload, getTareaSubtasks, ESTADOS_TAREA, PRIORIDADES_TAREA, canViewTarea } from '~/models/tarea'
 
 export default {
   name: 'TareasPage',
@@ -110,12 +126,37 @@ export default {
         return matchesSearch && matchesPriority && matchesOrigin
       })
     },
-    personalDisponible() { return this.personal.filter(persona => persona.estado && persona.id !== this.currentUser.id) }
+    personalDisponible() { return this.personal.filter(persona => persona.estado && persona.id !== (this.editingId ? this.form.creadorId : this.currentUser.id)) }
   },
   watch: { dialog(value) { if (!value) this.stopComments() }, '$route.query.tarea'() { this.loadData() }, tareasFiltradas: { handler() { this.syncColumns() }, immediate: true } },
   beforeDestroy() { this.stopComments() },
   mounted() { this.loadData() },
   methods: {
+    changeDescriptionFormat(format) {
+      if (this.readOnly || !format || format === this.form.descripcionFormato) return
+      if (format === 'lista') {
+        this.form.subtareas = getTareaSubtasks({ descripcionFormato: 'lista', descripcion: this.form.descripcion })
+        if (!this.form.subtareas.length) this.addSubtask(-1)
+      } else {
+        this.form.descripcion = this.form.subtareas.map(item => item.texto).join('\n')
+      }
+      this.form.descripcionFormato = format
+    },
+    addSubtask(index) {
+      if (this.readOnly) return
+      const item = { id: this.$db.collection(this.$firebaseApi.config.tareas.collection).doc().id, texto: '', completada: false }
+      this.form.subtareas.splice(index + 1, 0, item)
+      this.$nextTick(() => {
+        const field = this.$refs[`subtask-${item.id}`]
+        const input = Array.isArray(field) ? field[0] : field
+        if (input) input.focus()
+      })
+    },
+    onSubtaskEnter(event, index) {
+      if (this.readOnly || event.isComposing) return
+      event.preventDefault()
+      this.addSubtask(index)
+    },
     openRequestedTask() {
       const task = this.tareasVisibles.find(item => item.id === this.$route.query.tarea)
       if (task && this.openedNotificationId !== task.id) {
@@ -147,7 +188,7 @@ export default {
     openCreate() { this.resetComments(); this.editingId = null; this.readOnly = false; this.form = createEmptyTareaForm(); this.dialog = true },
     openTask(tarea) {
       this.resetComments()
-      this.editingId = tarea.id; this.readOnly = !this.canEdit(tarea); this.form = { ...tarea, compartidos: tarea.compartidos.map(person => ({ ...person })) }; this.dialog = true
+      this.editingId = tarea.id; this.readOnly = !this.canEdit(tarea); this.form = { ...tarea, subtareas: getTareaSubtasks(tarea), compartidos: tarea.compartidos.map(person => ({ ...person })) }; this.dialog = true
       this.commentsLoading = true
       this.commentAllowed = false
       const generation = this.commentGeneration
@@ -175,13 +216,15 @@ export default {
     },
     formatCommentDate(value) { return value ? new Date(value).toLocaleString('es-PE') : '' },
     async saveTask() {
-      if (this.readOnly) return
+      if (!this.commentAllowed) return
       if (this.saving || this.commentSaving) return
       if (this.editingId && this.commentDraft.trim()) { this.commentError = 'Publica el comentario antes de guardar los cambios de la tarea.'; return }
       if (!this.form.titulo.trim()) return alert('Ingresa el título de la tarea')
       this.saving = true
       try {
-        const payload = toTareaPayload(this.form, this.currentUser)
+        const payload = this.readOnly
+          ? { ...toTareaSharingPayload(this.form), ...(this.form.descripcionFormato === 'lista' ? { subtareas: getTareaSubtasks(this.form) } : {}) }
+          : toTareaPayload(this.form, this.currentUser)
         if (!this.editingId && this.commentDraft.trim()) {
           if (this.commentDraft.trim().length > 2000) throw new Error('El comentario admite hasta 2000 caracteres.')
           payload.comentarios = [{ id: this.$db.collection(this.$firebaseApi.config.tareas.collection).doc().id, texto: this.commentDraft.trim(), autorId: this.currentUser.id, autorNombre: this.currentUser.nombres || 'Usuario', fecha: new Date() }]
@@ -216,6 +259,11 @@ export default {
 .task-form-header span:not(.task-form-icon) { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; opacity: .65; }
 .task-form-card.v-card .task-form-body.v-card__text { padding: 18px 20px 8px; }
 .task-fields { display: grid; gap: 14px; }
+.subtask-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.subtask-row .v-input--checkbox { flex: 0 0 auto; }
+.subtask-completed ::v-deep input { text-decoration: line-through; opacity: .6; }
+.subtasks-progress { font-size: 12px; margin-bottom: 12px; }
+.description-editor { display: grid; gap: 10px; }
 .task-fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .task-fields ::v-deep .v-input, .task-comments ::v-deep .v-input { font-size: 13px; }
 .task-fields ::v-deep .v-label, .task-comments ::v-deep .v-label { font-size: 13px; }
