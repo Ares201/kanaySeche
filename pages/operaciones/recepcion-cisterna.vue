@@ -82,7 +82,7 @@
           <template #[`item.actions`]="{ item: ingreso }">
             <div class="actions">
               <!-- Botón Imprimir -->
-              <button class="icon-button" type="button" title="Imprimir" @click="imprimirDirecto(ingreso)">
+              <button class="icon-button" type="button" title="Imprimir" :disabled="printing" @click="imprimirDirecto(ingreso)">
                 <svg viewBox="0 0 24 24">
                   <rect x="3" y="7" width="18" height="12" rx="2" />
                   <rect x="5" y="10" width="14" height="5" rx="1" />
@@ -233,6 +233,8 @@
       </form>
     </div>
 
+    <iframe ref="printIframe" title="Recibo para imprimir" aria-hidden="true" tabindex="-1"
+      style="position: fixed; left: -10000px; top: 0; width: 210mm; height: 297mm; border: 0; pointer-events: none;" />
   </section>
 </template>
 
@@ -262,6 +264,7 @@ export default {
       fechaInicio: '',
       fechaFin: '',
       loading: false,
+      printing: false,
       tableHeaders: [
         { text: 'Código', value: 'correlativo' },
         { text: 'Fecha', value: 'fechaIngreso' },
@@ -552,26 +555,28 @@ export default {
 
     // ===== IMPRESIÓN DIRECTA =====
     imprimirDirecto(ingreso) {
-      const originalTitle = document.title;
-      document.title = `Ingreso-${ingreso.correlativo}`;
-
-      const html = this.buildIngresoPrintHtmlTriple(ingreso);
-      const iframe = this.$refs.printIframe;
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      doc.open();
-      doc.write(html);
-      doc.close();
-
-      iframe.contentWindow.focus();
-
-      // Restaurar título después de imprimir
-      const onPrintDone = () => {
-        document.title = originalTitle;
-        window.removeEventListener('afterprint', onPrintDone);
-      };
-      window.addEventListener('afterprint', onPrintDone);
-
-      iframe.contentWindow.print();
+      if (this.printing) return
+      this.printing = true
+      const iframe = this.$refs.printIframe
+      const fail = error => {
+        this.printing = false
+        if (iframe) iframe.onload = null
+        console.error(error)
+        alert('No se pudo abrir la impresi\u00f3n del recibo. Intenta nuevamente.')
+      }
+      try {
+        if (!iframe || !iframe.contentWindow) throw new Error('No se encuentra el marco de impresion.')
+        const html = this.buildIngresoPrintHtmlTriple(ingreso)
+        iframe.onload = () => {
+          iframe.onload = null
+          try {
+            iframe.contentWindow.focus()
+            iframe.contentWindow.print()
+            this.printing = false
+          } catch (error) { fail(error) }
+        }
+        iframe.srcdoc = html
+      } catch (error) { fail(error) }
     },
 
     buildIngresoPrintHtmlTriple(ingreso) {

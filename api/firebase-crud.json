@@ -27,33 +27,9 @@
         "delete": "remove"
       }
     },
-    "envases": {
-      "collection": "envases",
-      "model": "envase",
-      "orderBy": "fechaCreacion",
-      "orderDirection": "desc",
-      "crud": {
-        "list": "list",
-        "create": "create",
-        "update": "update",
-        "delete": "remove"
-      }
-    },
     "residuos": {
       "collection": "residuos",
       "model": "residuo",
-      "orderBy": "fechaCreacion",
-      "orderDirection": "desc",
-      "crud": {
-        "list": "list",
-        "create": "create",
-        "update": "update",
-        "delete": "remove"
-      }
-    },
-    "productos": {
-      "collection": "productos",
-      "model": "producto",
       "orderBy": "fechaCreacion",
       "orderDirection": "desc",
       "crud": {
@@ -82,18 +58,6 @@
       "collection": "movimientosUtiles",
       "orderBy": "fechaCreacion",
       "orderDirection": "desc"
-    },
-    "generadores": {
-      "collection": "generadores",
-      "model": "generador",
-      "orderBy": "fechaCreacion",
-      "orderDirection": "desc",
-      "crud": {
-        "list": "list",
-        "create": "create",
-        "update": "update",
-        "delete": "remove"
-      }
     },
     "clientes": {
       "collection": "clientes",
@@ -179,18 +143,8 @@
         "delete": "remove"
       }
     },
-    "procesarCertificados": {
-      "collection": "procesarCertificados",
-      "orderBy": "fecha",
-      "orderDirection": "desc"
-    },
     "procesarBoletas": {
       "collection": "procesarBoletas",
-      "orderBy": "fecha",
-      "orderDirection": "desc"
-    },
-    "procesarExpedientes": {
-      "collection": "procesarExpedientes",
       "orderBy": "fecha",
       "orderDirection": "desc"
     }

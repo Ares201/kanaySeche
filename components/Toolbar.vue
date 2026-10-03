@@ -127,18 +127,6 @@
           <NuxtLink v-if="can('/inicio/graficos')" class="nav-link" to="/inicio/graficos" @click.native="closeMenu">Mis graficos</NuxtLink>
         </div>
 
-        <!-- PLANIFICACION -->
-        <button v-if="hasAccess(['/planificacion/agendamientos'])" class="module-button module-button--spaced"
-          type="button" @click="togglePlanificacion">
-          <span>Planificacion</span>
-          <span class="chevron" :class="{ 'chevron--open': planificacionOpen }">›</span>
-        </button>
-        <div v-if="hasAccess(['/planificacion/agendamientos'])" v-show="planificacionOpen" class="submenu">
-          <NuxtLink v-if="can('/planificacion/agendamientos')" class="nav-link" to="/planificacion/agendamientos"
-            @click.native="closeMenu">Agendamientos
-          </NuxtLink>
-        </div>
-
         <!-- OPERACIONES -->
         <button v-if="hasAccess(operacionesRoutes)" class="module-button" type="button" @click="toggleOperaciones">
           <span>Operaciones</span>
@@ -168,8 +156,7 @@
         <div v-if="hasAccess(controlAceptacionRoutes)" v-show="controlAceptacionOpen" class="submenu">
           <NuxtLink v-if="can('/control-aceptacion/graficos')" class="nav-link" to="/control-aceptacion/graficos"
             @click.native="closeMenu">Gráficos</NuxtLink>
-          <NuxtLink v-if="can('/control-aceptacion/ingresos-cisterna')" class="nav-link"
-            to="/control-aceptacion/ingresos-cisterna" @click.native="closeMenu">Ingresos Cisterna</NuxtLink>
+
         </div>
 
         <!-- DOCUMENTOS -->
@@ -185,8 +172,6 @@
           </NuxtLink>
           <NuxtLink v-if="can('/documentos/controlDeIngresos')" class="nav-link" to="/documentos/controlDeIngresos"
             @click.native="closeMenu">Control de Ingresos</NuxtLink>
-          <NuxtLink v-if="can('/documentos/expedientes')" class="nav-link" to="/documentos/expedientes"
-            @click.native="closeMenu">Expedientes</NuxtLink>
           <NuxtLink v-if="can('/documentos/cartas')" class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
             Cartas</NuxtLink>
           <NuxtLink v-if="can('/documentos/firmar-pdf')" class="nav-link" to="/documentos/firmar-pdf"
@@ -194,10 +179,6 @@
           <NuxtLink v-if="can('/documentos/boletas')" class="nav-link" to="/documentos/boletas"
             @click.native="closeMenu">
             Boletas</NuxtLink>
-          <NuxtLink v-if="can('/documentos/certificados')" class="nav-link" to="/documentos/certificados"
-            @click.native="closeMenu">Certificados</NuxtLink>
-          <NuxtLink v-if="can('/documentos/validaciones')" class="nav-link" to="/documentos/validaciones"
-            @click.native="closeMenu">Validaciones</NuxtLink>
         </div>
 
         <!-- INVENTARIO -->
@@ -217,16 +198,10 @@
           <span class="chevron" :class="{ 'chevron--open': configuracionOpen }">›</span>
         </button>
         <div v-if="hasAccess(configuracionRoutes)" v-show="configuracionOpen" class="submenu">
-          <NuxtLink v-if="can('/configuracion/envases')" class="nav-link" to="/configuracion/envases"
-            @click.native="closeMenu">Envases</NuxtLink>
           <NuxtLink v-if="can('/configuracion/residuos')" class="nav-link" to="/configuracion/residuos"
             @click.native="closeMenu">Residuos</NuxtLink>
           <NuxtLink v-if="can('/configuracion/clientes')" class="nav-link" to="/configuracion/clientes"
             @click.native="closeMenu">Clientes</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/productos')" class="nav-link" to="/configuracion/productos"
-            @click.native="closeMenu">Productos</NuxtLink>
-          <NuxtLink v-if="can('/configuracion/generador')" class="nav-link" to="/configuracion/generador"
-            @click.native="closeMenu">Generadores</NuxtLink>
           <NuxtLink v-if="can('/configuracion/personal')" class="nav-link" to="/configuracion/personal"
             @click.native="closeMenu">Personal</NuxtLink>
           <NuxtLink v-if="can('/configuracion/roles')" class="nav-link" to="/configuracion/roles"
@@ -254,7 +229,6 @@ export default {
 
       // Modulos Open
       inicioOpen: false,
-      planificacionOpen: false,
       operacionesOpen: false,
       controlAceptacionOpen: false,
       configuracionOpen: false,
@@ -272,10 +246,10 @@ export default {
     currentRole() { return this.$auth?.user?.rolNombre || '' },
     inicioRoutes() { return ['/', '/inicio/tareas', '/inicio/graficos'] },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
-    controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/ingresos-cisterna'] },
-    documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas', '/documentos/certificados', '/documentos/validaciones'] },
+    controlAceptacionRoutes() { return ['/control-aceptacion/graficos'] },
+    documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas'] },
     inventarioRoutes() { return ['/inventario', '/inventario/requerimientos', '/inventario/productos'] },
-    configuracionRoutes() { return ['/configuracion/envases', '/configuracion/residuos', '/configuracion/clientes', '/configuracion/productos', '/configuracion/generador', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos', '/configuracion/historial'] }
+    configuracionRoutes() { return ['/configuracion/residuos', '/configuracion/clientes', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos', '/configuracion/historial'] }
   },
 
   mounted() {
@@ -327,7 +301,6 @@ export default {
       const stateKey = `${module}Open`
       const shouldOpen = !this[stateKey]
       const modules = [
-        'planificacionOpen',
         'inicioOpen',
         'operacionesOpen',
         'controlAceptacionOpen',
@@ -340,7 +313,6 @@ export default {
         this[key] = shouldOpen && key === stateKey
       })
     },
-    togglePlanificacion() { this.toggleModule('planificacion') },
     toggleInicio() { this.toggleModule('inicio') },
     toggleOperaciones() { this.toggleModule('operaciones') },
     toggleControlAceptacion() { this.toggleModule('controlAceptacion') },

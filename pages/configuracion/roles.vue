@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { ADMIN_ROLE, SYSTEM_PAGES } from '~/utils/access-control'
+import { ADMIN_ROLE, SYSTEM_PAGES, isRetiredRoute } from '~/utils/access-control'
 
 export default {
   data: () => ({
@@ -110,7 +110,7 @@ export default {
         const [roles, pages, relations] = await Promise.all([
           this.$firebaseApi.list('roles'), this.$firebaseApi.list('paginas'), this.$firebaseApi.list('rolPaginas')
         ])
-        this.roles = roles; this.pages = pages; this.relations = relations
+        this.roles = roles; this.pages = pages.filter(page => !isRetiredRoute(page.ruta)); this.relations = relations
       } finally { this.loading = false }
     },
     openRole(role) { this.roleForm = role ? { id: role.id, nombre: role.nombre, estado: role.estado !== false } : { id: null, nombre: '', estado: true }; this.roleDialog = true },
@@ -139,6 +139,7 @@ export default {
     },
     openPage(page) { this.pageForm = page ? { ...page } : { id: null, nombre: '', ruta: '', modulo: '', descripcion: '', estado: true }; this.pageDialog = true },
     async savePage() {
+      if (isRetiredRoute(this.pageForm.ruta)) return alert('Este modulo fue retirado del sistema.')
       if (!this.pageForm.nombre || !this.pageForm.ruta.startsWith('/')) return alert('Completa el nombre y una ruta válida.')
       const { id, ...payload } = this.pageForm
       if (id) await this.$firebaseApi.update('paginas', id, payload); else await this.$firebaseApi.create('paginas', payload)

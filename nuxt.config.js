@@ -5,14 +5,6 @@ const apiBaseURL = process.env.API_URL || (
 )
 
 export default {
-  publicRuntimeConfig: {
-    certificadosApiBaseURL: process.env.CERTIFICADOS_API_URL || (
-      process.env.NODE_ENV === 'production'
-        ? 'https://api-query-control-pesaje.vercel.app'
-        : 'http://localhost:8000'
-    ),
-    certificadosMaxTotalBytes: process.env.CERTIFICADOS_MAX_TOTAL_BYTES || 4000000
-  },
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: 'kanaySeche',

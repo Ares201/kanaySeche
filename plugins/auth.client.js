@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import { ADMIN_ROLE, SYSTEM_PAGES, canAccessRoute } from '~/utils/access-control'
+import { ADMIN_ROLE, SYSTEM_PAGES, canAccessRoute, isRetiredRoute } from '~/utils/access-control'
 
 const SESSION_KEY = 'kanay_session'
 
@@ -46,7 +46,7 @@ export default ({ app, $firebaseApi }, inject) => {
       const pages = await $firebaseApi.list('paginas')
       const existingRelations = await $firebaseApi.list('rolPaginas')
       const defaults = {
-        'Gestión Documentaria': ['/documentos/controlDeIngresos', '/documentos/expedientes', '/documentos/cartas'],
+        'Gestión Documentaria': ['/documentos/controlDeIngresos', '/documentos/cartas'],
         Operaciones: ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna']
       }
       for (const [roleName, routes] of Object.entries(defaults)) {
@@ -82,7 +82,7 @@ export default ({ app, $firebaseApi }, inject) => {
         const relations = await $firebaseApi.list('rolPaginas')
         const pages = await $firebaseApi.list('paginas')
         const pageIds = relations.filter(item => item.rolId === role.id).map(item => item.paginaId)
-        rutasPermitidas = pages.filter(item => item.estado !== false && pageIds.includes(item.id)).map(item => item.ruta)
+        rutasPermitidas = pages.filter(item => item.estado !== false && !isRetiredRoute(item.ruta) && pageIds.includes(item.id)).map(item => item.ruta)
       }
 
       state.session = { id: user.id, nombres: user.nombres, correo: user.correo, rolId: user.rolId || null, rolNombre, rutasPermitidas }
