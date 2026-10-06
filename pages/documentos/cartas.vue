@@ -84,8 +84,8 @@
                   {{ getEstadoIcon(carta.estadoProceso) }}
                 </v-icon>
               </v-btn>
-              <v-btn icon small class="status-icon-button" title="Ver o editar cargo digital"
-                aria-label="Ver o editar cargo digital" @click="openCargoDialog(carta)">
+              <v-btn icon small class="status-icon-button" title="Ver confirmaci&#243;n de recepci&#243;n"
+                aria-label="Ver confirmaci&#243;n de recepci&#243;n" @click="openConfirmacionDialog(carta)">
                 <v-icon small>mdi-file-sign</v-icon>
               </v-btn>
               <button class="icon-button" type="button" title="Ver" aria-label="Ver carta"
@@ -217,27 +217,22 @@
           </v-row>
 
 
-          <!-- FILA 3: ASUNTO + FECHA SERVICIO -->
           <v-row dense>
-
-            <v-col cols="12" md="10">
-              <label>
-                Asunto
-
-                <input :value="form.asunto" type="text" readonly>
-              </label>
+            <v-col cols="12">
+              <v-autocomplete v-model="form.generador" :items="generadorOptions" :loading="clientesLoading"
+                label="Generador" placeholder="Busca y selecciona un cliente" outlined dense hide-details clearable
+                no-data-text="No se encontraron clientes" />
             </v-col>
-
-            <v-col cols="12" md="2">
-              <label>
-                Fecha servicio
-
-                <input v-model="form.fechaServicio" type="date" required @change="actualizarAsunto">
-              </label>
+            <v-col cols="12" md="6">
+              <label>Asunto<input :value="form.asunto" type="text" readonly></label>
             </v-col>
-
+            <v-col cols="12" sm="6" md="3">
+              <label>Fecha de servicio<input v-model="form.fechaServicio" type="date" @change="actualizarAsunto"></label>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+              <label>Fecha de culminaci&#243;n<input v-model="form.fechaCulmino" type="date" @change="actualizarAsunto"></label>
+            </v-col>
           </v-row>
-
 
           <!-- SEGUNDA FILA: FECHA EMISIÓN + CORRELATIVO + FECHA CULMINO -->
           <v-row v-if="showExtraFields" dense>
@@ -258,13 +253,7 @@
               </label>
             </v-col>
 
-            <v-col cols="12" md="2">
-              <label>
-                Fecha culmino
 
-                <input v-model="form.fechaCulmino" type="date" @change="actualizarAsunto">
-              </label>
-            </v-col>
 
             <v-col cols="12">
               <label>
@@ -468,9 +457,9 @@
     </div>
 
     <ConfirmacionDialog v-if="confirmacionCarta" v-model="isConfirmacionOpen" :carta="confirmacionCarta"
-      @save-cargo="saveCargo" @mark-delivered="markDelivered" @message="showMessage" />
-    <CargoDigitalDialog v-if="cargoCarta" v-model="isCargoDialogOpen" :carta="cargoCarta" @save="saveCargoDigital"
+      @input="value => { if (!value) getAll() }"
       @message="showMessage" />
+
 
     <div v-if="isPreviewOpen" class="modal-backdrop modal-backdrop--preview">
       <div class="modal modal--preview">
@@ -503,11 +492,10 @@
 <script>
 import CartaPreview from '~/components/CartaPreview.vue'
 import ConfirmacionDialog from '~/components/documentos/ConfirmacionDialog.vue'
-import CargoDigitalDialog from '~/components/documentos/CargoDigitalDialog.vue'
 import { normalizeCliente } from '~/models/cliente'
 import { exportRowsToExcel, readRowsFromExcelFile } from '~/utils/exportExcel'
 
-const DEFAULT_ASUNTO = 'Presentación de Documentos del Servicio Ambiental del'
+const DEFAULT_ASUNTO = 'Presentación de Documentos del Servicio Ambiental'
 const DEFAULT_CONTEXTO = `De nuestra consideración:
 La presente tiene por finalidad saludarlo cordialmente en nombre de la Empresa KANAY S.A.C. – Séché Group Perú y a su vez hacerles llegar la documentación del Servicio de Disposición Final, según detalle:`
 const DEFAULT_DESPEDIDA = 'Sin otro particular me despido y le reiteramos nuestro atento saludo.'
@@ -529,7 +517,6 @@ export default {
   components: {
     CartaPreview,
     ConfirmacionDialog,
-    CargoDigitalDialog
   },
   data() {
     return {
@@ -552,8 +539,6 @@ export default {
       isPreviewOpen: false,
       isConfirmacionOpen: false,
       confirmacionCarta: null,
-      isCargoDialogOpen: false,
-      cargoCarta: null,
       editingId: null,
       selectedCarta: this.getEmptyForm(),
       form: this.getEmptyForm(),
@@ -574,6 +559,9 @@ export default {
     }
   },
   computed: {
+    generadorOptions() {
+      return [...new Set([...this.clientes.map(cliente => cliente.nombre), this.form.generador].filter(Boolean))]
+    },
     activeFilterCount() {
       return [this.estadoFiltro, this.direccionFiltro, this.fechaFiltro].filter(Boolean).length
     },
@@ -638,6 +626,7 @@ export default {
     '$route.query': {
       handler() {
         this.applyRouteFilters()
+        if (this.$route.query.cartaId) this.getAll()
       },
       deep: true
     }
@@ -764,6 +753,8 @@ export default {
         lugar: 'Lima',
         fecha: this.getTodayInputDate(),
         fechaServicio: '',
+        fechaCulmino: '',
+        generador: '',
         correlativo: this.getNextCorrelativo(),
         direccionAlterna: false,
         cliente: {
@@ -926,38 +917,6 @@ export default {
         console.error(error)
       }
     },
-    async saveCargo(cargo) {
-      try {
-        this.confirmacionCarta = await this.updateCargo(this.confirmacionCarta, cargo)
-        this.showMessage('Cargo guardado')
-      } catch (error) { alert('No se pudo guardar el cargo') }
-    },
-    openCargoDialog(carta) {
-      this.cargoCarta = this.cloneCarta(carta)
-      this.isCargoDialogOpen = true
-    },
-    async saveCargoDigital(cargo) {
-      try {
-        this.cargoCarta = await this.updateCargo(this.cargoCarta, cargo)
-        this.showMessage('Cargo digital actualizado')
-      } catch (error) { alert('No se pudo guardar el cargo digital') }
-    },
-    async updateCargo(carta, cargo) {
-      const updatedCarta = await this.$firebaseApi.update('cartas', carta.id, { cargo })
-      const normalizedCarta = this.normalizeCarta({ ...carta, ...updatedCarta, cargo })
-      this.cartas = this.cartas.map(item => item.id === carta.id ? normalizedCarta : item)
-      if (this.confirmacionCarta && this.confirmacionCarta.id === carta.id) this.confirmacionCarta = normalizedCarta
-      return normalizedCarta
-    },
-    async markDelivered() {
-      try {
-        const updatedCarta = await this.$firebaseApi.update('cartas', this.confirmacionCarta.id, { estadoProceso: 'Entregado', estado: 'Entregado' })
-        this.confirmacionCarta = this.normalizeCarta({ ...this.confirmacionCarta, ...updatedCarta, estadoProceso: 'Entregado', estado: 'Entregado' })
-        this.cartas = this.cartas.map(item => item.id === this.confirmacionCarta.id ? this.confirmacionCarta : item)
-        this.isConfirmacionOpen = false
-        this.showMessage('Carta marcada como entregada')
-      } catch (error) { alert('No se pudo marcar la carta como entregada') }
-    },
     showMessage(message) { alert(message) },
     openCreateModal() {
       this.editingId = null
@@ -982,6 +941,7 @@ export default {
       this.isClienteDropdownOpen = false
     },
     async saveCarta() {
+      this.actualizarAsunto()
       const payload = this.normalizeCarta(this.form)
       const exists = this.cartas.some(carta => {
         return carta.correlativo === payload.correlativo && carta.id !== this.editingId
@@ -1058,7 +1018,7 @@ export default {
       const [year, month, day] = this.form.fechaServicio.split('-')
 
       let asunto =
-        `Presentación de Documentos del Servicio Ambiental del ${day}/${month}/${year}`
+        `${DEFAULT_ASUNTO} del ${day}/${month}/${year}`
 
       if (this.form.fechaCulmino) {
         const [yearFin, monthFin, dayFin] = this.form.fechaCulmino.split('-')
@@ -1240,6 +1200,10 @@ export default {
                 left: -20px;
               }
 
+              .recepcion { width: 62mm; margin: 18px 0 0 auto; break-inside: avoid; page-break-inside: avoid; font-size: 9px; }
+              .recepcion-campo { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+              .recepcion-linea { flex: 1; border-bottom: 1px solid #999; min-height: 12px; }
+              .recepcion-firma { margin-top: 0; padding-top: 12px; }
               .firma {
                 margin-top: 50px;
                 font-size: 13px;
@@ -1274,6 +1238,8 @@ export default {
                     <strong>Señores:</strong>
                     <span>${escapeHtml(cliente.nombre)}</span>
                   </div>
+
+                  ${carta.generador ? `<div class="fila"><strong>Generador:</strong><span>${escapeHtml(carta.generador)}</span></div>` : ''}
 
                   ${cliente.direccion ? `
                     <div class="fila">
@@ -1317,6 +1283,11 @@ export default {
 
                 <div class="firma">
                   <p>Atentamente,</p>
+                </div>
+                <div class="recepcion">
+                  <div class="recepcion-campo recepcion-firma"><span>Recibido / Firma:</span><span class="recepcion-linea"></span></div>
+                  <div class="recepcion-campo"><span>Nombre:</span><span class="recepcion-linea"></span></div>
+                  <div class="recepcion-campo"><span>DNI:</span><span class="recepcion-linea"></span><span>Fecha:</span><span class="recepcion-linea"></span></div>
                 </div>
 
               </div>
@@ -1464,9 +1435,7 @@ export default {
       }
     },
     applyDefaultText() {
-      if (!this.form.asunto) {
-        this.form.asunto = DEFAULT_ASUNTO
-      }
+      this.actualizarAsunto()
 
       if (!this.form.contexto) {
         this.form.contexto = DEFAULT_CONTEXTO
@@ -1533,6 +1502,7 @@ export default {
         fecha: this.normalizeDateInput(source.fecha) || this.getTodayInputDate(),
         fechaServicio: this.normalizeDateInput(source.fechaServicio) || '',
         fechaCulmino: this.normalizeDateInput(source.fechaCulmino) || '',
+        generador: String(source.generador || '').trim(),
         correlativo: source.correlativo || '',
         cliente: {
           nombre: cliente.nombre || '',
@@ -1556,6 +1526,7 @@ export default {
         tokenConfirmacion: source.tokenConfirmacion || '',
         confirmacion: {
           confirmado: !!(source.confirmacion || {}).confirmado,
+          observacion: (source.confirmacion || {}).observacion || '',
           nombre: (source.confirmacion || {}).nombre || '',
           codigo: (source.confirmacion || {}).codigo || '',
           fechaConfirmacion: (source.confirmacion || {}).fechaConfirmacion || null,

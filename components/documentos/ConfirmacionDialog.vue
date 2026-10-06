@@ -27,8 +27,7 @@
                   {{ confirmado ? 'Confirmado' : 'Pendiente' }}
                 </v-chip>
                 <div v-if="confirmado">
-                  <p class="mb-1"><strong>Nombre del receptor:</strong> {{ carta.confirmacion.nombre }}</p>
-                  <p class="mb-1"><strong>Código ingresado:</strong> {{ carta.confirmacion.codigo }}</p>
+                  <p v-if="carta.confirmacion.observacion" class="mb-1"><strong>Nota:</strong> {{ carta.confirmacion.observacion }}</p>
                   <p class="mb-0"><strong>Fecha de confirmación:</strong> {{ formatDate(carta.confirmacion.fechaConfirmacion) }}</p>
                 </div>
                 <p v-else class="mb-0">El cliente aún no ha confirmado la recepción.</p>
@@ -64,19 +63,9 @@
           </v-card-text>
         </v-card>
 
-        <v-card outlined class="mt-6">
-          <v-card-title>Cargo escaneado</v-card-title>
-          <v-card-text>
-            <v-text-field v-model.trim="cargoLink" label="Link del cargo escaneado" outlined required :rules="[v => !!v || 'El link del cargo es obligatorio']" />
-            <v-btn color="#6eb49c" dark :loading="savingCargo" @click="saveCargo">Guardar cargo</v-btn>
-          </v-card-text>
-        </v-card>
-
         <div class="d-flex justify-end mt-6">
           <v-btn text class="mr-2" @click="close">Cerrar</v-btn>
-          <v-btn color="#6eb49c" dark :disabled="!canMarkDelivered" :loading="markingDelivered" @click="markDelivered">
-            Marcar como Entregado
-          </v-btn>
+
         </div>
       </v-container>
     </v-card>
@@ -92,9 +81,6 @@ export default {
   },
   data() {
     return {
-      cargoLink: '',
-      savingCargo: false,
-      markingDelivered: false,
       headers: [
         { text: 'Código', value: 'codigo' },
         { text: 'Documento', value: 'documento' }
@@ -115,13 +101,6 @@ export default {
     step() {
       const steps = { Emitido: 1, Enviado: 2, 'Pendiente de Confirmación': 3, Entregado: 4 }
       return steps[this.carta.estadoProceso] || 3
-    },
-    canMarkDelivered() { return this.confirmado && !!((this.carta.cargo || {}).link) }
-  },
-  watch: {
-    carta: {
-      immediate: true,
-      handler(value) { this.cargoLink = ((value || {}).cargo || {}).link || '' }
     }
   },
   methods: {
@@ -140,17 +119,7 @@ export default {
       }
     },
     openLink() { window.open(this.confirmationUrl, '_blank', 'noopener') },
-    async saveCargo() {
-      if (!this.cargoLink) return
-      this.savingCargo = true
-      try {
-        await this.$emit('save-cargo', { link: this.cargoLink, fechaCarga: new Date() })
-      } finally { this.savingCargo = false }
-    },
-    async markDelivered() {
-      this.markingDelivered = true
-      try { await this.$emit('mark-delivered') } finally { this.markingDelivered = false }
-    }
+
   }
 }
 </script>

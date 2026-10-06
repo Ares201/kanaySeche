@@ -82,6 +82,19 @@
 </template>
 
 <script>
+// Firestore puede devolver las claves de cada producto en otro orden.
+// Conservamos el orden de las líneas, pero comparamos sus campos por contenido.
+function canonicalItems(value) {
+  if (Array.isArray(value)) return value.map(canonicalItems)
+  if (value && typeof value === 'object') {
+    return Object.keys(value).sort().reduce((result, key) => {
+      result[key] = canonicalItems(value[key])
+      return result
+    }, {})
+  }
+  return value
+}
+
 export default {
   name: 'RequerimientosInventarioPage',
   data() {
@@ -173,6 +186,7 @@ export default {
       this.requestDialog = true
     },
     async saveRequest() {
+      if (this.busy) return
       if (!this.requestForm.items.length) {
         this.error = 'Agrega al menos un producto al requerimiento.'
         return
@@ -197,7 +211,7 @@ export default {
             if (!snapshot.exists || snapshot.data().anulado || snapshot.data().estado !== this.editingRequestStatus || snapshot.data().estado === 'Recibido') {
               throw new Error('El requerimiento cambió de estado. Actualiza la página.')
             }
-            if (JSON.stringify(snapshot.data().items || []) !== JSON.stringify(this.originalItems)) {
+            if (JSON.stringify(canonicalItems(snapshot.data().items || [])) !== JSON.stringify(canonicalItems(this.originalItems))) {
               throw new Error('Otro usuario modificó los productos. Actualiza la página.')
             }
             const now = new Date()

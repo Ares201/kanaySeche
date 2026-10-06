@@ -18,13 +18,12 @@
 
       <v-card v-if="confirmado" outlined class="mt-6">
         <v-card-title class="confirmacion-title">Documento confirmado correctamente</v-card-title>
-        <v-card-text><p><strong>Nombre:</strong> {{ carta.confirmacion.nombre }}</p><p class="mb-0"><strong>Fecha:</strong> {{ formatDate(carta.confirmacion.fechaConfirmacion) }}</p></v-card-text>
+        <v-card-text><p v-if="carta.confirmacion.observacion"><strong>Nota:</strong> {{ carta.confirmacion.observacion }}</p><p class="mb-0"><strong>Fecha:</strong> {{ formatDate(carta.confirmacion.fechaConfirmacion) }}</p></v-card-text>
       </v-card>
       <v-card v-else outlined class="mt-6">
         <v-card-title>Confirmar recepción</v-card-title>
         <v-card-text><v-form @submit.prevent="confirmar">
-          <v-text-field v-model.trim="form.nombre" label="Nombre completo" outlined required />
-          <v-text-field v-model.trim="form.codigo" label="Código de confirmación" outlined required />
+          <v-textarea v-model.trim="form.observacion" label="Observacion o nota (opcional)" outlined rows="3" maxlength="2000" counter="2000" :disabled="saving" />
           <v-btn type="submit" color="#6eb49c" dark :loading="saving">Confirmar recepción</v-btn>
         </v-form></v-card-text>
       </v-card>
@@ -36,7 +35,7 @@
 export default {
   name: 'ConfirmacionPublicaPage',
   layout: 'public',
-  data() { return { loading: true, carta: null, saving: false, form: { nombre: '', codigo: '' }, headers: [{ text: 'Código', value: 'codigo' }, { text: 'Documento', value: 'documento' }] } },
+  data() { return { loading: true, carta: null, saving: false, form: { observacion: '' }, headers: [{ text: 'Código', value: 'codigo' }, { text: 'Documento', value: 'documento' }] } },
   computed: { confirmado() { return !!((this.carta || {}).confirmacion || {}).confirmado } },
   mounted() { this.loadCarta() },
   methods: {
@@ -44,7 +43,7 @@ export default {
       this.loading = true
       try {
         const snapshot = await this.$db.collection('cartas').where('tokenConfirmacion', '==', this.$route.params.token).limit(1).get()
-        if (!snapshot.empty) this.carta = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
+        if (!snapshot.empty && !snapshot.docs[0].data().anulado && snapshot.docs[0].data().estadoProceso !== 'Anulado') this.carta = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
       } catch (error) { console.error(error) } finally { this.loading = false }
     },
     formatDate(value) {
@@ -53,12 +52,24 @@ export default {
       return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('es-PE')
     },
     async confirmar() {
-      if (!this.form.nombre || !this.form.codigo || this.confirmado) return
+      if (!this.carta || this.saving || this.confirmado) return
       this.saving = true
       try {
-        const confirmacion = { confirmado: true, nombre: this.form.nombre, codigo: this.form.codigo, fechaConfirmacion: new Date(), userAgent: navigator.userAgent }
-        await this.$firebaseApi.update('cartas', this.carta.id, { confirmacion })
-        this.carta = { ...this.carta, confirmacion }
+        const observacion = String(this.form.observacion || '').trim()
+        if (observacion.length > 2000) throw new Error('La nota excede el limite permitido.')
+        const ref = this.$db.collection('cartas').doc(this.carta.id)
+        let result
+        await this.$db.runTransaction(async transaction => {
+          const snapshot = await transaction.get(ref)
+          const current = snapshot.exists ? snapshot.data() : null
+          if (!current || current.anulado || current.estadoProceso === 'Anulado' || current.estado === 'Anulado' || current.tokenConfirmacion !== this.$route.params.token) throw new Error('La carta ya no esta disponible.')
+          if (current.confirmacion?.confirmado) { result = current; return }
+          const now = new Date()
+          const payload = { confirmacion: { confirmado: true, observacion, fechaConfirmacion: now }, estadoProceso: 'Entregado', estado: 'Entregado', fechaActualizacion: now }
+          transaction.update(ref, payload)
+          result = { ...current, ...payload }
+        })
+        this.carta = { ...result, id: this.carta.id }
       } catch (error) { alert('No se pudo guardar la confirmación. Inténtalo nuevamente.') } finally { this.saving = false }
     }
   }
