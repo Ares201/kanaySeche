@@ -14,7 +14,6 @@
       </NuxtLink>
       <div class="user-area">
         <TaskNotifications />
-        <CartaNotifications />
         <div class="info-item status">
           <span class="status-indicator online" aria-label="Estado: Operativo"></span>
         </div>

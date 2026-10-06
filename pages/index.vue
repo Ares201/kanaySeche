@@ -1,171 +1,111 @@
 <template>
-  <v-container fluid class="home-page pa-4 pa-md-8">
-    <!-- ===== HERO HEADER ===== -->
-    <v-card class="hero-card mb-6" rounded="xl" flat>
-      <div class="hero-gradient"></div>
-      <div class="hero-blob hero-blob--1"></div>
-      <div class="hero-blob hero-blob--2"></div>
-      <v-card-text class="hero-content pa-6 pa-md-8">
-        <v-row align="center" no-gutters>
-          <v-col cols="12" md="8">
-            <div class="d-flex align-center mb-3">
-              <div class="brand-dot mr-3"></div>
-              <p class="text-overline home-brand mb-0">Ecocentro Chilca</p>
-            </div>
-            <h1 class="hero-title mb-2">
-              Bienvenido, <span class="hero-name">{{ userName }}</span>
-              <span class="wave">👋</span>
-            </h1>
-            <p class="hero-subtitle mb-0">
-              Panel de control
-              <span class="dot-sep">·</span>
-              <span class="role-badge">{{ userRole }}</span>
-            </p>
-          </v-col>
-          <v-col cols="12" md="4" class="text-md-right mt-3 mt-md-0">
-            <v-chip class="date-chip" label rounded="lg">
-              <v-icon small left>mdi-calendar-blank-outline</v-icon>
-              {{ currentDate }}
-            </v-chip>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-
-    <!-- ===== ALERTA TAREAS VENCIDAS ===== -->
-    <v-alert v-if="canTasks && tasksError" type="error" dense text class="rounded-xl mb-4">
-      {{ tasksError }}
-    </v-alert>
-
-    <v-card
-      v-if="canTasks && tareasVencidas.length"
-      rounded="xl"
-      class="overdue-card mb-6"
-      flat
-    >
-      <div class="overdue-accent"></div>
-      <v-card-title class="d-flex align-center pa-5 pb-2">
-        <div class="overdue-icon-wrap mr-3">
-          <v-icon color="#fff">mdi-calendar-alert</v-icon>
-        </div>
-        <div class="flex-grow-1">
-          <div class="d-flex align-center">
-            <span class="overdue-title">Tareas vencidas</span>
-            <v-chip small class="overdue-chip ml-3">{{ tareasVencidas.length }}</v-chip>
-          </div>
-          <p class="overdue-subtitle mb-0">
-            Requieren tu atención: tareas propias y compartidas sin completar
+  <v-container fluid class="home-page">
+    <!-- HEADER EN TARJETA CON GRADIENTE AZUL -->
+    <header class="home-header-card">
+      <div class="header-content">
+        <div class="header-left">
+          <p class="eyebrow">Ecocentro Chilca</p>
+          <h1>Panel de control</h1>
+          <p class="user-context">
+            <v-icon size="16" class="mr-2">mdi-account-circle-outline</v-icon>
+            {{ userName }} <span class="dot">·</span> {{ userRole }}
           </p>
         </div>
-      </v-card-title>
-      <v-list class="overdue-tasks-list" color="transparent">
-        <v-list-item
-          v-for="tarea in tareasVencidas"
-          :key="tarea.id"
-          :to="{ path: '/inicio/tareas', query: { tarea: tarea.id } }"
-          class="overdue-item"
-        >
-          <v-list-item-content>
-            <v-list-item-title class="font-weight-medium">
-              {{ tarea.titulo }}
-            </v-list-item-title>
-            <v-list-item-subtitle class="text-caption">
-              {{ tarea.creadorId === currentUser.id ? 'Creada por mí' : `Compartida por ${tarea.creadorNombre}` }}
-              <span class="dot-sep">·</span> {{ tarea.estado }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-chip small outlined class="overdue-date-chip">
-              {{ tarea.fechaLimite.split('-').reverse().join('/') }}
-            </v-chip>
-          </v-list-item-action>
-          <v-list-item-action>
-            <v-icon small class="overdue-arrow">mdi-chevron-right</v-icon>
-          </v-list-item-action>
-        </v-list-item>
-      </v-list>
-    </v-card>
+        <div class="header-right">
+          <v-chip large outlined class="date-chip">
+            <v-icon left size="16">mdi-calendar-blank-outline</v-icon>
+            {{ currentDate }}
+          </v-chip>
+        </div>
+      </div>
+    </header>
 
-    <!-- ===== SECCIONES ===== -->
-    <div class="attention-grid">
-      <section
-        v-for="section in dashboardSections"
-        :key="section.id"
-        :aria-labelledby="section.id + '-title'"
-        class="mb-2"
-      >
-        <!-- Section header -->
-        <div class="section-header d-flex align-center mb-4">
-          <div class="section-icon mr-3" :class="'section-icon--' + section.id">
-            <v-icon color="#fff">{{ section.icon }}</v-icon>
+    <!-- TÍTULO DE SECCIÓN -->
+    <div class="section-heading">
+      <div>
+        <h2>Requieren atención</h2>
+        <span>Resumen de pendientes críticos</span>
+      </div>
+      <v-btn text class="refresh-btn" :loading="loading" @click="refreshAll">
+        <v-icon left size="18">mdi-refresh</v-icon>
+        Actualizar
+      </v-btn>
+    </div>
+
+    <!-- SKELETON LOADER -->
+    <div v-if="loading" class="summary-grid">
+      <v-skeleton-loader v-for="n in 3" :key="n" type="article, actions" class="summary-card-skeleton" />
+    </div>
+
+    <!-- CARDS MEJORADAS (3 EN UNA FILA) -->
+    <div v-else class="summary-grid">
+      <v-card v-for="section in dashboardSections" :key="section.id" outlined class="summary-card"
+        :class="[`accent-${section.id}`, { 'has-overdue': section.overdue > 0 }]"
+        @click="section.review && section.review()">
+        <div class="card-accent"></div>
+
+        <div class="summary-top">
+          <div class="title-group">
+            <div class="icon-badge">
+              <v-icon size="22" class="section-icon">{{ section.icon }}</v-icon>
+            </div>
+            <div class="title-text">
+              <h3>{{ section.title }}</h3>
+              <span class="title-sub">{{ section.total }} registros</span>
+            </div>
           </div>
-          <div class="flex-grow-1">
-            <h2 :id="section.id + '-title'" class="section-title mb-0">
-              {{ section.title }}
-            </h2>
-            <p class="section-subtitle mb-0">
-              {{ section.total }} registros en total
-            </p>
-          </div>
-          <div class="section-total-badge">
-            <span class="section-total-number">{{ section.total }}</span>
+          <v-chip x-small :color="section.overdue > 0 ? 'deep-orange' : 'green'" text-color="white" class="status-chip">
+            {{ section.overdue > 0 ? 'Crítico' : 'Al día' }}
+          </v-chip>
+        </div>
+
+        <!-- Métrica principal -->
+        <div class="summary-value">
+          <strong :class="{ 'text-error': section.overdue > 0 }">
+            {{ section.overdue }}
+          </strong>
+          <div class="value-context">
+            <span class="value-label">{{ section.id === 'tareas' ? 'vencidas' : 'vencidos' }}</span>
+            <span class="value-total">de {{ section.total }}</span>
           </div>
         </div>
 
-        <!-- Card: Requieren atención -->
-        <v-card rounded="xl" class="kpi-card kpi-card--alert d-flex flex-column" flat>
-          <div class="kpi-glow"></div>
-          <v-card-text class="flex-grow-1 pa-5 position-relative">
-            <div class="kpi-icon-wrap kpi-icon-wrap--alert mb-4">
-              <v-icon color="#fff" large>mdi-alert-circle-outline</v-icon>
-            </div>
-            <p class="kpi-label mb-1">Requieren atención</p>
-            <div class="d-flex align-end mb-2">
-              <p class="kpi-number mb-0">{{ section.overdue }}</p>
-              <span class="kpi-unit ml-2">registros</span>
-            </div>
-            <p class="kpi-sublabel mb-1">{{ section.overdueLabel }}</p>
-            <div class="kpi-hint-wrap">
-              <v-icon small color="#E65100">mdi-clock-outline</v-icon>
-              <span class="kpi-hint">Sin actualizar</span>
-            </div>
-          </v-card-text>
+        <p class="summary-description">{{ section.overdueLabel }}</p>
 
-          <v-divider class="kpi-divider" />
-
-          <v-card-actions class="px-3 py-2 kpi-actions">
-            <v-btn
-              text
-              small
-              class="text-none font-weight-medium kpi-btn-primary"
-              @click="section.review()"
-            >
-              <v-icon left small>mdi-eye-outline</v-icon>
-              Revisar ahora
-            </v-btn>
-            <v-spacer />
-            <v-btn
-              icon
-              small
-              class="kpi-btn-icon kpi-btn-icon--excel"
-              :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a Excel'"
-              @click="section.exportExcel()"
-            >
-              <v-icon small>mdi-microsoft-excel</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              small
-              class="kpi-btn-icon kpi-btn-icon--pdf"
-              :aria-label="'Exportar ' + section.title.toLowerCase() + ' vencidos a PDF'"
-              @click="section.exportPdf()"
-            >
-              <v-icon small>mdi-file-pdf-box</v-icon>
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </section>
+        <!-- Acciones -->
+        <div class="summary-actions" @click.stop>
+          <v-btn text small class="review-btn" @click="section.review && section.review()">
+            Revisar
+            <v-icon right size="16">mdi-arrow-right</v-icon>
+          </v-btn>
+          <div class="export-group">
+            <v-tooltip top>
+              <template #activator="{ on, attrs }">
+                <v-btn icon small v-bind="attrs" v-on="on" :disabled="section.overdue === 0 || !section.exportExcel"
+                  @click="section.exportExcel && section.exportExcel()">
+                  <v-icon size="20" class="icon-excel">mdi-microsoft-excel</v-icon>
+                </v-btn>
+              </template>
+              <span>Exportar a Excel</span>
+            </v-tooltip>
+            <v-tooltip top>
+              <template #activator="{ on, attrs }">
+                <v-btn icon small v-bind="attrs" v-on="on" :disabled="section.overdue === 0 || !section.exportPdf"
+                  @click="section.exportPdf && section.exportPdf()">
+                  <v-icon size="20" class="icon-pdf">mdi-file-pdf-box</v-icon>
+                </v-btn>
+              </template>
+              <span>Exportar a PDF</span>
+            </v-tooltip>
+          </div>
+        </div>
+      </v-card>
     </div>
+
+    <!-- ALERTA DE ERROR -->
+    <v-alert v-if="canTasks && tasksError" type="error" dense text dismissible class="mt-8" @input="tasksError = ''">
+      {{ tasksError }}
+    </v-alert>
   </v-container>
 </template>
 
@@ -176,9 +116,7 @@ import {
 import ExcelJS from 'exceljs'
 import { normalizeTarea, canViewTarea } from '~/models/tarea'
 
-// ===== FUNCIONES DE CARTA (COPIADAS DIRECTAMENTE DE TU PÁGINA DE CARTAS) =====
-// NO MODIFICAR NADA, SOLO COPIAR Y PEGAR
-
+// ===== FUNCIONES DE CARTA =====
 function normalizeCarta(carta) {
   const source = carta || {}
   const cliente = source.cliente || {}
@@ -208,7 +146,6 @@ function normalizeCarta(carta) {
     fechaCreacion: source.fechaCreacion || new Date()
   }
 }
-// ===== FIN FUNCIONES DE CARTA =====
 
 export default {
   name: 'IndexPage',
@@ -217,7 +154,8 @@ export default {
     cartas: [],
     tasks: [],
     tasksError: '',
-    loading: false
+    loading: false,
+    loadingCartas: false
   }),
   computed: {
     userName() {
@@ -243,7 +181,7 @@ export default {
         .sort((a, b) => a.fechaLimite.localeCompare(b.fechaLimite))
     },
     dashboardSections() {
-      return [
+      const base = [
         {
           id: 'pedidos',
           title: 'Pedidos de venta',
@@ -267,9 +205,24 @@ export default {
           exportPdf: () => this.exportCartasVencidasPdf(),
         }
       ]
+
+      if (this.canTasks) {
+        base.unshift({
+          id: 'tareas',
+          title: 'Tareas',
+          icon: 'mdi-checkbox-marked-outline',
+          total: this.tasks.length,
+          overdue: this.tareasVencidas.length,
+          overdueLabel: 'Tareas vencidas pendientes de completar',
+          review: this.goToTareasVencidas,
+          exportExcel: null,
+          exportPdf: null,
+        })
+      }
+
+      return base
     },
 
-    // ===== COMPUTED DE EXPEDIENTES =====
     expedientesVencidos() {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -285,7 +238,6 @@ export default {
         return fecha <= tenDaysAgo
       })
     },
-    // ===== COMPUTED DE CARTAS =====
     cartasVencidas() {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -307,7 +259,6 @@ export default {
         return fecha <= tenDaysAgo
       })
     },
-
   },
   mounted() {
     this.getAllExpedientes()
@@ -315,6 +266,33 @@ export default {
     if (this.canTasks) this.loadOverdueTasks()
   },
   methods: {
+    async refreshAll() {
+      this.loading = true
+      try {
+        await Promise.all([
+          this.getAllExpedientes(),
+          this.getAllCartas(),
+          this.canTasks ? this.loadOverdueTasks() : Promise.resolve()
+        ])
+        this.$toast?.success('Datos actualizados')
+      } finally {
+        this.loading = false
+      }
+    },
+
+    formatTaskDate(fechaLimite) {
+      if (!fechaLimite) return ''
+      const [y, m, d] = fechaLimite.split('-')
+      const fecha = new Date(y, m - 1, d)
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
+      const diff = Math.ceil((hoy - fecha) / (1000 * 60 * 60 * 24))
+      if (diff <= 1) return 'Hoy'
+      if (diff <= 2) return 'Ayer'
+      if (diff <= 7) return `Hace ${diff} días`
+      return `${d}/${m}/${y}`
+    },
+
     async loadOverdueTasks() {
       this.tasksError = ''
       try {
@@ -332,20 +310,16 @@ export default {
         if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
       }
 
-      // Si es un timestamp de Firestore con seconds
       if (timestamp.seconds !== undefined) {
         return new Date(timestamp.seconds * 1000)
       }
 
-      // Si tiene método toDate (Timestamp de Firestore)
       if (timestamp.toDate) {
         return timestamp.toDate()
       }
 
-      // Si es string o Date normal
       return new Date(timestamp)
     },
-    // ===== CARGAR EXPEDIENTES =====
     async getAllExpedientes() {
       this.loading = true
       try {
@@ -361,7 +335,6 @@ export default {
       }
     },
 
-    // ===== CARGAR CARTAS =====
     async getAllCartas() {
       try {
         const data = await this.$firebaseApi.list('cartas')
@@ -426,21 +399,21 @@ export default {
         const fechaBase = esCartas ? this.extraerFecha(registro.fechaServicio) : registro.fecha
         const valores = esCartas
           ? [
-              registro.correlativo,
-              registro.cliente?.nombre,
-              this.formatDateExcel(fechaBase),
-              registro.estadoProceso,
-              registro.asunto,
-              this.calcularDias(fechaBase)
-            ]
+            registro.correlativo,
+            registro.cliente?.nombre,
+            this.formatDateExcel(fechaBase),
+            registro.estadoProceso,
+            registro.asunto,
+            this.calcularDias(fechaBase)
+          ]
           : [
-              registro.correlativo,
-              registro.cliente?.nombre,
-              this.formatDateExcel(fechaBase),
-              registro.estado,
-              registro.planner,
-              this.calcularDias(fechaBase)
-            ]
+            registro.correlativo,
+            registro.cliente?.nombre,
+            this.formatDateExcel(fechaBase),
+            registro.estado,
+            registro.planner,
+            this.calcularDias(fechaBase)
+          ]
         return `<tr>${valores.map(valor => `<td>${escape(valor)}</td>`).join('')}</tr>`
       }).join('')
 
@@ -458,10 +431,10 @@ export default {
         <div class="executive-report">
           <style>
             .executive-report{width:277mm;padding:10mm 11mm;color:#1e293b;background:#fff;font-family:Arial,sans-serif;font-size:10px;box-sizing:border-box}
-            .report-header{display:flex;align-items:center;gap:18px;border-bottom:3px solid #00558a;padding-bottom:12px}.report-logo{width:120px;max-height:48px;object-fit:contain}.report-title{flex:1}.report-title h1{margin:0;color:#00558a;font-size:22px}.report-title p{margin:5px 0 0;color:#64748b;font-size:10px}.report-date{text-align:right;color:#475569}
-            .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.summary-card{border:1px solid #dbe5eb;border-left:5px solid #e65100;border-radius:6px;padding:10px;background:#f8fafc}.summary-card span{display:block;color:#64748b;font-size:9px;text-transform:uppercase}.summary-card strong{display:block;margin-top:4px;color:#0f172a;font-size:22px}
-            .report-section{margin-top:14px}.report-section h2{margin:0 0 9px;color:#334155;font-size:13px}.chart{border:1px solid #e2e8f0;border-radius:6px;padding:10px}.chart-row{display:grid;grid-template-columns:135px 1fr 25px;align-items:center;gap:8px;margin:7px 0}.chart-label{font-weight:bold}.chart-track{height:14px;border-radius:7px;background:#e8eef2;overflow:hidden}.chart-bar{height:100%;border-radius:7px;background:#e65100}.chart-row strong{text-align:right;color:#00558a}
-            table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.5px}thead{display:table-header-group}tr{page-break-inside:avoid}th{padding:7px 6px;color:#fff;background:#00558a;text-align:left}td{padding:6px;border:1px solid #dbe5eb;vertical-align:top;word-break:break-word}tbody tr:nth-child(even){background:#f8fafc}th:last-child,td:last-child{text-align:center;width:72px}.report-note{margin-top:10px;color:#64748b;font-size:8.5px}.report-footer{margin-top:14px;border-top:1px solid #cbd5e1;padding-top:7px;color:#64748b;text-align:center;font-size:8px}
+            .report-header{display:flex;align-items:center;gap:18px;border-bottom:3px solid #0d7a3e;padding-bottom:12px}.report-logo{width:120px;max-height:48px;object-fit:contain}.report-title{flex:1}.report-title h1{margin:0;color:#0d7a3e;font-size:22px}.report-title p{margin:5px 0 0;color:#64748b;font-size:10px}.report-date{text-align:right;color:#475569}
+            .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.summary-card{border:1px solid #dbe5eb;border-left:5px solid #f57c00;border-radius:6px;padding:10px;background:#f8fafc}.summary-card span{display:block;color:#64748b;font-size:9px;text-transform:uppercase}.summary-card strong{display:block;margin-top:4px;color:#0f172a;font-size:22px}
+            .report-section{margin-top:14px}.report-section h2{margin:0 0 9px;color:#334155;font-size:13px}.chart{border:1px solid #e2e8f0;border-radius:6px;padding:10px}.chart-row{display:grid;grid-template-columns:135px 1fr 25px;align-items:center;gap:8px;margin:7px 0}.chart-label{font-weight:bold}.chart-track{height:14px;border-radius:7px;background:#e8eef2;overflow:hidden}.chart-bar{height:100%;border-radius:7px;background:#f57c00}.chart-row strong{text-align:right;color:#0d7a3e}
+            table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.5px}thead{display:table-header-group}tr{page-break-inside:avoid}th{padding:7px 6px;color:#fff;background:#0d7a3e;text-align:left}td{padding:6px;border:1px solid #dbe5eb;vertical-align:top;word-break:break-word}tbody tr:nth-child(even){background:#f8fafc}th:last-child,td:last-child{text-align:center;width:72px}.report-note{margin-top:10px;color:#64748b;font-size:8.5px}.report-footer{margin-top:14px;border-top:1px solid #cbd5e1;padding-top:7px;color:#64748b;text-align:center;font-size:8px}
           </style>
           <header class="report-header">
             <img class="report-logo" src="${logo}" alt="Kanay">
@@ -521,7 +494,6 @@ export default {
       })
     },
 
-    // ===== EXPORTAR EXCEL DE EXPEDIENTES VENCIDOS =====
     async exportVencidosExcel() {
       if (this.expedientesVencidos.length === 0) {
         alert('No hay expedientes vencidos para exportar')
@@ -557,14 +529,14 @@ export default {
           worksheet.mergeCells('A1:B1')
           const titleCell = worksheet.getCell('C1')
           titleCell.value = '📋 REPORTE DE EXPEDIENTES VENCIDOS'
-          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1F4E79' } }
+          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF0D7A3E' } }
           titleCell.alignment = { horizontal: 'left', vertical: 'middle' }
           worksheet.mergeCells('C1:M1')
         } catch (error) {
           console.warn('No se pudo cargar el logo:', error)
           const titleCell = worksheet.getCell('A1')
           titleCell.value = '📋 REPORTE DE EXPEDIENTES VENCIDOS'
-          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1F4E79' } }
+          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF0D7A3E' } }
           worksheet.mergeCells('A1:M1')
         }
 
@@ -606,7 +578,7 @@ export default {
         })
 
         headerRow.eachCell((cell) => {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } }
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D7A3E' } }
           cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } }
           cell.alignment = { horizontal: 'center', vertical: 'middle' }
           cell.border = {
@@ -655,7 +627,6 @@ export default {
       }
     },
 
-    // ===== EXPORTAR EXCEL DE CARTAS VENCIDAS =====
     async exportCartasVencidasExcel() {
       if (this.cartasVencidas.length === 0) {
         alert('No hay cartas vencidas para exportar')
@@ -667,15 +638,10 @@ export default {
         const worksheet = workbook.addWorksheet('Cartas Vencidas')
 
         worksheet.columns = [
-          { width: 15 }, // Correlativo
-          { width: 25 }, // Cliente
-          { width: 14 }, // Fecha
-          { width: 20 }, // Asunto
-          { width: 15 }, // Estado
-          { width: 14 }  // Días Vencidos
+          { width: 15 }, { width: 25 }, { width: 14 },
+          { width: 20 }, { width: 15 }, { width: 14 }
         ]
 
-        // Insertar logo...
         try {
           const response = await fetch('/kanay.jpeg')
           const blob = await response.blob()
@@ -695,14 +661,14 @@ export default {
           worksheet.mergeCells('A1:B1')
           const titleCell = worksheet.getCell('C1')
           titleCell.value = '📋 REPORTE DE CARTAS VENCIDAS'
-          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1F4E79' } }
+          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF0D7A3E' } }
           titleCell.alignment = { horizontal: 'left', vertical: 'middle' }
           worksheet.mergeCells('C1:F1')
         } catch (error) {
           console.warn('No se pudo cargar el logo:', error)
           const titleCell = worksheet.getCell('A1')
           titleCell.value = '📋 REPORTE DE CARTAS VENCIDAS'
-          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1F4E79' } }
+          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF0D7A3E' } }
           worksheet.mergeCells('A1:F1')
         }
 
@@ -723,12 +689,10 @@ export default {
           cell.value = text
         })
 
-        // ===== DATOS: EXTRAER FECHA CORRECTAMENTE =====
         this.cartasVencidas.forEach((carta, index) => {
           const rowNumber = index + 4
           const row = worksheet.getRow(rowNumber)
 
-          // 🔥 Extraer fecha del timestamp de Firestore
           let fechaServicio = carta.fechaServicio
           let fechaObj = null
 
@@ -754,9 +718,8 @@ export default {
             : 'N/A'
         })
 
-        // Estilos de cabecera...
         headerRow.eachCell((cell) => {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } }
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D7A3E' } }
           cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } }
           cell.alignment = { horizontal: 'center', vertical: 'middle' }
           cell.border = {
@@ -767,7 +730,6 @@ export default {
           }
         })
 
-        // Estilos de datos...
         for (let rowNumber = 4; rowNumber <= worksheet.rowCount; rowNumber++) {
           const row = worksheet.getRow(rowNumber)
           row.eachCell((cell) => {
@@ -806,11 +768,9 @@ export default {
       }
     },
 
-    // ===== FORMATO DE FECHA =====
     formatDateExcel(fecha) {
       if (!fecha) return ''
 
-      // 🔥 Si es timestamp de Firestore, extraer fecha
       let fechaObj = fecha
       if (fecha.seconds !== undefined) {
         fechaObj = new Date(fecha.seconds * 1000)
@@ -828,11 +788,9 @@ export default {
       return `${day}/${month}/${year}`
     },
 
-    // ===== CALCULAR DÍAS VENCIDOS =====
     calcularDias(fecha) {
       if (!fecha) return 'N/A'
 
-      // 🔥 Si es timestamp de Firestore, extraer fecha
       let fechaObj = fecha
       if (fecha.seconds !== undefined) {
         fechaObj = new Date(fecha.seconds * 1000)
@@ -849,7 +807,6 @@ export default {
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     },
 
-    // ===== NAVEGACIÓN EXPEDIENTES =====
     goToVencidos() {
       this.$router.push({
         path: '/documentos/controlDeIngresos',
@@ -863,7 +820,6 @@ export default {
       })
     },
 
-    // ===== NAVEGACIÓN CARTAS =====
     goToCartasVencidas() {
       this.$router.push({
         path: '/documentos/cartas',
@@ -875,552 +831,565 @@ export default {
         path: '/documentos/cartas',
         query: { estado }
       })
+    },
+    goToTareasVencidas() {
+      this.$router.push({ path: '/inicio/tareas' })
     }
   }
 }
 </script>
 
 <style scoped>
-/* ===== RESET Y BASE ===== */
+/* ====== PALETA MEDIOAMBIENTAL ======
+   Verde    #0d7a3e  → naturaleza, éxito, "al día"
+   Naranja  #f57c00  → alerta, advertencia, "vencido"
+   Azul     #0277bd  → confianza, agua, información
+   Rojo     #d32f2f  → PDF / crítico
+====================================== */
+
 .home-page {
-  min-height: calc(100vh - 64px);
-  background: var(--color-background);
+  width: 100%;
+  max-width: 100%;
+  padding: 40px 56px 64px;
+  color: #1f2937;
+  box-sizing: border-box;
+}
+
+/* ===== HEADER EN TARJETA CON GRADIENTE AZUL ===== */
+.home-header-card {
   position: relative;
-}
-
-/* ===== HERO ===== */
-.hero-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 28px !important;
-  background: linear-gradient(135deg, #1F4E79 0%, #2E6BA8 50%, #1565C0 100%);
-  border: none;
-  box-shadow: 0 12px 40px -12px rgba(31, 78, 121, 0.45);
-}
-
-.hero-gradient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 55%);
-  pointer-events: none;
-}
-
-.hero-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.hero-blob--1 {
-  width: 320px;
-  height: 320px;
-  background: #4FC3F7;
-  top: -120px;
-  right: -80px;
-  animation: float 8s ease-in-out infinite;
-}
-
-.hero-blob--2 {
-  width: 240px;
-  height: 240px;
-  background: #FFB74D;
-  bottom: -100px;
-  left: -60px;
-  opacity: 0.35;
-  animation: float 10s ease-in-out infinite reverse;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(20px, -20px) scale(1.08); }
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-}
-
-.brand-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #4FC3F7;
-  box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.25);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.25); }
-  50% { box-shadow: 0 0 0 8px rgba(79, 195, 247, 0.1); }
-}
-
-.home-brand {
-  color: rgba(255, 255, 255, 0.75);
-  letter-spacing: 2px;
-  font-size: 11px !important;
-  font-weight: 600;
-}
-
-.hero-title {
-  font-size: clamp(1.4rem, 2.5vw, 2rem);
-  font-weight: 700;
-  color: #FFFFFF;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-}
-
-.hero-name {
-  background: linear-gradient(135deg, #4FC3F7, #81D4FA);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.wave {
-  display: inline-block;
-  animation: wave 2.5s ease-in-out infinite;
-  transform-origin: 70% 70%;
-}
-
-@keyframes wave {
-  0%, 60%, 100% { transform: rotate(0deg); }
-  10%, 30% { transform: rotate(14deg); }
-  20% { transform: rotate(-8deg); }
-  40% { transform: rotate(-4deg); }
-  50% { transform: rotate(10deg); }
-}
-
-.hero-subtitle {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.dot-sep {
-  margin: 0 8px;
-  opacity: 0.5;
-}
-
-.role-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(8px);
-  color: #FFFFFF;
-  font-weight: 500;
-  font-size: 0.78rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.date-chip {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  backdrop-filter: blur(10px);
-  color: #FFFFFF !important;
-  font-weight: 500;
-  padding: 0 14px;
-  height: 36px !important;
-}
-
-.date-chip >>> .v-icon {
-  color: #FFFFFF !important;
-}
-
-/* ===== ALERTA TAREAS VENCIDAS ===== */
-.overdue-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px !important;
-  background: linear-gradient(135deg, #FFF8F0 0%, #FFFFFF 100%);
-  border: 1px solid rgba(230, 81, 0, 0.15);
-  box-shadow: 0 4px 20px -8px rgba(230, 81, 0, 0.15);
-}
-
-.overdue-accent {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  background: linear-gradient(180deg, #E65100, #FF9800);
-}
-
-.overdue-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #E65100, #FF9800);
-  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3);
-  flex-shrink: 0;
-}
-
-.overdue-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #BF360C;
-}
-
-.overdue-chip {
-  background: #E65100 !important;
-  color: #fff !important;
-  font-weight: 600;
-  min-width: 26px;
-  justify-content: center;
-}
-
-.overdue-subtitle {
-  color: #8D6E63;
-  font-size: 0.8rem;
-  margin-top: 2px;
-}
-
-.overdue-tasks-list {
-  max-height: 360px;
-  overflow-y: auto;
-  padding: 0 8px 8px;
-}
-
-.overdue-item {
-  border-radius: 12px !important;
-  margin-bottom: 4px;
-  transition: background 0.2s ease;
-}
-
-.overdue-item:hover {
-  background: rgba(230, 81, 0, 0.06) !important;
-}
-
-.overdue-date-chip {
-  border-color: #E65100 !important;
-  color: #E65100 !important;
-  font-weight: 600;
-}
-
-.overdue-arrow {
-  color: #E65100;
-  transition: transform 0.2s ease;
-}
-
-.overdue-item:hover .overdue-arrow {
-  transform: translateX(3px);
-}
-
-/* ===== SECTION HEADER ===== */
-.section-header {
-  padding: 0 4px;
-}
-
-.section-icon {
-  width: 48px;
-  height: 48px;
   border-radius: 16px;
+  padding: 32px 36px;
+  margin-bottom: 40px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0277bd 0%, #01579b 45%, #0d7a3e 100%);
+  box-shadow: 0 8px 24px rgba(2, 119, 189, 0.25);
+  color: #fff;
+}
+
+.home-header-card::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.home-header-card::after {
+  content: '';
+  position: absolute;
+  bottom: -60%;
+  right: 15%;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.section-header:hover .section-icon {
-  transform: rotate(-6deg) scale(1.05);
-}
-
-.section-icon--pedidos {
-  background: linear-gradient(135deg, #1565C0, #42A5F5);
-}
-
-.section-icon--cartas {
-  background: linear-gradient(135deg, #6A1B9A, #AB47BC);
-}
-
-.section-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--ui-text-212121, #212121);
-  letter-spacing: -0.3px;
-}
-
-.section-subtitle {
-  color: var(--ui-text-757575, #757575);
-  font-size: 0.8rem;
-}
-
-.section-total-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  height: 44px;
-  padding: 0 14px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(31, 78, 121, 0.08), rgba(31, 78, 121, 0.04));
-  border: 1px solid rgba(31, 78, 121, 0.12);
-}
-
-.section-total-number {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--color-primary);
-  letter-spacing: -0.5px;
-}
-
-/* ===== KPI CARDS ===== */
-.attention-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: space-between;
   gap: 24px;
 }
 
-@media (max-width: 959px) {
-  .attention-grid { grid-template-columns: 1fr; }
-}
-
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px !important;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.kpi-card:hover {
-  transform: translateY(-4px);
-}
-
-.kpi-card--alert {
-  background: linear-gradient(160deg, #FFFFFF 0%, #FFF8F2 100%);
-  border: 1px solid rgba(230, 81, 0, 0.15);
-  box-shadow: 0 4px 20px -8px rgba(230, 81, 0, 0.12);
-}
-
-.kpi-card--alert:hover {
-  box-shadow: 0 16px 40px -12px rgba(230, 81, 0, 0.3);
-}
-
-.kpi-glow {
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(230, 81, 0, 0.15), transparent 70%);
-  pointer-events: none;
-  transition: transform 0.5s ease;
-}
-
-.kpi-card:hover .kpi-glow {
-  transform: scale(1.3);
-}
-
-.kpi-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 1;
-}
-
-.kpi-icon-wrap--alert {
-  background: linear-gradient(135deg, #E65100, #FF9800);
-  box-shadow: 0 8px 20px -6px rgba(230, 81, 0, 0.5);
-}
-
-.kpi-label {
-  color: #8D6E63;
-  letter-spacing: 1px;
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 1.6px;
   text-transform: uppercase;
-  font-size: 11px !important;
+  color: rgba(255, 255, 255, 0.85);
   font-weight: 700;
 }
 
-.kpi-number {
-  font-size: 3.2rem !important;
+.home-header-card h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.user-context {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+}
+
+.user-context .dot {
+  margin: 0 8px;
+  opacity: 0.6;
+}
+
+.date-chip {
+  font-size: 12px !important;
+  font-weight: 600;
+  height: 38px !important;
+  padding: 0 18px !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: #fff !important;
+  backdrop-filter: blur(6px);
+}
+
+/* ===== SECTION HEADING ===== */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  letter-spacing: -0.3px;
+}
+
+.section-heading>div>span {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+}
+
+.refresh-btn {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 13px !important;
+  color: #0277bd !important;
+  font-weight: 600 !important;
+  padding: 0 16px !important;
+  height: 40px !important;
+}
+
+.refresh-btn:hover {
+  background: rgba(2, 119, 189, 0.08) !important;
+}
+
+/* ===== GRID ANCHO COMPLETO — 3 COLUMNAS ===== */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+/* ===== CARD ===== */
+.summary-card.v-card {
+  position: relative;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  background: #fff;
+  color: inherit;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-card.v-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+  border-color: #cbd5e1;
+}
+
+.card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #0277bd;
+}
+
+.accent-pedidos .card-accent {
+  background: linear-gradient(90deg, #0277bd, #0d7a3e);
+}
+
+.accent-cartas .card-accent {
+  background: linear-gradient(90deg, #0d7a3e, #0277bd);
+}
+
+.accent-tareas .card-accent {
+  background: linear-gradient(90deg, #f57c00, #d32f2f);
+}
+
+.summary-card.has-overdue .card-accent {
+  background: linear-gradient(90deg, #f57c00, #e65100);
+}
+
+/* ===== SUMMARY TOP ===== */
+.summary-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 22px 0;
+}
+
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #e3f2fd;
+  transition: background 0.2s;
+}
+
+.accent-pedidos .icon-badge {
+  background: #e3f2fd;
+}
+
+.accent-pedidos .section-icon {
+  color: #0277bd;
+}
+
+.accent-cartas .icon-badge {
+  background: #e8f5e9;
+}
+
+.accent-cartas .section-icon {
+  color: #0d7a3e;
+}
+
+.accent-tareas .icon-badge {
+  background: #fff3e0;
+}
+
+.accent-tareas .section-icon {
+  color: #f57c00;
+}
+
+.summary-card.has-overdue .icon-badge {
+  background: #fff3e0;
+}
+
+.summary-card.has-overdue .section-icon {
+  color: #f57c00;
+}
+
+.title-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.summary-top h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+.status-chip {
+  font-weight: 700 !important;
+  letter-spacing: 0.4px !important;
+  text-transform: uppercase;
+  font-size: 9px !important;
+  height: 24px !important;
+  padding: 0 9px !important;
+  flex-shrink: 0;
+}
+
+/* ===== VALUE ===== */
+.summary-value {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 18px 22px 0;
+}
+
+.summary-value strong {
+  font-size: 44px;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -2px;
-  background: linear-gradient(135deg, #E65100, #FF9800);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0d7a3e;
+  letter-spacing: -1.5px;
 }
 
-.kpi-unit {
-  color: #A1887F;
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding-bottom: 8px;
+.summary-value strong.text-error {
+  color: #f57c00;
 }
 
-.kpi-sublabel {
-  color: #5D4037 !important;
-  font-size: 0.82rem !important;
-  font-weight: 500;
+.value-context {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  padding-bottom: 5px;
 }
 
-.kpi-hint-wrap {
-  display: inline-flex;
+.value-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.value-total {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+/* ===== DESCRIPTION ===== */
+.summary-description {
+  margin: 14px 22px 18px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.55;
+  flex: 1;
+}
+
+/* ===== ACTIONS ===== */
+.summary-actions {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(230, 81, 0, 0.08);
-  margin-top: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #edf0f3;
+  background: #f8fafc;
 }
 
-.kpi-hint {
-  color: #E65100;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+.review-btn {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #0277bd !important;
+  height: 36px !important;
+  padding: 0 14px !important;
 }
 
-.kpi-divider {
-  border-color: rgba(0, 0, 0, 0.06) !important;
+.review-btn:hover {
+  background: rgba(2, 119, 189, 0.08) !important;
 }
 
-.kpi-actions {
-  gap: 4px;
+.export-group {
+  display: flex;
+  gap: 2px;
 }
 
-.kpi-btn-primary {
-  color: #E65100 !important;
-  font-weight: 600 !important;
-  border-radius: 10px !important;
-  transition: background 0.2s ease;
+.export-group .v-btn {
+  width: 36px !important;
+  height: 36px !important;
 }
 
-.kpi-btn-primary:hover {
-  background: rgba(230, 81, 0, 0.08) !important;
+.icon-excel {
+  color: #0d7a3e !important;
 }
 
-.kpi-btn-icon {
-  border-radius: 10px !important;
-  transition: all 0.2s ease;
+.icon-pdf {
+  color: #d32f2f !important;
 }
 
-.kpi-btn-icon--excel {
-  color: #2E7D32 !important;
+/* ===== SKELETON ===== */
+.summary-card-skeleton {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 20px !important;
 }
 
-.kpi-btn-icon--excel:hover {
-  background: rgba(46, 125, 50, 0.1) !important;
+/* ===== DARK THEME ===== */
+.theme--dark .home-page {
+  color: #e2e8f0;
 }
 
-.kpi-btn-icon--pdf {
-  color: #C62828 !important;
+.theme--dark .home-header-card {
+  background: linear-gradient(135deg, #014f86 0%, #013a63 45%, #0a5d30 100%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-.kpi-btn-icon--pdf:hover {
-  background: rgba(198, 40, 40, 0.1) !important;
+.theme--dark .home-header-card h1 {
+  color: #f1f5f9;
 }
 
-/* ===== FOCUS VISIBLE (Accesibilidad) ===== */
-.kpi-card:focus-within,
-.overdue-card:focus-within {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+.theme--dark .eyebrow {
+  color: rgba(255, 255, 255, 0.75);
 }
 
-/* ===== DARK MODE ===== */
-.theme--dark .hero-card {
-  background: linear-gradient(135deg, #0D1B2A 0%, #1B3A5C 50%, #1F4E79 100%);
-  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.6);
+.theme--dark .user-context {
+  color: rgba(255, 255, 255, 0.85);
 }
 
-.theme--dark .overdue-card {
-  background: linear-gradient(135deg, #2A1810 0%, #1E1410 100%);
-  border-color: rgba(230, 81, 0, 0.3);
+.theme--dark .date-chip {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #f1f5f9 !important;
 }
 
-.theme--dark .overdue-title {
-  color: #FFB74D;
+.theme--dark .summary-card {
+  background: #1e293b;
+  border-color: #334155;
 }
 
-.theme--dark .overdue-subtitle {
-  color: #BCAAA4;
+.theme--dark .summary-actions {
+  background: #0f172a;
 }
 
-.theme--dark .section-title {
-  color: #FFFFFF;
+.theme--dark .summary-actions {
+  border-color: #334155;
 }
 
-.theme--dark .section-subtitle {
-  color: #B0BEC5;
+.theme--dark .section-heading h2,
+.theme--dark .summary-top h3 {
+  color: #f1f5f9;
 }
 
-.theme--dark .section-total-badge {
-  background: linear-gradient(135deg, rgba(79, 195, 247, 0.12), rgba(79, 195, 247, 0.06));
-  border-color: rgba(79, 195, 247, 0.2);
+.theme--dark .summary-value strong {
+  color: #4ade80;
 }
 
-.theme--dark .section-total-number {
-  color: #4FC3F7;
+.theme--dark .summary-value strong.text-error {
+  color: #fb923c;
 }
 
-.theme--dark .kpi-card--alert {
-  background: linear-gradient(160deg, #2A1810 0%, #1E1410 100%);
-  border-color: rgba(230, 81, 0, 0.3);
+.theme--dark .user-context,
+.theme--dark .section-heading>div>span,
+.theme--dark .value-label,
+.theme--dark .value-total,
+.theme--dark .summary-description,
+.theme--dark .title-sub {
+  color: #94a3b8;
 }
 
-.theme--dark .kpi-label {
-  color: #BCAAA4;
+.theme--dark .icon-badge {
+  background: #1e3a5f;
 }
 
-.theme--dark .kpi-sublabel {
-  color: #D7CCC8 !important;
+.theme--dark .accent-cartas .icon-badge {
+  background: #14532d;
 }
 
-.theme--dark .kpi-hint-wrap {
-  background: rgba(230, 81, 0, 0.15);
+.theme--dark .accent-tareas .icon-badge {
+  background: #7c2d12;
 }
 
-.theme--dark .kpi-divider {
-  border-color: rgba(255, 255, 255, 0.08) !important;
+.theme--dark .summary-card.has-overdue .icon-badge {
+  background: #7c2d12;
 }
 
-/* ===== SCROLLBAR PERSONALIZADA ===== */
-.overdue-tasks-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overdue-tasks-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.overdue-tasks-list::-webkit-scrollbar-thumb {
-  background: rgba(230, 81, 0, 0.25);
-  border-radius: 3px;
-}
-
-.overdue-tasks-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(230, 81, 0, 0.4);
-}
-
-/* ===== REDUCED MOTION ===== */
-@media (prefers-reduced-motion: reduce) {
-  .hero-blob,
-  .wave,
-  .brand-dot {
-    animation: none;
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1280px) {
+  .home-page {
+    padding: 32px 40px 56px;
   }
-  .kpi-card,
-  .overdue-arrow,
-  .section-icon {
-    transition: none;
+
+  .summary-value strong {
+    font-size: 38px;
+  }
+
+  .summary-top {
+    padding: 20px 18px 0;
+  }
+
+  .summary-value {
+    padding: 16px 18px 0;
+  }
+
+  .summary-description {
+    margin: 12px 18px 16px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .home-page {
+    padding: 28px 24px 48px;
+  }
+
+  .home-header-card {
+    padding: 26px 28px;
+    margin-bottom: 32px;
+  }
+
+  .home-header-card h1 {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 700px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .home-page {
+    padding: 24px 16px 40px;
+  }
+
+  .home-header-card {
+    padding: 22px 20px;
+    margin-bottom: 28px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .home-header-card h1 {
+    font-size: 22px;
+  }
+
+  .section-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .section-heading h2 {
+    font-size: 17px;
+  }
+
+  .summary-value strong {
+    font-size: 36px;
   }
 }
 </style>

@@ -71,7 +71,7 @@ test('notifications persist one receipt per user/task and exclude own/read tasks
   const component = sandbox.result
   const shared = {id:'task1',creadorId:'owner',compartidos:[{id:'a'}]}
   const writes = []
-  const ctx = { ...component.data(), ready:true,user:{id:'a'},tasks:[shared, {...shared,id:'own',creadorId:'a'}], receipts:[],
+  const ctx = { ...component.data(), ready:true,$auth:{can: () => true},user:{id:'a'},tasks:[shared, {...shared,id:'own',creadorId:'a'}], receipts:[],
     $db:{ collection: name => ({doc: id => ({set: async payload => writes.push({name,id,payload})})}) },
     $route:{path:'/inicio/tareas',query:{}},$router:{push:async () => {}} }
   assert.equal(component.computed.notifications.call(ctx).length,1)

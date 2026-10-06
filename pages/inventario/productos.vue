@@ -59,6 +59,7 @@
           <v-form ref="productForm" @submit.prevent="saveProduct">
             <v-text-field v-model.trim="form.codigo" label="Código" required :rules="[required]" maxlength="40" />
             <v-text-field v-model.trim="form.nombre" label="Nombre" required :rules="[required]" maxlength="120" />
+            <v-text-field v-model.trim="form.imagenUrl" label="URL de imagen (opcional)" placeholder="https://..." :rules="[imageUrlRule]" />
           </v-form>
         </v-card-text>
         <v-card-actions><v-spacer /><v-btn text @click="dialog = false">Cancelar</v-btn><v-btn color="teal" dark
@@ -74,7 +75,8 @@ export default {
   data() {
     return {
       loading: false, busy: false, dialog: false, error: '', message: '', products: [], search: '',
-      form: { id: '', codigo: '', nombre: '' },
+      form: { id: '', codigo: '', nombre: '', imagenUrl: '' },
+      imageUrlRule: value => !value || /^https:\/\//i.test(value) || 'Usa un enlace HTTPS',
       required: value => Boolean(String(value == null ? '' : value).trim()) || 'Obligatorio',
       headers: [{ text: 'Código', value: 'codigo' }, { text: 'Nombre', value: 'nombre' }, { text: '', value: 'actions', sortable: false }]
     }
@@ -98,20 +100,20 @@ export default {
       finally { this.loading = false }
     },
     openProduct(item) {
-      this.form = item ? { id: item.id, codigo: item.codigo, nombre: item.nombre } : { id: '', codigo: '', nombre: '' }
+      this.form = item ? { id: item.id, codigo: item.codigo, nombre: item.nombre, imagenUrl: item.imagenUrl || '' } : { id: '', codigo: '', nombre: '', imagenUrl: '' }
       this.dialog = true
     },
     async saveProduct() {
       if (!this.$refs.productForm.validate()) return
-      const { id, codigo, nombre } = this.form
+      const { id, codigo, nombre, imagenUrl } = this.form
       if (this.products.some(item => item.codigo.toLowerCase() === codigo.toLowerCase() && item.id !== id)) {
         this.error = 'Ya existe un producto con ese código.'
         return
       }
       this.busy = true
       try {
-        if (id) await this.$firebaseApi.update('utilesOficina', id, { codigo, nombre })
-        else await this.$firebaseApi.create('utilesOficina', { codigo, nombre, stock: 0, enAlmacen: false })
+        if (id) await this.$firebaseApi.update('utilesOficina', id, { codigo, nombre, imagenUrl })
+        else await this.$firebaseApi.create('utilesOficina', { codigo, nombre, imagenUrl, stock: 0, enAlmacen: false })
         this.dialog = false
         this.message = 'Producto guardado.'
         await this.loadProducts()
