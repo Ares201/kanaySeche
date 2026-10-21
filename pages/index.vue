@@ -21,7 +21,7 @@
     </header>
 
     <!-- TÍTULO DE SECCIÓN -->
-    <div class="section-heading">
+    <div v-if="dashboardSections.length" class="section-heading">
       <div>
         <h2>Requieren atención</h2>
         <span>Resumen de pendientes críticos</span>
@@ -34,7 +34,7 @@
 
     <!-- SKELETON LOADER -->
     <div v-if="loading" class="summary-grid">
-      <v-skeleton-loader v-for="n in 3" :key="n" type="article, actions" class="summary-card-skeleton" />
+      <v-skeleton-loader v-for="n in dashboardSections.length" :key="n" type="article, actions" class="summary-card-skeleton" />
     </div>
 
     <!-- CARDS MEJORADAS (3 EN UNA FILA) -->
@@ -101,6 +101,10 @@
         </div>
       </v-card>
     </div>
+
+    <v-alert v-if="!dashboardSections.length" type="info" text class="mt-4">
+      No tienes resúmenes de pendientes disponibles para tus permisos actuales.
+    </v-alert>
 
     <!-- ALERTA DE ERROR -->
     <v-alert v-if="canTasks && tasksError" type="error" dense text dismissible class="mt-8" @input="tasksError = ''">
@@ -172,6 +176,8 @@ export default {
         day: 'numeric'
       })
     },
+    canPedidos() { return Boolean(this.$auth?.can('/documentos/controlDeIngresos')) },
+    canCartas() { return Boolean(this.$auth?.can('/documentos/cartas')) },
     canTasks() { return Boolean(this.$auth?.can('/inicio/tareas')) },
     currentUser() { return this.$auth?.user || {} },
     tareasVencidas() {
@@ -184,6 +190,7 @@ export default {
       const base = [
         {
           id: 'pedidos',
+          permitido: this.canPedidos,
           title: 'Pedidos de venta',
           icon: 'mdi-clipboard-text-outline',
           total: this.expedientes.length,
@@ -195,6 +202,7 @@ export default {
         },
         {
           id: 'cartas',
+          permitido: this.canCartas,
           title: 'Cartas',
           icon: 'mdi-file-document-outline',
           total: this.cartas.length,
@@ -209,6 +217,7 @@ export default {
       if (this.canTasks) {
         base.unshift({
           id: 'tareas',
+          permitido: this.canTasks,
           title: 'Tareas',
           icon: 'mdi-checkbox-marked-outline',
           total: this.tasks.length,
@@ -220,7 +229,7 @@ export default {
         })
       }
 
-      return base
+      return base.filter(section => section.permitido)
     },
 
     expedientesVencidos() {
@@ -261,9 +270,7 @@ export default {
     },
   },
   mounted() {
-    this.getAllExpedientes()
-    this.getAllCartas()
-    if (this.canTasks) this.loadOverdueTasks()
+    this.refreshAll()
   },
   methods: {
     async refreshAll() {
@@ -272,7 +279,7 @@ export default {
         await Promise.all([
           this.getAllExpedientes(),
           this.getAllCartas(),
-          this.canTasks ? this.loadOverdueTasks() : Promise.resolve()
+          this.loadOverdueTasks()
         ])
         this.$toast?.success('Datos actualizados')
       } finally {
@@ -294,6 +301,7 @@ export default {
     },
 
     async loadOverdueTasks() {
+      if (!this.canTasks) { this.tasks = []; this.tasksError = ''; return }
       this.tasksError = ''
       try {
         this.tasks = (await this.$firebaseApi.list('tareas')).map(normalizeTarea)
@@ -321,7 +329,7 @@ export default {
       return new Date(timestamp)
     },
     async getAllExpedientes() {
-      this.loading = true
+      if (!this.canPedidos) { this.expedientes = []; return }
       try {
         const data = await this.$firebaseApi.list('expedientes')
         const allExpedientes = data.map(normalizeExpediente)
@@ -330,12 +338,11 @@ export default {
       } catch (error) {
         alert('No se pudieron cargar los expedientes')
         console.error(error)
-      } finally {
-        this.loading = false
       }
     },
 
     async getAllCartas() {
+      if (!this.canCartas) { this.cartas = []; return }
       try {
         const data = await this.$firebaseApi.list('cartas')
         const allCartas = data.map(normalizeCarta)
