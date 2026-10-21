@@ -10,6 +10,7 @@ export const SYSTEM_PAGES = [
   { nombre: 'Recepción de cisternas', ruta: '/operaciones/recepcion-cisterna', modulo: 'Operaciones' },
   { nombre: 'Gráficos documentarios', ruta: '/documentos/graficos', modulo: 'Documentos' },
   { nombre: 'Graficos de control y aceptacion', ruta: '/control-aceptacion/graficos', modulo: 'Control y Aceptacion' },
+  { nombre: 'Observaciones de control', ruta: '/control-aceptacion/observaciones', modulo: 'Control y Aceptacion' },
   { nombre: 'Control de Ingresos', ruta: '/documentos/controlDeIngresos', modulo: 'Documentos' },
   { nombre: 'Cartas', ruta: '/documentos/cartas', modulo: 'Documentos' },
   { nombre: 'Firmar PDF', ruta: '/documentos/firmar-pdf', modulo: 'Documentos' },
@@ -19,9 +20,6 @@ export const SYSTEM_PAGES = [
   { nombre: 'Personal', ruta: '/configuracion/personal', modulo: 'Configuración' },
   { nombre: 'Roles y permisos', ruta: '/configuracion/roles', modulo: 'Administración', soloAdministrador: true },
   { nombre: 'Vehículos', ruta: '/configuracion/vehiculos', modulo: 'Configuración' },
-  { nombre: 'Almacén de útiles', ruta: '/inventario', modulo: 'Inventario' },
-  { nombre: 'Requerimientos de útiles', ruta: '/inventario/requerimientos', modulo: 'Inventario' },
-  { nombre: 'Productos de inventario', ruta: '/inventario/productos', modulo: 'Inventario' },
 ]
 
 export const PUBLIC_ROUTES = ['/login', '/confirmacion']
@@ -42,7 +40,8 @@ export function canAccessRoute(session, route) {
 
 // Compatibilidad con registros y sesiones anteriores al retiro del modulo.
 export function isRetiredRoute(route = '') {
-  return /^\/planificacion(?:\/|[?#]|$)/i.test(route)
+  return /^\/inventario(?:\/|[?#]|$)/i.test(route)
+    || /^\/planificacion(?:\/|[?#]|$)/i.test(route)
     || /^\/configuracion\/(envases|productos|generador)(?:\/|[?#]|$)/i.test(route)
     || /^\/documentos\/(expedientes|certificados|validaciones)(?:\/|[?#]|$)/i.test(route)
     || /^\/control-aceptacion\/ingresos-cisterna(?:\/|[?#]|$)/i.test(route)

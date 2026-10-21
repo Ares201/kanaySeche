@@ -156,6 +156,8 @@
         <div v-if="hasAccess(controlAceptacionRoutes)" v-show="controlAceptacionOpen" class="submenu">
           <NuxtLink v-if="can('/control-aceptacion/graficos')" class="nav-link" to="/control-aceptacion/graficos"
             @click.native="closeMenu">Gráficos</NuxtLink>
+          <NuxtLink v-if="can('/control-aceptacion/observaciones')" class="nav-link" to="/control-aceptacion/observaciones"
+            @click.native="closeMenu">Observaciones</NuxtLink>
 
         </div>
 
@@ -179,17 +181,6 @@
           <NuxtLink v-if="can('/documentos/boletas')" class="nav-link" to="/documentos/boletas"
             @click.native="closeMenu">
             Boletas</NuxtLink>
-        </div>
-
-        <!-- INVENTARIO -->
-        <button v-if="hasAccess(inventarioRoutes)" class="module-button" type="button" @click="toggleInventario">
-          <span>Inventario</span>
-          <span class="chevron" :class="{ 'chevron--open': inventarioOpen }">›</span>
-        </button>
-        <div v-if="hasAccess(inventarioRoutes)" v-show="inventarioOpen" class="submenu">
-          <NuxtLink v-if="can('/inventario')" class="nav-link" to="/inventario" @click.native="closeMenu">Almacén</NuxtLink>
-          <NuxtLink v-if="can('/inventario/requerimientos')" class="nav-link" to="/inventario/requerimientos" @click.native="closeMenu">Requerimientos</NuxtLink>
-          <NuxtLink v-if="can('/inventario/productos')" class="nav-link" to="/inventario/productos" @click.native="closeMenu">Productos</NuxtLink>
         </div>
 
         <!-- CONFIGURACION -->
@@ -232,7 +223,6 @@ export default {
       operacionesOpen: false,
       controlAceptacionOpen: false,
       configuracionOpen: false,
-      inventarioOpen: false,
       documentosOpen: false
     }
   },
@@ -246,9 +236,8 @@ export default {
     currentRole() { return this.$auth?.user?.rolNombre || '' },
     inicioRoutes() { return ['/', '/inicio/tareas', '/inicio/graficos'] },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
-    controlAceptacionRoutes() { return ['/control-aceptacion/graficos'] },
+    controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/observaciones'] },
     documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas'] },
-    inventarioRoutes() { return ['/inventario', '/inventario/requerimientos', '/inventario/productos'] },
     configuracionRoutes() { return ['/configuracion/residuos', '/configuracion/clientes', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos', '/configuracion/historial'] }
   },
 
@@ -304,7 +293,6 @@ export default {
         'inicioOpen',
         'operacionesOpen',
         'controlAceptacionOpen',
-        'inventarioOpen',
         'configuracionOpen',
         'documentosOpen'
       ]
@@ -316,7 +304,6 @@ export default {
     toggleInicio() { this.toggleModule('inicio') },
     toggleOperaciones() { this.toggleModule('operaciones') },
     toggleControlAceptacion() { this.toggleModule('controlAceptacion') },
-    toggleInventario() { this.toggleModule('inventario') },
     toggleConfiguracion() { this.toggleModule('configuracion') },
     toggleDocumentos() { this.toggleModule('documentos') }
   }

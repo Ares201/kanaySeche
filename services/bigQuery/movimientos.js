@@ -49,15 +49,20 @@ function crearClienteBigQuery() {
 const bigquery = crearClienteBigQuery()
 
 const FIELDS = {
-  fecha_ingreso: '`Fecha de Ingreso de Cisterna`',
+  fecha_ingreso: '`Fecha`',
   generador: '`Generador`',
   producto_cliente: '`Nombre Producto Cliente`',
   transportista: '`Transportista`',
-  tratamiento: '`Tratamiento Propuesto-_Nombre Tratamiento_`',
-  ubicacion: '`Ubicación`',
-  pedido_venta: '`Pedido de Venta`',
-  tipo: '`Tipo`',
-  fecha_muestra: '`Fecha de Ingreso de Muestra`'
+  tratamiento: '`Nombre tratamiento`',
+  ubicacion: '`Zona de recepción`',
+  pedido_venta: '`No_ Pedido de Venta`',
+  hora_ingreso: '`Hora Ingreso`',
+  hora_salida: '`Hora Salida`',
+  residuo: '`Residuo`',
+  clasificacion_sigersol: '`Clasificación Sigersol`',
+  cliente: '`Cliente`',
+  coordenadas: '`Coordenadas`',
+  tipo_contenedor: '`Tipo Contenedor`'
 }
 
 const WRITABLE_FIELDS = Object.keys(FIELDS)
@@ -135,8 +140,11 @@ function normalizarRegistro(data) {
 }
 
 function valorSql(field) {
-  if (field === 'fecha_ingreso' || field === 'fecha_muestra') {
+  if (field === 'fecha_ingreso') {
     return `IF(@${field} = '', NULL, SAFE_CAST(@${field} AS DATE))`
+  }
+  if (field === 'hora_ingreso' || field === 'hora_salida') {
+    return `IF(@${field} = '', NULL, SAFE_CAST(@${field} AS TIME))`
   }
   return `NULLIF(@${field}, '')`
 }
@@ -165,7 +173,10 @@ export async function actualizarRegistro(pedidoVenta, data) {
       ${FIELDS.transportista} = @transportista,
       ${FIELDS.tratamiento} = @tratamiento,
       ${FIELDS.ubicacion} = @ubicacion,
-      ${FIELDS.tipo} = @tipo
+      ${FIELDS.hora_ingreso} = ${valorSql('hora_ingreso')},
+      ${FIELDS.hora_salida} = ${valorSql('hora_salida')},
+      ${FIELDS.residuo} = @residuo,
+      ${FIELDS.clasificacion_sigersol} = @clasificacion_sigersol
     WHERE ${FIELDS.pedido_venta} = @pedido_venta
   `
   await bigquery.query({
@@ -177,7 +188,10 @@ export async function actualizarRegistro(pedidoVenta, data) {
       transportista: record.transportista,
       tratamiento: record.tratamiento,
       ubicacion: record.ubicacion,
-      tipo: record.tipo
+      hora_ingreso: record.hora_ingreso,
+      hora_salida: record.hora_salida,
+      residuo: record.residuo,
+      clasificacion_sigersol: record.clasificacion_sigersol
     }
   })
   limpiarCache()
@@ -256,11 +270,16 @@ export async function obtenerRegistros(filters = {}, limit = 200) {
       CAST(${FIELDS.pedido_venta} AS STRING) AS pedido_venta,
       CAST(${FIELDS.ubicacion} AS STRING) AS ubicacion,
       CAST(${FIELDS.tratamiento} AS STRING) AS tratamiento,
-      CAST(${FIELDS.tipo} AS STRING) AS tipo,
-      CAST(${FIELDS.fecha_muestra} AS STRING) AS fecha_muestra,
+      CAST(${FIELDS.hora_ingreso} AS STRING) AS hora_ingreso,
+      CAST(${FIELDS.hora_salida} AS STRING) AS hora_salida,
+      CAST(${FIELDS.residuo} AS STRING) AS residuo,
+      CAST(${FIELDS.clasificacion_sigersol} AS STRING) AS clasificacion_sigersol,
       CAST(${FIELDS.generador} AS STRING) AS generador,
       CAST(${FIELDS.producto_cliente} AS STRING) AS producto_cliente,
-      CAST(${FIELDS.transportista} AS STRING) AS transportista
+      CAST(${FIELDS.transportista} AS STRING) AS transportista,
+      CAST(${FIELDS.cliente} AS STRING) AS cliente,
+      CAST(${FIELDS.coordenadas} AS STRING) AS coordenadas,
+      CAST(${FIELDS.tipo_contenedor} AS STRING) AS tipo_contenedor
     FROM ${TABLE}
     ${where.clauses.length ? `WHERE ${where.clauses.join(' AND ')}` : ''}
     ORDER BY ${FIELDS.fecha_ingreso} DESC

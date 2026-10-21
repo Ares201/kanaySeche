@@ -21,3 +21,13 @@ test('personal page requires assigned permission and roles page stays admin only
   assert.equal(canAccessRoute({...user,rutasPermitidas:[]},'/configuracion/personal'),false)
   assert.equal(canAccessRoute(user,'/configuracion/roles'),false)
 })
+test('retired inventory routes reject administrators and old permissions', async () => {
+  const { canAccessRoute, isRetiredRoute, SYSTEM_PAGES } = await load('utils/access-control.js')
+  const sessions = [{ rolNombre: 'Administrador' }, { rolNombre: 'Operaciones', rutasPermitidas: ['/inventario'] }]
+  for (const route of ['/inventario', '/inventario/productos', '/inventario/requerimientos', '/inventario?tab=stock']) {
+    assert.equal(isRetiredRoute(route), true)
+    for (const session of sessions) assert.equal(canAccessRoute(session, route), false)
+  }
+  assert.equal(SYSTEM_PAGES.some(page => page.ruta.startsWith('/inventario')), false)
+  assert.equal(isRetiredRoute('/inventario-extra'), false)
+})

@@ -1,5 +1,6 @@
 {
   "apis": {
+    "observacionesControl": { "collection": "observacionesControl", "orderBy": "fechaCreacion", "orderDirection": "desc" },
     "roles": {
       "collection": "roles",
       "orderBy": "fechaCreacion",
@@ -39,23 +40,8 @@
         "delete": "remove"
       }
     },
-    "utilesOficina": {
-      "collection": "utilesOficina",
-      "orderBy": "nombre",
-      "orderDirection": "asc"
-    },
-    "requerimientosUtiles": {
-      "collection": "requerimientosUtiles",
-      "orderBy": "fechaCreacion",
-      "orderDirection": "desc"
-    },
     "tareas": {
       "collection": "tareas",
-      "orderBy": "fechaCreacion",
-      "orderDirection": "desc"
-    },
-    "movimientosUtiles": {
-      "collection": "movimientosUtiles",
       "orderBy": "fechaCreacion",
       "orderDirection": "desc"
     },

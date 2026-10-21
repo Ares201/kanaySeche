@@ -25,7 +25,6 @@ export default {
   // Global CSS: https://go.nuxtjs.dev/config-css
     css: [
       '~/assets/css/global.css',
-      '~/assets/css/inventory-pages.css',
       '~/assets/css/theme.css'
     ],
 

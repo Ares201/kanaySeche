@@ -3,17 +3,24 @@
     <header class="header">
       <div>
         <span>Control y Aceptación</span>
-        <h1>Movimientos por fecha y ubicación</h1>
+        <h1>Control de Ingresos</h1>
       </div>
-      <button type="button" :disabled="loading" @click="limpiarFiltros">
-        <v-icon small>mdi-filter-remove-outline</v-icon>Limpiar filtros
-      </button>
+      <div class="header-actions">
+        <v-chip-group v-model="vista" mandatory active-class="primary--text" class="view-selector"
+          aria-label="Vista de resultados">
+          <v-chip value="grafico" outlined><v-icon left small>mdi-chart-bar</v-icon>Gráfico</v-chip>
+          <v-chip value="tabla" outlined><v-icon left small>mdi-table</v-icon>Tabla</v-chip>
+        </v-chip-group>
+        <button class="clear-filters" type="button" :disabled="loading" @click="limpiarFiltros">
+          <v-icon small>mdi-filter-remove-outline</v-icon>Limpiar filtros
+        </button>
+      </div>
     </header>
 
     <!-- Filtros de búsqueda -->
     <section class="filters-card">
       <v-row dense>
-        <v-col v-for="filter in filterDefinitions" :key="filter.key" cols="12" sm="6" lg="4">
+        <v-col v-for="filter in filterDefinitions" :key="filter.key" cols="12" sm="6" lg="3">
           <v-autocomplete v-model="filters[filter.key]" :items="options[filter.key]" :label="filter.label"
             :loading="optionLoading[filter.key]" clearable outlined dense hide-no-data
             :search-input.sync="searches[filter.key]" @change="onFilterChange"
@@ -35,10 +42,21 @@
         <strong>{{ total.toLocaleString('es-PE') }}</strong>
         <v-icon>mdi-chart-bar</v-icon>
       </article>
-      <article>
-        <small>Ubicaciones / Fechas</small>
-        <strong>{{ resultados.length }}</strong>
-        <v-icon>mdi-map-marker-multiple-outline</v-icon>
+      <article class="observation-card" :style="observacionCoincidente && !observacionError && !loadingObservaciones
+        ? { backgroundColor: estadoObservacion.fondo, color: estadoObservacion.color, borderColor: estadoObservacion.color } : {}">
+        <small>Observación</small>
+        <v-chip v-if="observacionCoincidente && !observacionError && !loadingObservaciones" small class="mt-2"
+          :color="estadoObservacion.fondo" :text-color="estadoObservacion.color">
+          {{ estadoObservacion.text }}
+        </v-chip>
+        <p v-if="observacionError" role="alert">{{ observacionError }}</p>
+        <p v-else-if="loadingObservaciones">Cargando observaciones...</p>
+        <div v-else-if="observacionCoincidente">
+          <p><b>Fecha de observación:</b> {{ fechaObservacionTexto(observacionCoincidente.fecha_observacion) }}</p>
+          <p>{{ observacionCoincidente.observacion }}</p>
+        </div>
+        <p v-else-if="filtrosObservacionCompletos">No hay observación registrada para esta combinación.</p>
+        <p v-else>Selecciona generador, transportista y producto cliente para consultar la observación.</p>
       </article>
       <article>
         <small>Filtros activos</small>
@@ -48,11 +66,11 @@
     </section>
 
     <!-- Gráfico -->
-    <article class="chart-card">
+    <article v-show="vista === 'grafico'" class="chart-card">
       <div class="chart-title">
         <div>
           <h2>Movimientos por Fecha y Ubicación</h2>
-          <p>Cantidad de movimientos agrupados por fecha de ingreso y ubicación física.</p>
+          <p>Cantidad de movimientos agrupados por fecha y zona de recepción.</p>
         </div>
         <v-progress-circular v-if="loading" indeterminate size="26" color="primary" />
       </div>
@@ -63,7 +81,7 @@
     </article>
 
     <!-- Tabla Detalle de Registros -->
-    <article class="table-card mt-6">
+    <article v-show="vista === 'tabla'" class="table-card">
       <div class="table-header">
         <div>
           <h2>Detalle de Registros</h2>
@@ -79,27 +97,27 @@
           <span class="font-weight-bold primary--text">{{ item.pedido_venta || '-' }}</span>
         </template>
 
-        <template #[`item.tipo`]="{ item }">
-          <v-chip v-if="item.tipo" small label color="teal" text-color="white">
-            {{ item.tipo }}
+        <template #[`item.clasificacion_sigersol`]="{ item }">
+          <v-chip v-if="item.clasificacion_sigersol" small label color="teal" text-color="white">
+            {{ item.clasificacion_sigersol }}
           </v-chip>
           <span v-else>-</span>
         </template>
       </v-data-table>
     </article>
+
   </section>
 </template>
 
 <script>
 import Chart from '~/utils/theme-chart'
+import { camposObservacion, coincideObservacion, obtenerEstadoObservacion, formatearFechaObservacion } from '~/utils/observaciones-control'
 
 const emptyFilters = () => ({
-  fecha_ingreso: null,
   generador: null,
   producto_cliente: null,
   transportista: null,
-  tratamiento: null,
-  ubicacion: null
+  tipo_contenedor: null
 })
 
 const CHART_COLORS = ['#087f8c', '#2e93a0', '#46a7b4', '#68bbc8', '#8ecfdb', '#1d6f8a', '#104e61', '#3b82f6', '#8b5cf6']
@@ -108,12 +126,15 @@ export default {
   name: 'GraficosControlAceptacionPage',
   data() {
     return {
+      vista: 'grafico',
+      observaciones: [],
+      observacionError: '',
+      loadingObservaciones: false,
       filters: emptyFilters(),
       searches: emptyFilters(),
       options: emptyFilters(),
       optionLoading: {
-        fecha_ingreso: false, generador: false, producto_cliente: false,
-        transportista: false, tratamiento: false, ubicacion: false
+        generador: false, producto_cliente: false, transportista: false, tipo_contenedor: false
       },
       resultados: [],
       listaRegistros: [],
@@ -126,41 +147,67 @@ export default {
       debounceTimers: {},
       requestVersion: 0,
       headersTabla: [
-        { text: 'Fecha Ingreso Cisterna', value: 'fecha_ingreso' },
-        { text: 'Pedido de Venta', value: 'pedido_venta' },
-        { text: 'Ubicación', value: 'ubicacion' },
-        { text: 'Tratamiento Propuesto', value: 'tratamiento' },
-        { text: 'Tipo', value: 'tipo' },
-        { text: 'Fecha Ingreso Muestra', value: 'fecha_muestra' },
+        { text: 'Fecha', value: 'fecha_ingreso' },
+        { text: 'No. Pedido de Venta', value: 'pedido_venta' },
+        { text: 'Nombre Producto Cliente', value: 'producto_cliente' },
+        { text: 'Clasificación Sigersol', value: 'clasificacion_sigersol' },
+        { text: 'Cliente', value: 'cliente' },
+        { text: 'Transportista', value: 'transportista' },
         { text: 'Generador', value: 'generador' },
-        { text: 'Producto Cliente', value: 'producto_cliente' },
-        { text: 'Transportista', value: 'transportista' }
+        { text: 'Zona de recepción', value: 'ubicacion' },
+        { text: 'Coordenadas', value: 'coordenadas' },
+        { text: 'Tipo Contenedor', value: 'tipo_contenedor' }
       ]
     }
   },
   computed: {
+    estadoObservacion() {
+      return obtenerEstadoObservacion(this.observacionCoincidente?.estado)
+    },
+    filtrosObservacionCompletos() {
+      return camposObservacion.every(field => this.filters[field])
+    },
+    observacionCoincidente() {
+      return this.observaciones.find(record => coincideObservacion(record, this.filters))
+    },
     filterDefinitions() {
       return [
-        { key: 'fecha_ingreso', label: 'Fecha de Ingreso' },
-        { key: 'ubicacion', label: 'Ubicación' },
-        { key: 'tratamiento', label: 'Tratamiento Propuesto' },
         { key: 'generador', label: 'Generador' },
         { key: 'producto_cliente', label: 'Nombre Producto Cliente' },
-        { key: 'transportista', label: 'Transportista' }
+        { key: 'transportista', label: 'Transportista' },
+        { key: 'tipo_contenedor', label: 'Tipo Contenedor' }
       ]
     },
     filtrosActivos() {
       return Object.values(this.filters).filter(Boolean).length
     }
   },
+  watch: {
+    vista(value) {
+      if (value === 'grafico') this.$nextTick(this.renderizarGrafico)
+    }
+  },
   mounted() {
     this.actualizarDashboard()
+    this.cargarObservaciones()
   },
   beforeDestroy() {
     this.destruirGrafico()
     Object.values(this.debounceTimers).forEach(clearTimeout)
   },
   methods: {
+    fechaObservacionTexto: formatearFechaObservacion,
+    async cargarObservaciones() {
+      this.loadingObservaciones = true
+      this.observacionError = ''
+      try {
+        this.observaciones = await this.$firebaseApi.list('observacionesControl')
+      } catch (error) {
+        this.observacionError = `No se pudieron cargar las observaciones: ${error.message}`
+      } finally {
+        this.loadingObservaciones = false
+      }
+    },
     parametros(extra = {}) {
       const params = new URLSearchParams(extra)
       Object.entries(this.filters).forEach(([key, value]) => {
@@ -304,7 +351,7 @@ export default {
 
 .header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 20px
@@ -336,7 +383,24 @@ h1 {
   color: var(--ui-text-64748b, #64748b)
 }
 
-.header button {
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px
+}
+
+.view-selector {
+  flex: 0 0 auto
+}
+
+.clear-filters:disabled {
+  opacity: .6;
+  cursor: default
+}
+
+.clear-filters {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -350,7 +414,7 @@ h1 {
   cursor: pointer
 }
 
-.header button .v-icon {
+.clear-filters .v-icon {
   color: #fff
 }
 
@@ -383,6 +447,27 @@ h1 {
 .summary small,
 .summary strong {
   display: block
+}
+
+.observation-card p {
+  margin-top: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.5
+}
+
+.observation-card small {
+  color: inherit
+}
+
+.observation-card .v-chip {
+  max-width: 100%;
+  height: auto;
+  min-height: 24px;
+  white-space: normal
 }
 
 .summary small {
@@ -463,7 +548,11 @@ h1 {
     flex-direction: column
   }
 
-  .header button {
+  .header-actions {
+    justify-content: space-between
+  }
+
+  .clear-filters {
     justify-content: center
   }
 
