@@ -174,6 +174,7 @@
           </NuxtLink>
           <NuxtLink v-if="can('/documentos/controlDeIngresos')" class="nav-link" to="/documentos/controlDeIngresos"
             @click.native="closeMenu">Control de Ingresos</NuxtLink>
+          <NuxtLink v-if="can('/documentos/navision')" class="nav-link" to="/documentos/navision" @click.native="closeMenu">Pedidos Navision</NuxtLink>
           <NuxtLink v-if="can('/documentos/cartas')" class="nav-link" to="/documentos/cartas" @click.native="closeMenu">
             Cartas</NuxtLink>
           <NuxtLink v-if="can('/documentos/firmar-pdf')" class="nav-link" to="/documentos/firmar-pdf"
@@ -237,7 +238,7 @@ export default {
     inicioRoutes() { return ['/', '/inicio/tareas', '/inicio/graficos'] },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
     controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/observaciones'] },
-    documentosRoutes() { return ['/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas'] },
+    documentosRoutes() { return ['/documentos/navision', '/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas'] },
     configuracionRoutes() { return ['/configuracion/residuos', '/configuracion/clientes', '/configuracion/personal', '/configuracion/roles', '/configuracion/vehiculos', '/configuracion/historial'] }
   },
 

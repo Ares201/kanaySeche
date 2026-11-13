@@ -12,6 +12,7 @@ export const SYSTEM_PAGES = [
   { nombre: 'Graficos de control y aceptacion', ruta: '/control-aceptacion/graficos', modulo: 'Control y Aceptacion' },
   { nombre: 'Observaciones de control', ruta: '/control-aceptacion/observaciones', modulo: 'Control y Aceptacion' },
   { nombre: 'Control de Ingresos', ruta: '/documentos/controlDeIngresos', modulo: 'Documentos' },
+  { nombre: 'Pedidos Navision', ruta: '/documentos/navision', modulo: 'Documentos' },
   { nombre: 'Cartas', ruta: '/documentos/cartas', modulo: 'Documentos' },
   { nombre: 'Firmar PDF', ruta: '/documentos/firmar-pdf', modulo: 'Documentos' },
   { nombre: 'Boletas', ruta: '/documentos/boletas', modulo: 'Documentos' },

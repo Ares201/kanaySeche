@@ -216,8 +216,13 @@ export default {
       return params
     },
     async solicitar(params) {
-      // Consulta el middleware de BigQuery en el mismo dominio de la aplicación.
-      const response = await this.$axios.$get(`/api/reporteLab?${params.toString()}`)
+      // Axios usa la API configurada para desarrollo o producción.
+      let response
+      try {
+        response = await this.$axios.$get(`/api/reporteLab?${params.toString()}`)
+      } catch (error) {
+        throw new Error(error.response?.data?.error || error.message || 'No se pudo consultar la API')
+      }
 
       // Axios parsea automáticamente el JSON y extrae la propiedad data/success
       if (!response || !response.success) {
@@ -261,6 +266,7 @@ export default {
         const data = await this.solicitar(this.parametros({ action: 'registros', limit: '200' }))
         this.listaRegistros = Array.isArray(data) ? data : []
       } catch (error) {
+        this.error = error.message
         console.error('Error cargando registros:', error)
       } finally {
         this.loadingTabla = false
