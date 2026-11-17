@@ -1,6 +1,7 @@
 export const ADMIN_ROLE = 'Administrador'
 
 export const SYSTEM_PAGES = [
+  { nombre: 'Excel intermedio', ruta: '/aprendizaje/excel-intermedio', modulo: 'Aprendizaje', descripcion: 'Curso de Excel intermedio. Tema 1: Función SI.' },
   { nombre: 'Historial', ruta: '/configuracion/historial', modulo: 'Configuración', soloAdministrador: true },
   { nombre: 'Inicio', ruta: '/', modulo: 'General', descripcion: 'Página de inicio' },
   { nombre: 'Tareas', ruta: '/inicio/tareas', modulo: 'Inicio', descripcion: 'Tareas personales y compartidas' },

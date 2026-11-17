@@ -184,6 +184,15 @@
             Boletas</NuxtLink>
         </div>
 
+        <button v-if="hasAccess(aprendizajeRoutes)" class="module-button" type="button" @click="toggleAprendizaje">
+          <span>Aprendizaje</span>
+          <span class="chevron" :class="{ 'chevron--open': aprendizajeOpen }">›</span>
+        </button>
+        <div v-if="hasAccess(aprendizajeRoutes)" v-show="aprendizajeOpen" class="submenu">
+          <NuxtLink v-if="can('/aprendizaje/excel-intermedio')" class="nav-link" to="/aprendizaje/excel-intermedio"
+            @click.native="closeMenu">Excel intermedio</NuxtLink>
+        </div>
+
         <!-- CONFIGURACION -->
         <button v-if="hasAccess(configuracionRoutes)" class="module-button" type="button" @click="toggleConfiguracion">
           <span>Configuracion</span>
@@ -224,7 +233,8 @@ export default {
       operacionesOpen: false,
       controlAceptacionOpen: false,
       configuracionOpen: false,
-      documentosOpen: false
+      documentosOpen: false,
+      aprendizajeOpen: false
     }
   },
 
@@ -236,6 +246,7 @@ export default {
     currentUserName() { return this.$auth?.user?.nombres || 'Kanay - Seche' },
     currentRole() { return this.$auth?.user?.rolNombre || '' },
     inicioRoutes() { return ['/', '/inicio/tareas', '/inicio/graficos'] },
+    aprendizajeRoutes() { return ['/aprendizaje/excel-intermedio'] },
     operacionesRoutes() { return ['/operaciones/graficos', '/operaciones/pedidos-venta', '/operaciones/recepcion-cisterna'] },
     controlAceptacionRoutes() { return ['/control-aceptacion/graficos', '/control-aceptacion/observaciones'] },
     documentosRoutes() { return ['/documentos/navision', '/documentos/graficos', '/documentos/controlDeIngresos', '/documentos/cartas', '/documentos/firmar-pdf', '/documentos/boletas'] },
@@ -295,7 +306,8 @@ export default {
         'operacionesOpen',
         'controlAceptacionOpen',
         'configuracionOpen',
-        'documentosOpen'
+        'documentosOpen',
+        'aprendizajeOpen'
       ]
 
       modules.forEach((key) => {
@@ -303,6 +315,7 @@ export default {
       })
     },
     toggleInicio() { this.toggleModule('inicio') },
+    toggleAprendizaje() { this.toggleModule('aprendizaje') },
     toggleOperaciones() { this.toggleModule('operaciones') },
     toggleControlAceptacion() { this.toggleModule('controlAceptacion') },
     toggleConfiguracion() { this.toggleModule('configuracion') },
